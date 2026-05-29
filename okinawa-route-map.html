@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>沖縄遠征ルートマップ</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=Space+Grotesk:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ── Limey Life Revised tokens ── */
+:root {
+  --primary:   #222222;
+  --secondary: #777777;
+  --lime:      #C5E84A;
+  --peacock:   #007A8A;
+  --soft-lime: #E8F5C0;
+  --cream:     #F7F5EE;
+  --warm-gray: #D9D6CC;
+  --light-gray:#EEEEEE;
+  --white:     #FFFFFF;
+  --font-head: "DM Sans", "Helvetica Neue", sans-serif;
+  --font-body: "Space Grotesk", Helvetica, sans-serif;
+  --ease: cubic-bezier(0.25,0.8,0.25,1);
+  --dur: 220ms;
+  --radius: 8px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:var(--font-body); background:var(--cream); color:var(--primary); height:100vh; display:flex; overflow:hidden; -webkit-font-smoothing:antialiased; }
+
+/* ── Sidebar ── */
+.sidebar {
+  width:308px; min-width:308px;
+  background:var(--cream);
+  border-right:1px solid var(--warm-gray);
+  display:flex; flex-direction:column; overflow:hidden;
+}
+
+.sidebar-header {
+  padding:20px 20px 16px;
+  border-bottom:1px solid var(--warm-gray);
+  background:var(--white);
+}
+.eyebrow {
+  font-family:var(--font-body);
+  font-size:10px; font-weight:600;
+  letter-spacing:.14em; text-transform:uppercase;
+  color:var(--peacock); margin-bottom:6px;
+  display:flex; align-items:center; gap:7px;
+}
+.eyebrow-dot {
+  width:7px; height:7px; border-radius:50%;
+  background:var(--lime); flex-shrink:0;
+}
+.app-title {
+  font-family:var(--font-head);
+  font-size:21px; font-weight:700;
+  color:var(--primary); line-height:1.25;
+}
+.title-accent {
+  background:var(--lime);
+  padding:0 5px 1px;
+  border-radius:3px;
+}
+
+/* ── Day tabs ── */
+.day-tabs {
+  display:flex;
+  border-bottom:1px solid var(--warm-gray);
+  background:var(--white);
+}
+.day-tab {
+  flex:1; padding:10px 6px;
+  border:none; border-bottom:2px solid transparent;
+  background:transparent; color:var(--secondary);
+  cursor:pointer;
+  font-family:var(--font-body); font-size:10px; font-weight:600;
+  letter-spacing:.06em; text-transform:uppercase;
+  transition:all var(--dur) var(--ease);
+  line-height:1.5; text-align:center;
+}
+.day-tab:hover { color:var(--primary); background:var(--cream); }
+.day-tab.active {
+  color:var(--peacock);
+  border-bottom-color:var(--peacock);
+  background:var(--cream);
+}
+
+/* ── Timeline ── */
+.timeline { flex:1; overflow-y:auto; padding:14px 16px; scrollbar-width:thin; scrollbar-color:var(--warm-gray) var(--cream); }
+.timeline::-webkit-scrollbar { width:3px; }
+.timeline::-webkit-scrollbar-thumb { background:var(--warm-gray); border-radius:2px; }
+
+.stop-row { display:flex; gap:10px; cursor:pointer; }
+.stop-row:hover .stop-card { border-color:var(--peacock); box-shadow:0 2px 8px rgba(0,122,138,.08); }
+.stop-row.active .stop-card {
+  border-color:var(--peacock);
+  border-left-width:3px;
+  background:var(--white);
+  box-shadow:0 2px 12px rgba(0,122,138,.12);
+}
+
+.stop-spine { display:flex; flex-direction:column; align-items:center; min-width:16px; padding-top:14px; }
+.stop-dot {
+  width:9px; height:9px; border-radius:50%;
+  background:var(--warm-gray); flex-shrink:0; transition:all .25s;
+}
+.stop-row.active .stop-dot {
+  background:var(--peacock); width:11px; height:11px;
+  margin-left:-1px; box-shadow:0 0 0 3px rgba(0,122,138,.15);
+}
+.stop-seg { width:1px; flex:1; background:var(--warm-gray); min-height:14px; }
+
+.stop-card {
+  flex:1; padding:9px 11px;
+  border:1px solid var(--light-gray);
+  border-radius:var(--radius);
+  margin-bottom:10px; background:var(--white);
+  transition:all .2s var(--ease);
+}
+.stop-time {
+  font-family:var(--font-body); font-size:10px; font-weight:600;
+  letter-spacing:.06em; text-transform:uppercase;
+  color:var(--secondary); margin-bottom:1px;
+}
+.stop-row.active .stop-time { color:var(--peacock); }
+.stop-name {
+  font-family:var(--font-head); font-size:13px; font-weight:700;
+  color:var(--primary); margin-bottom:3px; line-height:1.3;
+}
+.stop-desc { font-size:11px; color:var(--secondary); margin-bottom:5px; line-height:1.5; }
+.transport-row { display:flex; align-items:center; gap:5px; flex-wrap:wrap; margin-top:4px; }
+.badge {
+  font-family:var(--font-body); font-size:9px; font-weight:600;
+  letter-spacing:.04em; padding:2px 7px;
+  border-radius:20px; white-space:nowrap;
+}
+.b-bus  { background:rgba(0,122,138,.08); color:var(--peacock); border:1px solid rgba(0,122,138,.3); }
+.b-oas  { background:rgba(197,232,74,.2); color:#556b00; border:1px solid rgba(197,232,74,.5); }
+.b-bike { background:rgba(197,232,74,.15); color:#556b00; border:1px solid rgba(197,232,74,.4); }
+.b-walk { background:var(--light-gray); color:var(--secondary); border:1px solid var(--warm-gray); }
+.b-stay { background:rgba(0,122,138,.1); color:var(--peacock); border:1px solid rgba(0,122,138,.3); }
+.price-tag { font-family:var(--font-body); font-size:10px; font-weight:700; color:var(--primary); }
+.dur-tag { font-family:var(--font-body); font-size:9px; color:var(--warm-gray); margin-left:auto; }
+
+/* ── Cost bar ── */
+.cost-bar {
+  padding:9px 16px; border-top:1px solid var(--warm-gray);
+  display:flex; justify-content:space-between; align-items:center;
+  background:var(--soft-lime);
+}
+.cost-label { font-family:var(--font-body); font-size:10px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:#556b00; }
+.cost-num { font-family:var(--font-head); font-size:15px; font-weight:700; color:var(--primary); }
+
+/* ── Controls ── */
+.controls { padding:12px 16px; border-top:1px solid var(--warm-gray); display:flex; gap:8px; background:var(--white); }
+.btn {
+  flex:1; padding:9px 12px;
+  border-radius:var(--radius); border:1.5px solid;
+  cursor:pointer;
+  font-family:var(--font-body); font-size:10px; font-weight:700;
+  letter-spacing:.08em; text-transform:uppercase;
+  transition:all var(--dur) var(--ease);
+}
+.btn-play { background:var(--peacock); border-color:var(--peacock); color:var(--white); }
+.btn-play:hover { background:#006475; }
+.btn-play.playing { background:var(--white); border-color:var(--peacock); color:var(--peacock); }
+.btn-reset { background:transparent; border-color:var(--warm-gray); color:var(--secondary); }
+.btn-reset:hover { border-color:var(--primary); color:var(--primary); }
+
+/* ── Map ── */
+#map { flex:1; }
+.leaflet-container { background:#1a6a7a; }
+
+/* Popup — Limey Life style */
+.leaflet-popup-content-wrapper {
+  background:var(--white) !important;
+  border-top:3px solid var(--peacock) !important;
+  border-radius:var(--radius) !important;
+  color:var(--primary) !important;
+  box-shadow:0 6px 24px rgba(0,0,0,.18) !important;
+  padding:0 !important;
+}
+.leaflet-popup-content { margin:12px 14px !important; }
+.leaflet-popup-tip { background:var(--white) !important; }
+.leaflet-popup-close-button { color:var(--secondary) !important; top:6px !important; right:8px !important; }
+.leaflet-control-zoom a { background:var(--white) !important; color:var(--primary) !important; border-color:var(--warm-gray) !important; border-radius:6px !important; }
+.leaflet-control-zoom a:hover { background:var(--cream) !important; }
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="sidebar-header">
+    <div class="eyebrow"><span class="eyebrow-dot"></span>Okinawa June 2026</div>
+    <div class="app-title"><span class="title-accent">ROUTE</span> MAP</div>
+  </div>
+
+  <div class="day-tabs">
+    <button class="day-tab active" onclick="switchDay(1)">Day 1<br><span style="font-size:9px;font-weight:400;letter-spacing:.01em;text-transform:none">美ら海 &amp; パイン</span></button>
+    <button class="day-tab" onclick="switchDay(2)">Day 2<br><span style="font-size:9px;font-weight:400;letter-spacing:.01em;text-transform:none">タコス &amp; ライブ</span></button>
+    <button class="day-tab" onclick="switchDay(3)">Day 3<br><span style="font-size:9px;font-weight:400;letter-spacing:.01em;text-transform:none">那覇のんびり</span></button>
+  </div>
+
+  <div class="timeline" id="timeline"></div>
+  <div class="cost-bar" id="costBar"></div>
+
+  <div class="controls">
+    <button class="btn btn-play" id="playBtn" onclick="togglePlay()">&#9654; Play</button>
+    <button class="btn btn-reset" onclick="resetAnim()">&#8635; Reset</button>
+  </div>
+</div>
+
+<div id="map"></div>
+
+<script>
+var DAYS = {
+  1: {
+    center:[26.44,127.82], zoom:10, cost:'別払い ¥4,880',
+    stops:[
+      { name:'那覇空港', time:'09:21', desc:'コインロッカーに荷物を預けてから乗車', lat:26.196, lng:127.646, transport:'117番 高速バス', type:'bus', price:'¥2,880', dur:'2h30m' },
+      { name:'美ら海水族館', time:'11:51', desc:'ジンベイザメ！約2.5時間滞在', lat:26.694, lng:127.878, transport:'OAS/APL', type:'oas', price:'¥1,250', dur:'47m' },
+      { name:'名護市役所前', time:'15:38', desc:'70番バスに乗り換え', lat:26.592, lng:127.978, transport:'70番（OTOPa）', type:'bus', price:'パス対象', dur:'31m' },
+      { name:'ナゴパイナップルパーク', time:'16:09', desc:'カート体験！約2時間滞在（早割済）', lat:26.584, lng:127.964, transport:'70番 → OASシャトル', type:'oas', price:'¥2,000', dur:'2h22m' },
+      { name:'那覇バスターミナル', time:'20:38', desc:'国際通りでタコス！', lat:26.215, lng:127.681, transport:'到着', type:'stay', price:'', dur:'' }
+    ]
+  },
+  2: {
+    center:[26.285,127.742], zoom:11, cost:'パス活用 + ¥2,270',
+    stops:[
+      { name:'那覇バスターミナル', time:'午前', desc:'Tギャラリアでジュエリーを見る', lat:26.215, lng:127.681, transport:'30番バス（OTOPa）', type:'bus', price:'パス対象', dur:'約40m' },
+      { name:'比屋根 / キングタコス', time:'昼前', desc:'テイクアウト注文して即バス停へ！', lat:26.329, lng:127.799, transport:'31番バス（OTOPa）', type:'bus', price:'パス対象', dur:'約10m' },
+      { name:'胡屋 / チャーリータコス', time:'昼', desc:'本店でタコス！食後はアリーナへ', lat:26.334, lng:127.803, transport:'Hello Cycling / 徒歩2km', type:'bike', price:'~¥500', dur:'約20m' },
+      { name:'沖縄サントリーアリーナ', time:'15:00', desc:'SixTONES オーラス！！', lat:26.331, lng:127.793, transport:'111番 高速バス', type:'bus', price:'¥1,200~', dur:'約50m' },
+      { name:'那覇バスターミナル', time:'21:00頃', desc:'終演後 那覇に帰還', lat:26.215, lng:127.681, transport:'到着', type:'stay', price:'', dur:'' }
+    ]
+  },
+  3: {
+    center:[26.210,127.678], zoom:12, cost:'パス活用でOK',
+    stops:[
+      { name:'グランドキャビンホテル那覇小禄', time:'チェックアウト', desc:'朝食を食べてチェックアウト', lat:26.201, lng:127.663, transport:'バス（OTOPa）', type:'bus', price:'パス対象', dur:'約15m' },
+      { name:'壺屋やちむん通り', time:'午前', desc:'お皿を選ぶ！ゆっくり歩く', lat:26.218, lng:127.690, transport:'バス（OTOPa）', type:'bus', price:'パス対象', dur:'約30m' },
+      { name:'豊崎美らSUNビーチ', time:'昼すぎ', desc:'日光浴！空港近くで帰り動線OK', lat:26.168, lng:127.666, transport:'バス（OTOPa）', type:'bus', price:'パス対象', dur:'約20m' },
+      { name:'那覇空港 スナックコーナー風月', time:'18:00頃', desc:'旅の締め！SNA26 20:30発で帰京', lat:26.196, lng:127.646, transport:'帰京', type:'stay', price:'', dur:'' }
+    ]
+  }
+};
+
+var PEACOCK = '#007A8A';
+var LIME = '#C5E84A';
+
+var map = L.map('map',{zoomControl:true,attributionControl:false});
+L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19}).addTo(map);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png',{maxZoom:19,opacity:.85}).addTo(map);
+
+var currentDay=1, currentStop=-1, playing=false, playTimer=null;
+var mapMarkers=[], mapLines=[];
+
+function makeIcon(stop, active) {
+  if (active) {
+    return L.divIcon({
+      className:'',
+      html:'<div style="width:36px;height:36px;background:'+LIME+';border:2.5px solid #222;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 4px rgba(197,232,74,.3),0 3px 10px rgba(0,0,0,.3);transition:all .25s"><div style="width:10px;height:10px;background:#222;border-radius:50%"></div></div>',
+      iconSize:[36,36], iconAnchor:[18,18], popupAnchor:[0,-18]
+    });
+  }
+  return L.divIcon({
+    className:'',
+    html:'<div style="width:24px;height:24px;background:#fff;border:2px solid '+PEACOCK+';border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.2);transition:all .25s"><div style="width:7px;height:7px;background:'+PEACOCK+';border-radius:50%"></div></div>',
+    iconSize:[24,24], iconAnchor:[12,12], popupAnchor:[0,-12]
+  });
+}
+
+function renderTimeline() {
+  var d = DAYS[currentDay];
+  var html = '';
+  for (var i=0; i<d.stops.length; i++) {
+    var s = d.stops[i];
+    var isActive = i===currentStop;
+    var hasT = s.transport!=='到着' && s.transport!=='帰京';
+    var tHtml = '';
+    if (hasT) {
+      tHtml = '<div class="transport-row"><span class="badge b-'+s.type+'">'+s.transport+'</span>';
+      if (s.price) tHtml += '<span class="price-tag">'+s.price+'</span>';
+      if (s.dur) tHtml += '<span class="dur-tag">'+s.dur+'</span>';
+      tHtml += '</div>';
+    }
+    html += '<div class="stop-row'+(isActive?' active':'')+'" onclick="jumpTo('+i+')" id="sr'+i+'">';
+    html += '<div class="stop-spine"><div class="stop-dot"></div>';
+    if (i<d.stops.length-1) html += '<div class="stop-seg"></div>';
+    html += '</div><div style="flex:1"><div class="stop-card">';
+    html += '<div class="stop-time">'+s.time+'</div>';
+    html += '<div class="stop-name">'+s.name+'</div>';
+    html += '<div class="stop-desc">'+s.desc+'</div>';
+    html += tHtml + '</div></div></div>';
+  }
+  document.getElementById('timeline').innerHTML = html;
+  document.getElementById('costBar').innerHTML = '<span class="cost-label">交通費メモ</span><span class="cost-num">'+d.cost+'</span>';
+}
+
+function renderMap() {
+  for (var i=0;i<mapMarkers.length;i++) map.removeLayer(mapMarkers[i]);
+  for (var i=0;i<mapLines.length;i++) map.removeLayer(mapLines[i]);
+  mapMarkers=[]; mapLines=[];
+  var d = DAYS[currentDay];
+  var ll = [];
+  for (var i=0;i<d.stops.length;i++) ll.push([d.stops[i].lat,d.stops[i].lng]);
+  mapLines.push(L.polyline(ll,{color:PEACOCK,weight:3,opacity:.7,dashArray:'8 5'}).addTo(map));
+  for (var i=0;i<d.stops.length;i++) {
+    (function(idx){
+      var s = d.stops[idx];
+      var m = L.marker([s.lat,s.lng],{icon:makeIcon(s,idx===currentStop)}).addTo(map);
+      var hasT = s.transport!=='到着'&&s.transport!=='帰京';
+      var tHtml = hasT ? '<div style="margin-top:6px;display:flex;gap:5px;align-items:center"><span style="font-size:9px;font-weight:600;padding:2px 7px;border-radius:20px;background:rgba(0,122,138,.1);color:#007A8A;border:1px solid rgba(0,122,138,.3)">'+s.transport+'</span>'+(s.price?'<span style="font-size:10px;font-weight:700;color:#222">'+s.price+'</span>':'')+'</div>' : '';
+      m.bindPopup('<div style="font-family:Space Grotesk,sans-serif;min-width:160px"><div style="font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#007A8A;margin-bottom:2px">'+s.time+'</div><div style="font-family:DM Sans,sans-serif;font-weight:700;font-size:13px;color:#222;margin-bottom:3px;line-height:1.3">'+s.name+'</div><div style="font-size:11px;color:#777;line-height:1.5">'+s.desc+'</div>'+tHtml+'</div>');
+      m.on('click',function(){jumpTo(idx);});
+      mapMarkers.push(m);
+    })(i);
+  }
+  map.setView(d.center,d.zoom,{animate:true});
+}
+
+function jumpTo(i) {
+  currentStop = i;
+  var d = DAYS[currentDay];
+  for (var j=0;j<mapMarkers.length;j++) mapMarkers[j].setIcon(makeIcon(d.stops[j],j===i));
+  map.flyTo([d.stops[i].lat,d.stops[i].lng],13,{duration:.7});
+  mapMarkers[i].openPopup();
+  renderTimeline();
+  var el = document.getElementById('sr'+i);
+  if (el) el.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function switchDay(day) {
+  clearInterval(playTimer); playing=false; currentStop=-1;
+  document.getElementById('playBtn').innerHTML='&#9654; Play';
+  document.getElementById('playBtn').classList.remove('playing');
+  currentDay = day;
+  var tabs = document.querySelectorAll('.day-tab');
+  for (var i=0;i<tabs.length;i++) tabs[i].classList.toggle('active',i+1===day);
+  renderTimeline(); renderMap();
+}
+
+function togglePlay() {
+  if (playing) {
+    clearInterval(playTimer); playing=false;
+    document.getElementById('playBtn').innerHTML='&#9654; Play';
+    document.getElementById('playBtn').classList.remove('playing');
+  } else {
+    playing=true;
+    document.getElementById('playBtn').innerHTML='&#9632; Stop';
+    document.getElementById('playBtn').classList.add('playing');
+    var max = DAYS[currentDay].stops.length;
+    if (currentStop>=max-1) currentStop=-1;
+    playTimer=setInterval(function(){
+      currentStop++;
+      if (currentStop>=max) {
+        clearInterval(playTimer); playing=false;
+        document.getElementById('playBtn').innerHTML='&#9654; Play';
+        document.getElementById('playBtn').classList.remove('playing');
+        return;
+      }
+      jumpTo(currentStop);
+    },2200);
+  }
+}
+
+function resetAnim() {
+  clearInterval(playTimer); playing=false; currentStop=-1;
+  document.getElementById('playBtn').innerHTML='&#9654; Play';
+  document.getElementById('playBtn').classList.remove('playing');
+  renderTimeline(); renderMap();
+}
+
+switchDay(1);
+</script>
+</body>
+</html>
