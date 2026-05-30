@@ -638,7 +638,7 @@ body {
   background: transparent; border: 1.5px solid var(--warm-gray);
   border-radius: 6px; padding: 4px 10px; cursor: pointer;
 }
-.profile-body { overflow-y: auto; padding: 0 20px 40px; -webkit-overflow-scrolling: touch; }
+.profile-body { flex: 1; min-height: 0; overflow-y: auto; padding: 0 20px 40px; -webkit-overflow-scrolling: touch; }
 .pf-hero { padding: 24px 0 20px; border-bottom: 1px solid var(--warm-gray); }
 .pf-eyebrow {
   font-family: var(--font-body); font-size: 9px; font-weight: 700;
@@ -794,11 +794,11 @@ body {
       <div class="header-actions">
         <button class="edit-toggle-btn" id="editToggleBtn" onclick="toggleEditMode()">✏ Edit Trip</button>
         <button class="settings-btn" id="moreBtn" onclick="toggleMoreMenu(event)">⋯</button>
-        <button class="settings-btn" id="settingsBtn" onclick="openSettings()">⚙</button>
         <div class="more-menu" id="moreMenu">
           <button class="more-menu-item" onclick="openPosterModal();closeMoreMenu()">🖼 Poster</button>
-          <button class="more-menu-item" onclick="openProfileModal();closeMoreMenu()">📖 Profile</button>
+          <button class="more-menu-item" onclick="openProfileModal();closeMoreMenu()">📖 Travel Story</button>
           <button class="more-menu-item" onclick="exportJSON();closeMoreMenu()">📤 Export</button>
+          <button class="more-menu-item" onclick="openSettings();closeMoreMenu()">⚙ Settings</button>
         </div>
       </div>
     </div>
@@ -1039,7 +1039,7 @@ body {
 <div class="profile-modal" id="profileModal" onclick="if(event.target===this)closeProfileModal()">
   <div class="profile-inner">
     <div class="profile-ph">
-      <span class="profile-ph-title">Journey Profile</span>
+      <span class="profile-ph-title">Travel Story</span>
       <button class="profile-ph-close" onclick="closeProfileModal()">&#10005; Close</button>
     </div>
     <div class="profile-body" id="profileBody"></div>
@@ -2664,7 +2664,7 @@ function renderProfileBody(st) {
 
   /* ── Hero: Personality → Vibe + Rhythm → Story → Stats ── */
   h += '<div class="pf-hero">';
-  h += '<div class="pf-eyebrow">Journey Profile</div>';
+  h += '<div class="pf-eyebrow">Travel Story</div>';
   h += '<div class="pf-title">'+escHtml(TRIP.title)+'</div>';
   h += '<div class="pf-subtitle">'+escHtml(TRIP.subtitle)+'</div>';
 
