@@ -702,23 +702,31 @@ body {
 .pf-stat-unit { font-family: var(--font-body); font-size: 10px; font-weight: 600; color: var(--secondary); text-transform: uppercase; letter-spacing: .06em; display: block; margin-top: 2px; }
 .pf-stat-div { width: 1px; background: var(--warm-gray); margin: 4px 0; }
 
-/* ── Export sheet ── */
+/* ── Export modal ── */
 .export-sheet {
   display: none; position: fixed; inset: 0; z-index: 3100;
-  background: rgba(0,0,0,.55); align-items: flex-end; justify-content: center;
+  background: rgba(0,0,0,.55); align-items: center; justify-content: center;
+  padding: 20px;
 }
 .export-sheet.open { display: flex; }
 .export-sheet-inner {
-  background: var(--white); width: 100%; max-width: 480px;
-  border-radius: 16px 16px 0 0;
-  padding: 20px 16px max(20px, env(safe-area-inset-bottom, 20px));
+  background: var(--white); width: 100%; max-width: 360px;
+  border-radius: 16px;
+  padding: 20px 16px 16px;
   display: flex; flex-direction: column; gap: 8px;
+}
+.export-sheet-header {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;
 }
 .export-sheet-title {
   font-family: var(--font-body); font-size: 11px; font-weight: 700;
   letter-spacing: .1em; text-transform: uppercase; color: var(--secondary);
-  margin-bottom: 4px;
 }
+.export-sheet-close {
+  font-size: 16px; background: transparent; border: none; color: var(--secondary);
+  cursor: pointer; padding: 2px 6px; border-radius: 4px;
+}
+.export-sheet-close:hover { background: var(--light-gray); }
 .export-sheet-btn {
   width: 100%; padding: 13px 16px; border-radius: var(--radius);
   border: 1.5px solid var(--warm-gray); background: var(--white);
@@ -1063,10 +1071,14 @@ body {
 </div>
 
 <!-- ── Profile Modal ── -->
-<!-- ── Export sheet ── -->
+<!-- ── Export modal ── -->
 <div class="export-sheet" id="exportSheet" onclick="if(event.target===this)closeExportSheet()">
   <div class="export-sheet-inner">
-    <div class="export-sheet-title">Export Route</div>
+    <div class="export-sheet-header">
+      <span class="export-sheet-title">Export</span>
+      <button class="export-sheet-close" onclick="closeExportSheet()">&#10005;</button>
+    </div>
+    <button class="export-sheet-btn" onclick="openPosterModal();closeExportSheet()">🖼 Download Poster (PNG)</button>
     <button class="export-sheet-btn" onclick="downloadJSON()">&#8595; Download JSON</button>
     <button class="export-sheet-btn export-sheet-btn-share" onclick="shareJSON()">&#8599; Share</button>
   </div>
@@ -1231,7 +1243,7 @@ function closeExportSheet() {
   document.getElementById('exportSheet').classList.remove('open');
 }
 function _buildExportBlob() {
-  return new Blob([JSON.stringify({ schemaVersion: '5.8', trip: TRIP, days: DAYS }, null, 2)], { type: 'application/json' });
+  return new Blob([JSON.stringify({ schemaVersion: '5.11', trip: TRIP, days: DAYS }, null, 2)], { type: 'application/json' });
 }
 function downloadJSON() {
   var blob = _buildExportBlob();
@@ -1267,7 +1279,27 @@ function handleImport(input) {
   reader.onload = function(e) {
     try {
       var data = JSON.parse(e.target.result);
-      if (!data.days || typeof data.days !== 'object') { alert('有効なルートマップJSONではありません'); return; }
+
+      /* ── Validation (fail early, never touch localStorage) ── */
+      if (!data.days || typeof data.days !== 'object') {
+        alert('読み込みエラー: daysフィールドがありません。有効なルートマップJSONを選択してください。'); return;
+      }
+      var errs = [];
+      Object.keys(data.days).forEach(function(k) {
+        var day = data.days[k];
+        if (!day.stops || !Array.isArray(day.stops)) { errs.push('Day ' + k + ': stops が配列ではありません'); return; }
+        day.stops.forEach(function(s, i) {
+          if (!s.name)             errs.push('Day ' + k + ' Stop ' + (i+1) + ': name が未設定');
+          if (s.lat == null || s.lng == null) errs.push('Day ' + k + ' Stop ' + (i+1) + ': 座標(lat/lng)が未設定');
+        });
+      });
+      if (errs.length) {
+        alert('読み込みエラー:\n' + errs.slice(0, 6).join('\n') + (errs.length > 6 ? '\n…他 ' + (errs.length - 6) + ' 件' : '')); return;
+      }
+      var sv = parseFloat(data.schemaVersion || '0');
+      if (sv > 0 && sv < 5.0 && !confirm('古いバージョン (schemaVersion ' + data.schemaVersion + ') のデータです。続けますか？')) return;
+
+      /* ── Import (only reached if validation passed) ── */
       if (data.trip) {
         TRIP.title    = data.trip.title    || TRIP.title;
         TRIP.subtitle = data.trip.subtitle !== undefined ? data.trip.subtitle : TRIP.subtitle;
@@ -1691,6 +1723,18 @@ function startPlay() {
   if(currentStop>=stops.length-1){finishPlay();return;}
   animNext();
 }
+function _cameraFollow(f, t, c, ctrlPt_) {
+  var rhythm = c.rhythmLabel;
+  if (rhythm === 'air' || rhythm === 'sea') {
+    var bounds = L.latLngBounds([f, t]);
+    if (ctrlPt_) bounds.extend(ctrlPt_);
+    map.fitBounds(bounds.pad(0.35), { maxZoom: 9, animate: true, duration: 1.2 });
+  } else if (rhythm === 'trail' || rhythm === 'stroll') {
+    map.flyTo([(f[0]+t[0])/2,(f[1]+t[1])/2], 16, { animate: true, duration: 0.7 });
+  } else {
+    map.flyTo([(f[0]+t[0])/2,(f[1]+t[1])/2], 13, { animate: true, duration: 0.8 });
+  }
+}
 function animNext() {
   var stops=DAYS[currentDay].stops, from=stops[currentStop], to=stops[currentStop+1], c=tcfg(from.transport);
   var f=[from.lat,from.lng],t=[to.lat,to.lng];
@@ -1702,6 +1746,7 @@ function animNext() {
   var dl=t[0]-f[0],dn=t[1]-f[1],dist=Math.sqrt(dl*dl+dn*dn);
   anim.duration=Math.max(700,Math.min(2800,dist*4400))/c.speedMult/playbackSpeed;
   anim.startTime=performance.now();
+  _cameraFollow(f, t, c, anim.ctrlPt);
   anim.raf=requestAnimationFrame(animTick);
 }
 function animTick(ts) {
@@ -1917,9 +1962,14 @@ function closeSidebar() {
 function toggleEditMode() {
   editMode = !editMode;
   var btn = document.getElementById('editToggleBtn');
-  btn.textContent = editMode ? 'Done' : 'Edit';
+  btn.textContent = editMode ? '✓ Done' : '✏ Edit Trip';
   btn.classList.toggle('on', editMode);
-  if (!editMode) closeEP();
+  if (editMode) {
+    if (isMobile()) setSheet('full');
+  } else {
+    closeEP();
+    if (isMobile()) setSheet('peek');
+  }
   renderTimeline();
 }
 
