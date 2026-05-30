@@ -638,7 +638,7 @@ body {
   background: transparent; border: 1.5px solid var(--warm-gray);
   border-radius: 6px; padding: 4px 10px; cursor: pointer;
 }
-.profile-body { flex: 1; min-height: 0; overflow-y: auto; padding: 0 20px 40px; -webkit-overflow-scrolling: touch; }
+.profile-body { flex: 1; min-height: 0; overflow-y: auto; padding: 0 20px; padding-bottom: max(60px, env(safe-area-inset-bottom, 60px)); -webkit-overflow-scrolling: touch; }
 .pf-hero { padding: 24px 0 20px; border-bottom: 1px solid var(--warm-gray); }
 .pf-eyebrow {
   font-family: var(--font-body); font-size: 9px; font-weight: 700;
@@ -701,6 +701,33 @@ body {
 .pf-stat-num { font-family: var(--font-head); font-size: 30px; font-weight: 700; color: var(--primary); line-height: 1; }
 .pf-stat-unit { font-family: var(--font-body); font-size: 10px; font-weight: 600; color: var(--secondary); text-transform: uppercase; letter-spacing: .06em; display: block; margin-top: 2px; }
 .pf-stat-div { width: 1px; background: var(--warm-gray); margin: 4px 0; }
+
+/* ── Export sheet ── */
+.export-sheet {
+  display: none; position: fixed; inset: 0; z-index: 3100;
+  background: rgba(0,0,0,.55); align-items: flex-end; justify-content: center;
+}
+.export-sheet.open { display: flex; }
+.export-sheet-inner {
+  background: var(--white); width: 100%; max-width: 480px;
+  border-radius: 16px 16px 0 0;
+  padding: 20px 16px max(20px, env(safe-area-inset-bottom, 20px));
+  display: flex; flex-direction: column; gap: 8px;
+}
+.export-sheet-title {
+  font-family: var(--font-body); font-size: 11px; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--secondary);
+  margin-bottom: 4px;
+}
+.export-sheet-btn {
+  width: 100%; padding: 13px 16px; border-radius: var(--radius);
+  border: 1.5px solid var(--warm-gray); background: var(--white);
+  font-family: var(--font-body); font-size: 13px; font-weight: 700;
+  color: var(--primary); cursor: pointer; text-align: center; transition: all .15s;
+}
+.export-sheet-btn:hover { border-color: var(--peacock); color: var(--peacock); }
+.export-sheet-btn-share { background: var(--peacock); border-color: var(--peacock); color: var(--white); }
+.export-sheet-btn-share:hover { background: #006475; border-color: #006475; color: var(--white); }
 
 /* ── Poster modal ── */
 .poster-modal {
@@ -796,8 +823,8 @@ body {
         <button class="settings-btn" id="moreBtn" onclick="toggleMoreMenu(event)">⋯</button>
         <div class="more-menu" id="moreMenu">
           <button class="more-menu-item" onclick="openPosterModal();closeMoreMenu()">🖼 Poster</button>
-          <button class="more-menu-item" onclick="openProfileModal();closeMoreMenu()">📖 Travel Story</button>
-          <button class="more-menu-item" onclick="exportJSON();closeMoreMenu()">📤 Export</button>
+          <button class="more-menu-item" onclick="openProfileModal();closeMoreMenu()">📖 Journey Log</button>
+          <button class="more-menu-item" onclick="openExportSheet();closeMoreMenu()">📤 Export</button>
           <button class="more-menu-item" onclick="openSettings();closeMoreMenu()">⚙ Settings</button>
         </div>
       </div>
@@ -1036,10 +1063,19 @@ body {
 </div>
 
 <!-- ── Profile Modal ── -->
+<!-- ── Export sheet ── -->
+<div class="export-sheet" id="exportSheet" onclick="if(event.target===this)closeExportSheet()">
+  <div class="export-sheet-inner">
+    <div class="export-sheet-title">Export Route</div>
+    <button class="export-sheet-btn" onclick="downloadJSON()">&#8595; Download JSON</button>
+    <button class="export-sheet-btn export-sheet-btn-share" onclick="shareJSON()">&#8599; Share</button>
+  </div>
+</div>
+
 <div class="profile-modal" id="profileModal" onclick="if(event.target===this)closeProfileModal()">
   <div class="profile-inner">
     <div class="profile-ph">
-      <span class="profile-ph-title">Travel Story</span>
+      <span class="profile-ph-title">Journey Log</span>
       <button class="profile-ph-close" onclick="closeProfileModal()">&#10005; Close</button>
     </div>
     <div class="profile-body" id="profileBody"></div>
@@ -1188,14 +1224,38 @@ function renderPaletteGrid() {
 }
 
 /* ─── Export / Import ─── */
-function exportJSON() {
-  var blob = new Blob([JSON.stringify({ schemaVersion: '5.8', trip: TRIP, days: DAYS }, null, 2)], { type: 'application/json' });
+function openExportSheet() {
+  document.getElementById('exportSheet').classList.add('open');
+}
+function closeExportSheet() {
+  document.getElementById('exportSheet').classList.remove('open');
+}
+function _buildExportBlob() {
+  return new Blob([JSON.stringify({ schemaVersion: '5.8', trip: TRIP, days: DAYS }, null, 2)], { type: 'application/json' });
+}
+function downloadJSON() {
+  var blob = _buildExportBlob();
   var a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = ((TRIP.subtitle || 'route-map').replace(/\s+/g, '-').toLowerCase()) + '.json';
   a.click();
   setTimeout(function() { URL.revokeObjectURL(a.href); }, 1000);
+  closeExportSheet();
 }
+function shareJSON() {
+  var blob = _buildExportBlob();
+  var filename = ((TRIP.subtitle || 'route-map').replace(/\s+/g, '-').toLowerCase()) + '.json';
+  var file = new File([blob], filename, { type: 'application/json' });
+  if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+    navigator.share({ files: [file], title: TRIP.title || 'Route Map' });
+  } else {
+    var url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
+    setTimeout(function() { URL.revokeObjectURL(url); }, 10000);
+  }
+  closeExportSheet();
+}
+function exportJSON() { openExportSheet(); }
 function triggerImport() {
   document.getElementById('importFileInput').value = '';
   document.getElementById('importFileInput').click();
@@ -2664,7 +2724,7 @@ function renderProfileBody(st) {
 
   /* ── Hero: Personality → Vibe + Rhythm → Story → Stats ── */
   h += '<div class="pf-hero">';
-  h += '<div class="pf-eyebrow">Travel Story</div>';
+  h += '<div class="pf-eyebrow">Journey Log</div>';
   h += '<div class="pf-title">'+escHtml(TRIP.title)+'</div>';
   h += '<div class="pf-subtitle">'+escHtml(TRIP.subtitle)+'</div>';
 
