@@ -55,7 +55,22 @@ body {
 .sidebar-header-top {
   display: flex; align-items: flex-start; justify-content: space-between; gap: 8px;
 }
-.header-actions { display: flex; gap: 6px; flex-shrink: 0; margin-top: 2px; }
+.header-actions { display: flex; gap: 6px; flex-shrink: 0; margin-top: 2px; position: relative; }
+/* More menu dropdown */
+.more-menu {
+  display: none; position: absolute; right: 0; top: calc(100% + 6px);
+  background: var(--white); border: 1px solid var(--warm-gray);
+  border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,.14);
+  padding: 5px; min-width: 148px; z-index: 200; flex-direction: column; gap: 2px;
+}
+.more-menu.open { display: flex; }
+.more-menu-item {
+  display: flex; align-items: center; gap: 8px; padding: 8px 10px;
+  border-radius: 7px; background: transparent; border: none; cursor: pointer;
+  font-family: var(--font-body); font-size: 12px; font-weight: 600;
+  color: var(--primary); text-align: left; white-space: nowrap; width: 100%;
+}
+.more-menu-item:hover { background: var(--soft-lime); color: var(--peacock); }
 .eyebrow {
   font-family: var(--font-body);
   font-size: 10px; font-weight: 600;
@@ -777,8 +792,14 @@ body {
         <div class="app-title" id="appTitle"><span class="title-accent">ROUTE</span> MAP</div>
       </div>
       <div class="header-actions">
-        <button class="settings-btn" id="settingsBtn" onclick="openSettings()" title="設定">⚙</button>
-        <button class="edit-toggle-btn" id="editToggleBtn" onclick="toggleEditMode()">Edit</button>
+        <button class="edit-toggle-btn" id="editToggleBtn" onclick="toggleEditMode()">✏ Edit Trip</button>
+        <button class="settings-btn" id="moreBtn" onclick="toggleMoreMenu(event)">⋯</button>
+        <button class="settings-btn" id="settingsBtn" onclick="openSettings()">⚙</button>
+        <div class="more-menu" id="moreMenu">
+          <button class="more-menu-item" onclick="openPosterModal();closeMoreMenu()">🖼 Poster</button>
+          <button class="more-menu-item" onclick="openProfileModal();closeMoreMenu()">📖 Profile</button>
+          <button class="more-menu-item" onclick="exportJSON();closeMoreMenu()">📤 Export</button>
+        </div>
       </div>
     </div>
   </div>
@@ -806,8 +827,6 @@ body {
       <button class="btn btn-play" id="playBtn" onclick="togglePlay()">&#9654; Play</button>
       <button class="btn btn-step" onclick="stepNext()" title="次のStop">&#8594;</button>
       <button class="btn btn-reset" onclick="resetAnim()">&#8635;</button>
-      <button class="btn btn-poster" onclick="openPosterModal()">&#8599;</button>
-      <button class="btn btn-profile" onclick="openProfileModal()">&#9776;</button>
     </div>
   </div>
 
@@ -867,15 +886,15 @@ body {
             </div>
             <div class="type-group-label">— Train —</div>
             <div class="type-group-row">
-              <button class="type-chip" data-type="shinkansen"    onclick="epSetType('shinkansen')"   >Shinkansen</button>
-              <button class="type-chip" data-type="train_limited" onclick="epSetType('train_limited')">Limited Exp.</button>
-              <button class="type-chip" data-type="train_local"   onclick="epSetType('train_local')"  >Local</button>
+              <button class="type-chip" data-type="shinkansen"    onclick="epSetType('shinkansen')"   >🚄 Shinkansen</button>
+              <button class="type-chip" data-type="train_limited" onclick="epSetType('train_limited')">🚃 Limited Exp.</button>
+              <button class="type-chip" data-type="train_local"   onclick="epSetType('train_local')"  >🚃 Local Train</button>
             </div>
             <div class="type-group-label">— Bus —</div>
             <div class="type-group-row">
-              <button class="type-chip" data-type="bus_express" onclick="epSetType('bus_express')">Express</button>
-              <button class="type-chip" data-type="bus_local"   onclick="epSetType('bus_local')"  >Local</button>
-              <button class="type-chip" data-type="shuttle"     onclick="epSetType('shuttle')"    >Shuttle</button>
+              <button class="type-chip" data-type="bus_express" onclick="epSetType('bus_express')">🚍 Highway Bus</button>
+              <button class="type-chip" data-type="bus_local"   onclick="epSetType('bus_local')"  >🚌 Local Bus</button>
+              <button class="type-chip" data-type="shuttle"     onclick="epSetType('shuttle')"    >🚐 Shuttle</button>
             </div>
             <div class="type-group-row">
               <button class="type-chip" data-type="car"  onclick="epSetType('car')" >🚗 Car</button>
@@ -1466,11 +1485,18 @@ function updateAllProgress() {
 }
 
 /* ─── Icons ─── */
-function stopIcon(state) {
+function stopIcon(state, stop) {
   if(state==='passed') return L.divIcon({className:'',iconSize:[18,18],iconAnchor:[9,9],popupAnchor:[0,-9],
     html:'<div style="width:18px;height:18px;background:'+LIME+';border:2px solid #93b820;border-radius:50%;box-shadow:0 1px 5px rgba(0,0,0,.15)"></div>'});
   if(state==='active') return L.divIcon({className:'',iconSize:[22,22],iconAnchor:[11,11],popupAnchor:[0,-11],
     html:'<div style="width:22px;height:22px;background:#fff;border:2.5px solid '+PEACOCK+';border-radius:50%;box-shadow:0 0 0 3px rgba(0,122,138,.15),0 2px 8px rgba(0,0,0,.2);display:flex;align-items:center;justify-content:center"><div style="width:8px;height:8px;background:'+PEACOCK+';border-radius:50%"></div></div>'});
+  /* default — category emoji pin if available */
+  var cats = stop && Array.isArray(stop.categories) ? stop.categories : [];
+  var catCfg = cats.length ? CATEGORIES[cats[0]] : null;
+  if (catCfg) {
+    return L.divIcon({className:'',iconSize:[28,28],iconAnchor:[14,14],popupAnchor:[0,-14],
+      html:'<div style="width:28px;height:28px;border-radius:50%;background:#fff;border:2px solid '+PEACOCK+';box-shadow:0 2px 7px rgba(0,0,0,.18);display:flex;align-items:center;justify-content:center;font-size:15px">'+catCfg.icon+'</div>'});
+  }
   return L.divIcon({className:'',iconSize:[20,20],iconAnchor:[10,10],popupAnchor:[0,-10],
     html:'<div style="width:20px;height:20px;background:#fff;border:2px solid '+PEACOCK+';border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center"><div style="width:6px;height:6px;background:'+PEACOCK+';border-radius:50%"></div></div>'});
 }
@@ -1506,7 +1532,7 @@ function renderMapMarkers() {
     (function(idx){
       var s=d.stops[idx];
       var state=idx<currentStop?'passed':(idx===currentStop&&!anim.active?'active':'default');
-      var m=L.marker([s.lat,s.lng],{icon:stopIcon(state),zIndexOffset:state==='active'?500:0}).addTo(map);
+      var m=L.marker([s.lat,s.lng],{icon:stopIcon(state,s),zIndexOffset:state==='active'?500:0}).addTo(map);
       m.bindPopup(popupHtml(s));
       m.on('click',function(){jumpTo(idx);});
       mapMarkers.push(m);
@@ -2063,7 +2089,7 @@ function selectSearchResult(i) {
 
   /* preview pin + fly */
   removePickPreviewPin();
-  pickPreviewPin = L.marker([lat, lng], { icon: stopIcon('default'), zIndexOffset: 900 })
+  pickPreviewPin = L.marker([lat, lng], { icon: stopIcon('default', null), zIndexOffset: 900 })
     .addTo(map)
     .bindPopup('📍 ' + (item.name || item.display_name.split(',')[0]) +
                '<br><small>' + lat.toFixed(4) + ', ' + lng.toFixed(4) + '</small>')
@@ -2103,7 +2129,7 @@ map.on('click', function(e) {
   document.getElementById('ef-lng').value = e.latlng.lng.toFixed(5);
   document.getElementById('ef-coord-err').classList.remove('show');
   removePickPreviewPin();
-  pickPreviewPin = L.marker([e.latlng.lat, e.latlng.lng], { icon: stopIcon('default'), zIndexOffset: 900 })
+  pickPreviewPin = L.marker([e.latlng.lat, e.latlng.lng], { icon: stopIcon('default', null), zIndexOffset: 900 })
     .addTo(map).bindPopup('📍 ' + e.latlng.lat.toFixed(4) + ', ' + e.latlng.lng.toFixed(4)).openPopup();
   if (window.innerWidth <= 768) openSidebar();
 });
@@ -2111,6 +2137,19 @@ map.on('click', function(e) {
 /* ═══════════════════════════════════════════
    SETTINGS PANEL
 ═══════════════════════════════════════════ */
+
+function toggleMoreMenu(e) {
+  if (e) e.stopPropagation();
+  var menu = document.getElementById('moreMenu');
+  menu.classList.toggle('open');
+  if (menu.classList.contains('open')) {
+    document.addEventListener('click', closeMoreMenu, { once: true });
+  }
+}
+function closeMoreMenu() {
+  var menu = document.getElementById('moreMenu');
+  if (menu) menu.classList.remove('open');
+}
 
 function openSettings() {
   document.getElementById('sf-title').value    = TRIP.title    || '';
