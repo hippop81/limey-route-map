@@ -1295,7 +1295,17 @@ function handleGtfsImport(e) {
   var reader = new FileReader();
   reader.onload = function(ev) {
     try {
-      var arr = JSON.parse(ev.target.result);
+      var data = JSON.parse(ev.target.result);
+      if (loadGtfsDbObject(data)) {
+        stopAnim(); playing = false; setPlayBtn(false); currentStop = -1;
+        removeCurrentPin();
+        initRouteLines();
+        renderMapMarkers();
+        renderTimeline();
+        alert(Object.keys(GTFS_DB.shapes || {}).length + ' shapes を読み込みました');
+        return;
+      }
+      var arr = data;
       if (!Array.isArray(arr)) arr = [arr];
       var added = 0;
       arr.forEach(function(entry) {
@@ -1363,6 +1373,9 @@ function tcfg(type) { return TCFG[type] || TCFG.bus_local; }
 
 /* ─── GTFS ─── */
 var GTFS_DB = {
+  shapes: {},
+  shapeToRoute: {},
+  routeToShapes: {},
   yui_rail: {
     name: 'ゆいレール',
     types: ['train_limited', 'train_local'],
@@ -1398,11 +1411,81 @@ var GTFS_DB = {
   });
 })();
 
-function findGtfsShape(fromLat, fromLng, toLat, toLng, type) {
+function loadGtfsDbObject(data) {
+  if (!data || !data.shapes || typeof data.shapes !== 'object') return false;
+  GTFS_DB.shapes = data.shapes || {};
+  GTFS_DB.shapeToRoute = data.shapeToRoute || {};
+  GTFS_DB.routeToShapes = data.routeToShapes || {};
+  GTFS_DB.schemaVersion = data.schemaVersion || null;
+  GTFS_DB.source = data.source || null;
+  return true;
+}
+
+function loadDefaultGtfsDb() {
+  if (typeof fetch !== 'function') return;
+  fetch('gtfs_db.json', { cache: 'no-store' })
+    .then(function(r) { if (!r.ok) throw new Error('not found'); return r.json(); })
+    .then(function(data) {
+      if (!loadGtfsDbObject(data)) return;
+      initRouteLines();
+      renderMapMarkers();
+      renderTimeline();
+    })
+    .catch(function() {});
+}
+
+function normalizeShapePoints(points) {
+  if (!Array.isArray(points)) return null;
+  var out = [];
+  points.forEach(function(p) {
+    if (!Array.isArray(p) || p.length < 2) return;
+    var lat = parseFloat(p[0]), lng = parseFloat(p[1]);
+    if (isNaN(lat) || isNaN(lng)) return;
+    out.push([lat, lng]);
+  });
+  return out.length >= 2 ? out : null;
+}
+
+function closestShapePointIndex(points, lat, lng) {
+  var best = -1, bestDist = Infinity;
+  for (var i = 0; i < points.length; i++) {
+    var d = haversineKm(lat, lng, points[i][0], points[i][1]);
+    if (d < bestDist) { bestDist = d; best = i; }
+  }
+  return best;
+}
+
+function sliceShapeBetweenStops(points, fromLat, fromLng, toLat, toLng) {
+  var fromIdx = closestShapePointIndex(points, fromLat, fromLng);
+  var toIdx = closestShapePointIndex(points, toLat, toLng);
+  if (fromIdx < 0 || toIdx < 0 || fromIdx === toIdx) return points;
+  var seg = fromIdx < toIdx ? points.slice(fromIdx, toIdx + 1) : points.slice(toIdx, fromIdx + 1).reverse();
+  return seg.length >= 2 ? seg : points;
+}
+
+function explicitSegmentShapeId(from, to) {
+  return (from && (from.shapeId || from.gtfsShapeId || from.segmentShapeId || (from.gtfs && from.gtfs.shapeId))) ||
+         (to && (to.arrivalShapeId || to.inboundShapeId || (to.gtfs && to.gtfs.inboundShapeId))) ||
+         '';
+}
+
+function findShapeById(shapeId, fromLat, fromLng, toLat, toLng) {
+  if (!shapeId || !GTFS_DB.shapes) return null;
+  var shape = GTFS_DB.shapes[shapeId];
+  var points = shape ? normalizeShapePoints(shape.points) : null;
+  if (!points) return null;
+  return sliceShapeBetweenStops(points, fromLat, fromLng, toLat, toLng);
+}
+
+function findGtfsShape(fromLat, fromLng, toLat, toLng, type, shapeId) {
+  var explicit = findShapeById(shapeId, fromLat, fromLng, toLat, toLng);
+  if (explicit) return explicit;
+
   var THRESHOLD = 0.5;
   var keys = Object.keys(GTFS_DB);
   for (var ki = 0; ki < keys.length; ki++) {
     var db = GTFS_DB[keys[ki]];
+    if (!db || !db.types || !db.stops || !db.shape) continue;
     if (db.types.indexOf(type) < 0) continue;
     var fromIdx = -1, toIdx = -1, fromDist = Infinity, toDist = Infinity;
     for (var si = 0; si < db.stops.length; si++) {
@@ -1531,7 +1614,7 @@ function initRouteLines() {
   var stops=DAYS[currentDay].stops;
   for(var i=0;i<stops.length-1;i++){
     var from=stops[i], to=stops[i+1];
-    segShapes.push(findGtfsShape(from.lat, from.lng, to.lat, to.lng, from.transport));
+    segShapes.push(findGtfsShape(from.lat, from.lng, to.lat, to.lng, from.transport, explicitSegmentShapeId(from, to)));
     var c=tcfg(from.transport), pts=fullSegPts(i,i+1);
     var dash = segShapes[i] ? null : (c.dashArray||'6 5');
     segLines.push(L.polyline(pts,{color:'#C4C0B6',weight:Math.max(1.5,c.lineWeight),opacity:.8,dashArray:dash,lineCap:'round'}).addTo(map));
@@ -2806,6 +2889,7 @@ _setPaletteVars(TRIP.palette || 'tropical');
 renderHeader();
 renderDayTabs();
 switchDay(currentDay);
+loadDefaultGtfsDb();
 requestAnimationFrame(function() {
   requestAnimationFrame(function() {
     if (isMobile()) setSheet('peek', false);
