@@ -428,6 +428,9 @@ body {
 .stop-row.dragging { opacity: 0.3; }
 .stop-row.drag-over .stop-card { border-color: var(--peacock) !important; background: var(--soft-lime) !important; outline: 2px dashed var(--peacock); }
 /* ── Move to Day ── */
+.ep-gtfs-hint { font-family: var(--font-body); font-size: 10px; margin-top: 3px; min-height: 14px; }
+.ep-gtfs-ok   { color: #2a7a2a; }
+.ep-gtfs-warn { color: #c04444; }
 .ep-dur-row { display: flex; align-items: center; gap: 6px; }
 .ep-dur-input { width: 56px !important; text-align: center; }
 .ep-dur-sep { font-family: var(--font-body); font-size: 12px; font-weight: 600; color: var(--secondary); white-space: nowrap; }
@@ -1037,6 +1040,11 @@ body {
           <label class="ep-lbl">ラベル（バス番号など）</label>
           <input class="ep-input" id="ef-label" type="text" placeholder="117番 高速バス">
         </div>
+        <div class="ep-field">
+          <label class="ep-lbl">GTFS Shape ID <span style="font-size:9px;color:var(--secondary);font-weight:400">（任意）</span></label>
+          <input class="ep-input" id="ef-gtfs-shape" type="text" placeholder="yuirail:shapes_557_1" autocomplete="off" oninput="onGtfsShapeInput(this)">
+          <div class="ep-gtfs-hint" id="epGtfsHint"></div>
+        </div>
         <div class="ep-row">
           <div class="ep-field">
             <label class="ep-lbl">料金</label>
@@ -1336,7 +1344,7 @@ function closeExportSheet() {
   document.getElementById('exportSheet').classList.remove('open');
 }
 function _buildExportBlob() {
-  return new Blob([JSON.stringify({ schemaVersion: '5.14', trip: TRIP, days: DAYS }, null, 2)], { type: 'application/json' });
+  return new Blob([JSON.stringify({ schemaVersion: '5.16', trip: TRIP, days: DAYS }, null, 2)], { type: 'application/json' });
 }
 function downloadJSON() {
   var blob = _buildExportBlob();
@@ -1428,7 +1436,7 @@ function handleGtfsImport(e) {
         if (!entry.name || !entry.stops || !entry.types) return;
         var key = entry.name.replace(/[\s　]/g, '_').toLowerCase();
         if (!entry.shape) entry.shape = entry.stops.map(function(s){ return [s.lat, s.lng]; });
-        GTFS_DB[key] = entry;
+        GTFS_PROX_DB[key] = entry;
         added++;
       });
       if (!added) { alert('有効な GTFS エントリが見つかりませんでした'); return; }
@@ -1487,8 +1495,8 @@ var TCFG = {
 };
 function tcfg(type) { return TCFG[type] || TCFG.bus_local; }
 
-/* ─── GTFS ─── */
-var GTFS_DB = {
+/* ─── GTFS proximity-match DB (pre-bundled station coords) ─── */
+var GTFS_PROX_DB = {
   yui_rail: {
     name: 'ゆいレール',
     types: ['train_limited', 'train_local'],
@@ -1517,17 +1525,20 @@ var GTFS_DB = {
   }
 };
 (function() {
-  Object.keys(GTFS_DB).forEach(function(k) {
-    var db = GTFS_DB[k];
+  Object.keys(GTFS_PROX_DB).forEach(function(k) {
+    var db = GTFS_PROX_DB[k];
     if (!db.shape) db.shape = db.stops.map(function(s){ return [s.lat, s.lng]; });
   });
 })();
 
+/* ─── GTFS shape DB (loaded from gtfs_db.json) ─── */
+var GTFS_DB = {};
+
 function findGtfsShape(fromLat, fromLng, toLat, toLng, type) {
   var THRESHOLD = 0.5;
-  var keys = Object.keys(GTFS_DB);
+  var keys = Object.keys(GTFS_PROX_DB);
   for (var ki = 0; ki < keys.length; ki++) {
-    var db = GTFS_DB[keys[ki]];
+    var db = GTFS_PROX_DB[keys[ki]];
     if (db.types.indexOf(type) < 0) continue;
     var fromIdx = -1, toIdx = -1, fromDist = Infinity, toDist = Infinity;
     for (var si = 0; si < db.stops.length; si++) {
@@ -1656,9 +1667,16 @@ function initRouteLines() {
   var stops=DAYS[currentDay].stops;
   for(var i=0;i<stops.length-1;i++){
     var from=stops[i], to=stops[i+1];
-    segShapes.push(findGtfsShape(from.lat, from.lng, to.lat, to.lng, from.transport));
+    // Phase 3: explicit shapeId → Phase 4 fallback: proximity match → bezier/straight
+    var shape = null;
+    if (from.gtfs && from.gtfs.shapeId && GTFS_DB.shapes) {
+      var sd = GTFS_DB.shapes[from.gtfs.shapeId];
+      if (sd && sd.points && sd.points.length >= 2) shape = sd.points;
+    }
+    if (!shape) shape = findGtfsShape(from.lat, from.lng, to.lat, to.lng, from.transport);
+    segShapes.push(shape);
     var c=tcfg(from.transport), pts=fullSegPts(i,i+1);
-    var dash = segShapes[i] ? null : (c.dashArray||'6 5');
+    var dash = shape ? null : (c.dashArray||'6 5');
     segLines.push(L.polyline(pts,{color:'#C4C0B6',weight:Math.max(1.5,c.lineWeight),opacity:.8,dashArray:dash,lineCap:'round'}).addTo(map));
     segProgressLines.push(L.polyline([],{color:LIME,weight:c.progWeight||4,opacity:.9,lineCap:'round',lineJoin:'round'}).addTo(map));
   }
@@ -2091,6 +2109,9 @@ function openEP(idx, insertAfter) {
   document.getElementById('ef-fare').value     = s ? (s.fare || '') : '';
   document.getElementById('ef-dur-h').value = s && s.durHours ? String(s.durHours) : '';
   document.getElementById('ef-dur-m').value = s && s.durMins  ? String(s.durMins)  : '';
+  var gtfsShapeId = s && s.gtfs ? (s.gtfs.shapeId || '') : '';
+  document.getElementById('ef-gtfs-shape').value = gtfsShapeId;
+  onGtfsShapeInput(document.getElementById('ef-gtfs-shape'));
   document.getElementById('ef-lat').value      = s ? s.lat      : '';
   document.getElementById('ef-lng').value      = s ? s.lng      : '';
   document.getElementById('ef-is-day-end').checked = s ? !!s.isDayEnd : false;
@@ -2180,7 +2201,8 @@ function epSave() {
     durHours:   parseInt(document.getElementById('ef-dur-h').value, 10) || 0,
     durMins:    parseInt(document.getElementById('ef-dur-m').value, 10) || 0,
     lat:        lat,
-    lng:        lng
+    lng:        lng,
+    gtfs:       (function(){ var id = document.getElementById('ef-gtfs-shape').value.trim(); return id ? { shapeId: id } : undefined; })()
   };
 
   var stops = DAYS[currentDay].stops;
@@ -2438,6 +2460,22 @@ function _migrateDays(days) {
       }
     });
   });
+}
+
+/* ── GTFS Shape ID hint ── */
+function onGtfsShapeInput(input) {
+  var hint = document.getElementById('epGtfsHint');
+  if (!hint) return;
+  var val = input.value.trim();
+  if (!val) { hint.textContent = ''; hint.className = 'ep-gtfs-hint'; return; }
+  if (GTFS_DB && GTFS_DB.shapes && GTFS_DB.shapes[val]) {
+    var pts = GTFS_DB.shapes[val].points;
+    hint.textContent = '✓ ' + (pts ? pts.length : 0) + ' points';
+    hint.className = 'ep-gtfs-hint ep-gtfs-ok';
+  } else {
+    hint.textContent = GTFS_DB.shapes ? '⚠ shape not found' : '⏳ GTFS DB loading…';
+    hint.className = 'ep-gtfs-hint ep-gtfs-warn';
+  }
 }
 
 /* ── 全角→半角 normalize ── */
@@ -3196,6 +3234,17 @@ requestAnimationFrame(function() {
 document.addEventListener('click', function(e) {
   if (!e.target.closest('.card-menu-wrap')) closeCardMenu();
 });
+
+/* ── Phase 1: load gtfs_db.json ── */
+fetch('./gtfs_db.json')
+  .then(function(r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+  .then(function(data) {
+    GTFS_DB = data;
+    initRouteLines();
+    renderMapMarkers();
+    console.log('[Limey] gtfs_db.json loaded —', Object.keys(GTFS_DB.shapes || {}).length, 'shapes');
+  })
+  .catch(function(e) { console.warn('[Limey] gtfs_db.json not available:', e.message); });
 </script>
 </body>
 </html>
