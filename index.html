@@ -166,22 +166,69 @@ body {
 .rhythm-pill { display: inline-flex; align-items: center; gap: 3px; font-family: var(--font-body); font-size: 8px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--warm-gray); margin-top: 5px; }
 .rhythm-pill .dot { width: 4px; height: 4px; border-radius: 50%; background: var(--warm-gray); }
 
-/* ── Edit mode card UI ── */
-.card-edit-btns {
-  display: none; position: absolute; top: 6px; right: 6px;
-  gap: 2px;
+/* ── Edit mode card ⋮ menu ── */
+.card-menu {
+  display: none; position: absolute; top: 4px; right: 4px;
+  align-items: center; gap: 2px;
 }
-.timeline.edit-mode .card-edit-btns { display: flex; }
-.card-act {
-  width: 22px; height: 22px; border-radius: 5px; border: none;
+.timeline.edit-mode .card-menu { display: flex; }
+.card-menu-btn {
+  width: 24px; height: 24px; border-radius: 5px; border: none;
   background: transparent; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
-  font-size: 11px; transition: all .15s;
+  font-size: 15px; color: var(--secondary); transition: all .15s;
+  line-height: 1;
 }
-.card-act-edit { color: var(--peacock); }
-.card-act-edit:hover { background: rgba(0,122,138,.1); }
-.card-act-del  { color: #c04444; }
-.card-act-del:hover  { background: rgba(192,68,68,.1); }
+.card-menu-btn:hover { background: rgba(0,0,0,.06); color: var(--primary); }
+.card-menu-wrap { position: relative; }
+.card-menu-dropdown {
+  display: none; position: absolute; top: 28px; right: 0; z-index: 300;
+  background: var(--white); border: 1px solid var(--warm-gray);
+  border-radius: 8px; overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0,0,0,.14);
+  min-width: 148px;
+}
+.card-menu-dropdown.open { display: block; }
+.card-menu-item {
+  display: flex; align-items: center; gap: 8px;
+  width: 100%; padding: 10px 14px; border: none; background: transparent;
+  font-family: var(--font-body); font-size: 12px; font-weight: 600;
+  color: var(--primary); cursor: pointer; text-align: left;
+  transition: background .12s; white-space: nowrap;
+}
+.card-menu-item + .card-menu-item { border-top: 1px solid var(--light-gray); }
+.card-menu-item:hover { background: var(--soft-lime); }
+.card-menu-item.danger { color: #c04444; }
+.card-menu-item.danger:hover { background: rgba(192,68,68,.06); }
+.card-menu-sub { border-top: 1px solid var(--light-gray); }
+.card-menu-sub-item {
+  padding: 8px 14px 8px 28px; font-size: 11px; color: var(--secondary);
+}
+.card-menu-sub-item:hover { color: var(--peacock); background: var(--soft-lime); }
+
+/* ── Edit mode tabs ── */
+.edit-tab-bar {
+  display: none; border-bottom: 2px solid var(--light-gray);
+  padding: 0 12px; background: var(--white); flex-shrink: 0;
+}
+.edit-tab {
+  padding: 7px 14px; border: none; background: transparent;
+  font-family: var(--font-body); font-size: 10px; font-weight: 700;
+  letter-spacing: .07em; text-transform: uppercase;
+  color: var(--secondary); cursor: pointer;
+  border-bottom: 2px solid transparent; margin-bottom: -2px;
+  transition: all .15s;
+}
+.edit-tab.active { color: var(--peacock); border-bottom-color: var(--peacock); }
+
+/* ── Day edit panel ── */
+.day-edit-panel {
+  flex: 1; overflow-y: auto; padding: 12px 16px;
+  padding-bottom: max(60px, env(safe-area-inset-bottom, 60px));
+}
+
+/* ── Cost bar totals ── */
+.cost-total { font-family: var(--font-head); font-size: 13px; font-weight: 700; color: var(--peacock); }
 
 .add-row {
   display: none; justify-content: center;
@@ -869,7 +916,13 @@ body {
 
   <div class="day-tabs" id="dayTabs"></div>
 
+  <div class="edit-tab-bar" id="editTabBar">
+    <button class="edit-tab active" id="etabStops" onclick="switchEditTab('stops')">Stops</button>
+    <button class="edit-tab" id="etabDays" onclick="switchEditTab('days')">Days</button>
+  </div>
+
   <div class="timeline" id="timeline"></div>
+  <div class="day-edit-panel" id="dayEditPanel" style="display:none"></div>
   <div class="cost-bar" id="costBar"></div>
 
   <div class="controls">
@@ -973,7 +1026,7 @@ body {
         <div class="ep-row">
           <div class="ep-field">
             <label class="ep-lbl">料金</label>
-            <input class="ep-input" id="ef-fare" type="text" placeholder="¥2,880">
+            <input class="ep-input" id="ef-fare" type="text" placeholder="¥2,880" onblur="formatFareInput(this)">
           </div>
           <div class="ep-field">
             <label class="ep-lbl">所要時間</label>
@@ -1007,10 +1060,6 @@ body {
         </div>
       </div>
 
-      <div class="ep-move-wrap" id="epMoveWrap" style="display:none">
-        <button class="ep-move-btn" onclick="toggleMoveDayMenu()">📅 Move to Day <span>▾</span></button>
-        <div class="ep-move-menu" id="epMoveMenu"></div>
-      </div>
     </div>
     <div class="ep-footer">
       <button class="ep-btn-del" id="epDelBtn" onclick="epDelete()">Delete</button>
@@ -1042,15 +1091,6 @@ body {
       <div class="ep-section">
         <span class="ep-section-label">カラーテーマ</span>
         <div class="palette-grid" id="paletteGrid"></div>
-      </div>
-
-      <div class="ep-section">
-        <span class="ep-section-label">Day 設定</span>
-        <div id="settingsDaysList"></div>
-        <div class="settings-action-row">
-          <button class="btn-add-stop" onclick="addDay()" style="flex:1">+ Day を追加</button>
-          <button class="btn-add-stop" onclick="removeLastDay()" style="flex:1;border-color:rgba(192,68,68,.35);color:#c04444">− 最後のDayを削除</button>
-        </div>
       </div>
 
       <div class="ep-section">
@@ -1706,9 +1746,11 @@ function renderTimeline() {
     var catHtml=cats.map(function(k){var cfg=CATEGORIES[k];return cfg?'<span class="cat-badge">'+cfg.icon+' '+cfg.label+'</span>':''}).join('');
     var dragAttr = editMode ? ' draggable="true" ondragstart="onDragStart(event,'+i+')" ondragover="onDragOver(event,'+i+')" ondrop="onDrop(event,'+i+')" ondragend="onDragEnd(event)"' : '';
     var dragHandle = editMode ? '<span class="drag-handle" draggable="false" ondragstart="event.stopPropagation()">⠿</span>' : '';
-    var editBtns='<div class="card-edit-btns">'+dragHandle+
-      '<button class="card-act card-act-edit" onclick="event.stopPropagation();openEP('+i+','+i+')" title="Edit">&#9998;</button>'+
-      '<button class="card-act card-act-del"  onclick="event.stopPropagation();confirmDelete('+i+')" title="Delete">&#215;</button>'+
+    var editBtns='<div class="card-menu">'+dragHandle+
+      '<div class="card-menu-wrap">'+
+        '<button class="card-menu-btn" onclick="event.stopPropagation();openCardMenu(event,'+i+')">⋮</button>'+
+        '<div class="card-menu-dropdown" id="cm-'+i+'"></div>'+
+      '</div>'+
       '</div>';
 
     html+='<div class="stop-row'+rowCls+'"'+dragAttr+' onclick="'+(!editMode?'jumpTo('+i+')':'')+'" id="sr'+i+'">'+
@@ -1725,7 +1767,10 @@ function renderTimeline() {
   }
 
   tl.innerHTML=html;
-  document.getElementById('costBar').innerHTML='<span class="cost-label">交通費メモ</span><span class="cost-num">'+escHtml(d.cost||'')+'</span>';
+  var _totalFare=0;
+  d.stops.forEach(function(s){if(s.fare){var n=parseInt(s.fare.replace(/[¥,\s]/g,''),10);if(!isNaN(n))_totalFare+=n;}});
+  var _totalHtml=_totalFare>0?'<span class="cost-total">合計 ¥'+_totalFare.toLocaleString('ja-JP')+'</span>':'';
+  document.getElementById('costBar').innerHTML='<span class="cost-label">メモ</span><span class="cost-num">'+escHtml(d.cost||'')+'</span>'+_totalHtml;
   updateSeekBar();
 }
 
@@ -1998,10 +2043,14 @@ function toggleEditMode() {
   var btn = document.getElementById('editToggleBtn');
   btn.textContent = editMode ? '✓ Done' : '✏ Edit Trip';
   btn.classList.toggle('on', editMode);
+  var tabBar = document.getElementById('editTabBar');
+  if (tabBar) tabBar.style.display = editMode ? 'flex' : 'none';
   if (editMode) {
     if (isMobile()) setSheet('full');
   } else {
     closeEP();
+    // reset to Stops tab
+    _switchToStopsTab();
     if (isMobile()) setSheet('peek');
   }
   renderTimeline();
@@ -2030,12 +2079,6 @@ function openEP(idx, insertAfter) {
 
   document.getElementById('epTitle').textContent = idx >= 0 ? 'Stop を編集' : 'Stop を追加';
   document.getElementById('epDelBtn').style.display = idx >= 0 ? '' : 'none';
-  var moveWrap = document.getElementById('epMoveWrap');
-  if (moveWrap) {
-    moveWrap.style.display = (idx >= 0 && Object.keys(DAYS).length > 1) ? 'block' : 'none';
-    var mm = document.getElementById('epMoveMenu');
-    if (mm) mm.classList.remove('open');
-  }
 
   document.getElementById('ef-name-err').classList.remove('show');
   document.getElementById('ef-coord-err').classList.remove('show');
@@ -2207,6 +2250,142 @@ function moveStopToDay(targetDay) {
   currentDay = targetDay;
   renderDayTabs();
   switchDay(targetDay);
+}
+
+/* ── Card ⋮ menu ── */
+function openCardMenu(e, idx) {
+  e.stopPropagation();
+  var el = document.getElementById('cm-' + idx);
+  if (!el) return;
+  // close other open menus first
+  document.querySelectorAll('.card-menu-dropdown.open').forEach(function(d){ if(d!==el) d.classList.remove('open'); });
+  if (el.classList.contains('open')) { el.classList.remove('open'); return; }
+  var hasMulDays = Object.keys(DAYS).length > 1;
+  var moveHtml = '';
+  if (hasMulDays) {
+    var days = Object.keys(DAYS).map(Number).sort();
+    var opts = days.filter(function(d){ return d !== currentDay; }).map(function(d){
+      return '<button class="card-menu-item card-menu-sub-item" onclick="moveStopToDay2('+idx+','+d+')">Day '+d+(DAYS[d].label?' · '+escHtml(DAYS[d].label):'')+' <span style="margin-left:4px;font-size:10px;color:var(--secondary)">('+DAYS[d].stops.length+')</span></button>';
+    }).join('');
+    moveHtml = '<button class="card-menu-item" onclick="toggleCardMoveSection(\'cms-'+idx+'\')">📅 Move to Day <span style="margin-left:auto">▾</span></button>'+
+      '<div id="cms-'+idx+'" class="card-menu-sub" style="display:none">'+opts+'</div>';
+  }
+  el.innerHTML =
+    '<button class="card-menu-item" onclick="closeCardMenu();openEP('+idx+','+idx+')">✏️ Edit</button>' +
+    moveHtml +
+    '<button class="card-menu-item danger" onclick="closeCardMenu();confirmDelete('+idx+')">🗑 Delete</button>';
+  el.classList.add('open');
+}
+function toggleCardMoveSection(id) {
+  var el = document.getElementById(id);
+  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+function closeCardMenu() {
+  document.querySelectorAll('.card-menu-dropdown.open').forEach(function(el){ el.classList.remove('open'); });
+}
+function moveStopToDay2(stopIdx, targetDay) {
+  var stop = DAYS[currentDay].stops.splice(stopIdx, 1)[0];
+  DAYS[targetDay].stops.push(stop);
+  saveToStorage();
+  closeCardMenu();
+  stopAnim(); playing=false; currentStop=-1; removeCurrentPin(); setPlayBtn(false);
+  currentDay = targetDay;
+  renderDayTabs();
+  switchDay(targetDay);
+}
+
+/* ── Edit mode tabs ── */
+var _editTab = 'stops';
+function switchEditTab(tab) {
+  _editTab = tab;
+  var tl  = document.getElementById('timeline');
+  var dep = document.getElementById('dayEditPanel');
+  var es  = document.getElementById('etabStops');
+  var ed  = document.getElementById('etabDays');
+  if (tab === 'days') {
+    if (tl)  tl.style.display  = 'none';
+    if (dep) { dep.style.display = ''; renderDayEditPanel(); }
+    if (es) es.classList.remove('active');
+    if (ed) ed.classList.add('active');
+  } else {
+    if (tl)  tl.style.display  = '';
+    if (dep) dep.style.display = 'none';
+    if (es) es.classList.add('active');
+    if (ed) ed.classList.remove('active');
+  }
+}
+function _switchToStopsTab() {
+  _editTab = 'stops';
+  var tl  = document.getElementById('timeline');
+  var dep = document.getElementById('dayEditPanel');
+  var es  = document.getElementById('etabStops');
+  var ed  = document.getElementById('etabDays');
+  if (tl)  tl.style.display  = '';
+  if (dep) dep.style.display = 'none';
+  if (es) es.classList.add('active');
+  if (ed) ed.classList.remove('active');
+}
+
+/* ── Day edit panel (Edit mode → Days tab) ── */
+function renderDayEditPanel() {
+  var html = '';
+  Object.keys(DAYS).map(Number).sort(function(a,b){return a-b;}).forEach(function(d) {
+    var day = DAYS[d];
+    html += '<div class="settings-day-card">' +
+      '<div class="settings-day-label">Day ' + d + '</div>' +
+      '<div class="ep-row">' +
+        '<div class="ep-field">' +
+          '<label class="ep-lbl">ラベル</label>' +
+          '<input class="ep-input" id="de-day-' + d + '-label" type="text" value="' + escHtml(day.label || '') + '" placeholder="美ら海 & パイン" oninput="saveDayEdit()">' +
+        '</div>' +
+        '<div class="ep-field">' +
+          '<label class="ep-lbl">メモ</label>' +
+          '<input class="ep-input" id="de-day-' + d + '-cost" type="text" value="' + escHtml(day.cost || '') + '" placeholder="¥0" oninput="saveDayEdit()">' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  });
+  html += '<div class="settings-action-row">' +
+    '<button class="btn-add-stop" onclick="addDayFromEdit()" style="flex:1">+ Day を追加</button>' +
+    '<button class="btn-add-stop" onclick="removeLastDayFromEdit()" style="flex:1;border-color:rgba(192,68,68,.35);color:#c04444">− 最後のDay</button>' +
+  '</div>';
+  var panel = document.getElementById('dayEditPanel');
+  if (panel) panel.innerHTML = html;
+}
+function saveDayEdit() {
+  Object.keys(DAYS).forEach(function(d) {
+    var lbl = document.getElementById('de-day-' + d + '-label');
+    var cst = document.getElementById('de-day-' + d + '-cost');
+    if (lbl) DAYS[d].label = lbl.value;
+    if (cst) DAYS[d].cost  = cst.value;
+  });
+  saveToStorage();
+  renderDayTabs();
+  renderTimeline();
+}
+function addDayFromEdit() {
+  var keys = Object.keys(DAYS).map(Number).sort(function(a,b){return a-b;});
+  var newNum = keys[keys.length - 1] + 1;
+  var lastDay = DAYS[keys[keys.length - 1]];
+  DAYS[newNum] = { center: lastDay?[lastDay.center[0],lastDay.center[1]]:[26.3,127.7], zoom: lastDay?lastDay.zoom:11, label:'Day '+newNum, cost:'', stops:[] };
+  saveToStorage(); renderDayEditPanel(); renderDayTabs();
+}
+function removeLastDayFromEdit() {
+  var keys = Object.keys(DAYS).map(Number).sort(function(a,b){return a-b;});
+  if (keys.length <= 1) { alert('最低1日は必要です'); return; }
+  var lastKey = keys[keys.length - 1];
+  if (!confirm('Day ' + lastKey + ' を削除しますか？\n（このDayのストップもすべて削除されます）')) return;
+  delete DAYS[lastKey];
+  if (currentDay === lastKey) currentDay = keys[keys.length - 2];
+  saveToStorage(); renderDayEditPanel(); renderDayTabs(); switchDay(currentDay);
+}
+
+/* ── Fare auto-format ── */
+function formatFareInput(input) {
+  var raw = input.value.replace(/[¥,\s]/g, '');
+  if (/^\d+$/.test(raw)) {
+    input.value = '¥' + parseInt(raw, 10).toLocaleString('ja-JP');
+  }
 }
 
 var pickPreviewPin = null;
@@ -2388,12 +2567,6 @@ function renderSettingsDaysList() {
 function saveSettings() {
   TRIP.title    = document.getElementById('sf-title').value.trim()    || 'ROUTE MAP';
   TRIP.subtitle = document.getElementById('sf-subtitle').value.trim();
-  Object.keys(DAYS).forEach(function(d) {
-    var lbl = document.getElementById('sf-day-' + d + '-label');
-    var cst = document.getElementById('sf-day-' + d + '-cost');
-    if (lbl) DAYS[d].label = lbl.value;
-    if (cst) DAYS[d].cost  = cst.value;
-  });
   saveToStorage();
   renderHeader();
   renderDayTabs();
@@ -2950,6 +3123,9 @@ requestAnimationFrame(function() {
   requestAnimationFrame(function() {
     if (isMobile()) setSheet('peek', false);
   });
+});
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.card-menu-wrap')) closeCardMenu();
 });
 </script>
 </body>
