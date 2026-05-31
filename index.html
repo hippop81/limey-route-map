@@ -226,13 +226,37 @@ body {
   flex: 1; overflow-y: auto; padding: 12px 16px;
   padding-bottom: max(60px, env(safe-area-inset-bottom, 60px));
 }
+.de-day-card {
+  background: var(--white); border: 1.5px solid var(--light-gray);
+  border-radius: var(--radius); padding: 12px; margin-bottom: 8px;
+  transition: border-color .15s;
+}
+.de-day-card.de-day-active { border-color: var(--peacock); }
+.de-day-hd {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 10px;
+}
+.de-day-num {
+  font-family: var(--font-body); font-size: 10px; font-weight: 700;
+  letter-spacing: .08em; text-transform: uppercase; color: var(--peacock); flex: 1;
+}
+.de-day-stat {
+  font-family: var(--font-body); font-size: 11px; font-weight: 600; color: var(--secondary);
+}
+.de-day-switch {
+  font-family: var(--font-body); font-size: 9px; font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase;
+  color: var(--peacock); background: var(--soft-lime);
+  border: none; border-radius: 4px; padding: 2px 7px; cursor: pointer;
+  opacity: 0; transition: opacity .15s;
+}
+.de-day-card:hover .de-day-switch { opacity: 1; }
 
 /* ── Cost bar totals ── */
 .cost-total { font-family: var(--font-head); font-size: 13px; font-weight: 700; color: var(--peacock); }
 
 .add-row {
   display: none; justify-content: center;
-  margin: 4px 0 8px 26px;
+  margin: 0 0 0 26px;
 }
 .timeline.edit-mode .add-row { display: flex; }
 .btn-add-stop {
@@ -241,8 +265,8 @@ body {
   letter-spacing: .07em; text-transform: uppercase;
   color: var(--secondary); background: transparent;
   border: 1.5px dashed var(--warm-gray); border-radius: 6px;
-  padding: 5px 12px; cursor: pointer; transition: all .2s;
-  justify-content: center;
+  padding: 3px 10px; cursor: pointer; transition: all .2s;
+  justify-content: center; width: 100%;
 }
 .btn-add-stop:hover { border-color: var(--peacock); color: var(--peacock); background: rgba(0,122,138,.03); }
 
@@ -2047,6 +2071,7 @@ function switchDay(day) {
   renderTimeline();initRouteLines();renderMapMarkers();
   updatePeekInfo();
   map.setView(DAYS[day].center,DAYS[day].zoom,{animate:true});
+  if (editMode) switchEditTab(_editTab);
 }
 
 /* ─── Mobile / desktop ─── */
@@ -2452,27 +2477,41 @@ function _switchToStopsTab() {
 }
 
 /* ── Day edit panel (Edit mode → Days tab) ── */
+function _dayFareTotalStr(stops) {
+  var total = (stops || []).reduce(function(sum, s) {
+    if (!s.fare) return sum;
+    var n = parseInt(String(s.fare).replace(/[¥,\s]/g, ''), 10);
+    return sum + (isNaN(n) ? 0 : n);
+  }, 0);
+  return total > 0 ? '¥' + total.toLocaleString('ja-JP') : '';
+}
 function renderDayEditPanel() {
   var html = '';
   Object.keys(DAYS).map(Number).sort(function(a,b){return a-b;}).forEach(function(d) {
-    var day = DAYS[d];
-    html += '<div class="settings-day-card">' +
-      '<div class="settings-day-label">Day ' + d + '</div>' +
-      '<div class="ep-row">' +
-        '<div class="ep-field">' +
-          '<label class="ep-lbl">ラベル</label>' +
-          '<input class="ep-input" id="de-day-' + d + '-label" type="text" value="' + escHtml(day.label || '') + '" placeholder="美ら海 & パイン" oninput="saveDayEdit()">' +
-        '</div>' +
-        '<div class="ep-field">' +
-          '<label class="ep-lbl">メモ</label>' +
-          '<input class="ep-input" id="de-day-' + d + '-cost" type="text" value="' + escHtml(day.cost || '') + '" placeholder="¥0" oninput="saveDayEdit()">' +
-        '</div>' +
+    var day  = DAYS[d];
+    var stops = day.stops || [];
+    var isActive = d === currentDay;
+    var fareStr  = _dayFareTotalStr(stops);
+    html += '<div class="de-day-card' + (isActive ? ' de-day-active' : '') + '">' +
+      '<div class="de-day-hd">' +
+        '<span class="de-day-num">Day ' + d + '</span>' +
+        '<span class="de-day-stat">' + stops.length + ' stops</span>' +
+        (fareStr ? '<span class="de-day-stat">' + fareStr + '</span>' : '') +
+        (!isActive ? '<button class="de-day-switch" onclick="switchDay(' + d + ');switchEditTab(\'stops\')">切替 →</button>' : '') +
+      '</div>' +
+      '<div class="ep-field">' +
+        '<label class="ep-lbl">ラベル</label>' +
+        '<input class="ep-input" id="de-day-' + d + '-label" type="text" value="' + escHtml(day.label || '') + '" placeholder="Day ' + d + '" oninput="saveDayEdit()">' +
+      '</div>' +
+      '<div class="ep-field" style="margin-top:6px">' +
+        '<label class="ep-lbl">メモ</label>' +
+        '<input class="ep-input" id="de-day-' + d + '-cost" type="text" value="' + escHtml(day.cost || '') + '" placeholder="交通費・メモ" oninput="saveDayEdit()">' +
       '</div>' +
     '</div>';
   });
   html += '<div class="settings-action-row">' +
-    '<button class="btn-add-stop" onclick="addDayFromEdit()" style="flex:1">+ Day を追加</button>' +
-    '<button class="btn-add-stop" onclick="removeLastDayFromEdit()" style="flex:1;border-color:rgba(192,68,68,.35);color:#c04444">− 最後のDay</button>' +
+    '<button class="btn-add-stop" onclick="addDayFromEdit()" style="flex:1;border-style:dashed">＋ Day を追加</button>' +
+    '<button class="btn-add-stop" onclick="removeLastDayFromEdit()" style="flex:1;border-color:rgba(192,68,68,.35);color:#c04444;border-style:dashed">− 最後のDay</button>' +
   '</div>';
   var panel = document.getElementById('dayEditPanel');
   if (panel) panel.innerHTML = html;
@@ -2746,7 +2785,7 @@ function renderSettingsDaysList() {
       '</div>' +
     '</div>';
   });
-  document.getElementById('settingsDaysList').innerHTML = html;
+  var _sdl = document.getElementById('settingsDaysList'); if (_sdl) _sdl.innerHTML = html;
 }
 
 function saveSettings() {
