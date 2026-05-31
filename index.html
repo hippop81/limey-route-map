@@ -589,7 +589,7 @@ body {
 .sheet-drag-area { display: none; }
 
 /* ── Mobile bottom sheet ── */
-@media (max-width: 768px) {
+@media (max-width: 768px), (hover: none) and (pointer: coarse) {
   #map { width: 100%; height: 100dvh; flex: none; }
 
   .sidebar {
@@ -657,6 +657,17 @@ body {
 
   .controls { padding-bottom: max(16px, env(safe-area-inset-bottom, 16px)); }
   .leaflet-control-zoom { margin-top: 16px !important; margin-left: 16px !important; }
+  .stop-card { max-width: 640px; }
+}
+
+/* ── Wide touch devices (tablets / foldables) ── */
+@media (hover: none) and (pointer: coarse) and (min-width: 641px) {
+  .sidebar {
+    left: 50%;
+    right: auto;
+    width: min(640px, 100vw);
+    margin-left: calc(-1 * min(320px, 50vw));
+  }
 }
 
 /* ── Palette chips ── */
@@ -1942,7 +1953,8 @@ function switchDay(day) {
 }
 
 /* ─── Mobile / desktop ─── */
-function isMobile() { return window.innerWidth <= 768; }
+var _isTouchDevice = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+function isMobile() { return window.innerWidth <= 768 || _isTouchDevice; }
 
 /* ── Bottom sheet state ── */
 var sheetState  = 'peek';
@@ -2548,7 +2560,7 @@ function startMapPick() {
   document.getElementById('mapPickTip').classList.add('on');
   document.getElementById('map').classList.add('pick-mode');
   document.getElementById('epPickBtn').classList.add('picking');
-  if (window.innerWidth <= 768) closeSidebar();
+  if (isMobile()) closeSidebar();
 }
 function cancelMapPick() {
   mapPickActive = false;
@@ -2567,7 +2579,7 @@ map.on('click', function(e) {
   removePickPreviewPin();
   pickPreviewPin = L.marker([e.latlng.lat, e.latlng.lng], { icon: stopIcon('default', null), zIndexOffset: 900 })
     .addTo(map).bindPopup('📍 ' + e.latlng.lat.toFixed(4) + ', ' + e.latlng.lng.toFixed(4)).openPopup();
-  if (window.innerWidth <= 768) openSidebar();
+  if (isMobile()) openSidebar();
 });
 
 /* ═══════════════════════════════════════════
