@@ -1227,10 +1227,13 @@ var DAYS = {
     cost: '別払い ¥4,880',
     stops: [
       { name: '那覇空港',              time: '09:21',        memo: 'コインロッカーに荷物を預けてから乗車', lat: 26.196, lng: 127.646, transport: 'bus_express', categories: [],               isDayEnd: false, label: '117番 高速バス',      fare: '¥2,880',  durHours: 2, durMins: 30 },
-      { name: '赤嶺駅',               time: '09:30',        memo: 'GTFS test — ゆいレール駅座標ポリライン確認', lat: 26.19878, lng: 127.65338, transport: 'train_local', categories: [],             isDayEnd: false, label: 'ゆいレール',           fare: '',         durHours: 0, durMins:  3 },
+      { name: '赤嶺駅',               time: '09:30',        memo: 'GTFS test — ゆいレール駅座標ポリライン確認', lat: 26.19878, lng: 127.65338, transport: 'train_local', categories: [],             isDayEnd: false, label: 'ゆいレール',           fare: '',         durHours: 0, durMins:  3, gtfs: { shapeId: 'yuirail:shapes_383_1' } },
+      { name: '儀保駅',               time: '09:46',        memo: 'GTFS shape テスト終点',                   lat: 26.23650, lng: 127.69320, transport: 'shuttle',    categories: [],             isDayEnd: false, label: 'OAS',                  fare: '',         durHours: 0, durMins:  0 },
+      { name: '県庁北口',             time: '10:10',        memo: 'OAS test — oas:shapes_424_1',             lat: 26.2157,  lng: 127.6785, transport: 'bus_express', categories: [],             isDayEnd: false, label: 'OAS/RSL リゾートライナーA', fare: '',    durHours: 0, durMins:  0, gtfs: { shapeId: 'oas:shapes_424_1' } },
       { name: '美ら海水族館',           time: '11:51',        memo: 'ジンベイザメ！約2.5時間滞在',         lat: 26.694, lng: 127.878, transport: 'shuttle',    categories: ['sightseeing'],   isDayEnd: false, label: 'OAS/APL',             fare: '¥1,250',  durHours: 0, durMins: 47 },
       { name: '名護市役所前',           time: '15:38',        memo: '70番バスに乗り換え',                  lat: 26.592, lng: 127.978, transport: 'bus_local',  categories: [],               isDayEnd: false, label: '70番（OTOPa）',       fare: 'パス対象', durHours: 0, durMins: 31 },
       { name: 'ナゴパイナップルパーク',  time: '16:09',        memo: 'カート体験！約2時間滞在（早割済）',    lat: 26.584, lng: 127.964, transport: 'shuttle',    categories: ['sightseeing'],   isDayEnd: false, label: '70番 → OASシャトル', fare: '¥2,000',  durHours: 2, durMins: 22 },
+      { name: '名護バスターミナル',      time: '18:00',        memo: 'やんばる急行 test — yanbaru:11',         lat: 26.593,  lng: 127.979, transport: 'bus_express', categories: [],             isDayEnd: false, label: 'やんばる急行バス',    fare: '',         durHours: 0, durMins:  0, gtfs: { shapeId: 'yanbaru:11' } },
       { name: '那覇バスターミナル',      time: '20:38',        memo: '国際通りでタコス！',                   lat: 26.215, lng: 127.681, transport: 'bus_express',categories: [],               isDayEnd: true,  label: '',                    fare: '',         durHours: 0, durMins:  0 }
     ]
   },
