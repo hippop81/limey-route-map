@@ -114,7 +114,7 @@ node scripts/build-gtfs-db.js \
   `route_long_name`, then `route_short_name`, then `route_id`.
 - `shapes[shapeId].transportType`: Route Replay transport type inferred from route
   name and GTFS `route_type`, for example `train_local`, `shuttle`, `bus_express`,
-  `bus_local`, or `ferry`.
+  `bus_local`, or `ferry`. OAS-style `エアポートライナー` names are treated as `shuttle` for replay purposes.
 - `shapeToRoute`: secondary index for debugging and ambiguous cases where a shape
   is shared by multiple routes. It is built through `trips.txt`, not by guessing
   from `shape_id`.
