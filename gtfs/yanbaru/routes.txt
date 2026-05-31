@@ -1,0 +1,4 @@
+route_id,agency_id,route_short_name,route_long_name,route_type,route_color,route_text_color,route_desc
+01,1360003007856,YKB888,やんばる急行バス空港線,3,5e8234,ffffff,
+02,1360003007856,YKB3T,やんばる急行バス三島線,3,c6006f,ffffff,
+03,1360003007856,YKB-HLT,やんばる急行バスヒルトン瀬底リゾート直行バス,3,00b0f0,ffffff,予約制（予約電話番号：0570-02-0701）です。当日空席があれば予約なしでも乗車できます。運賃は大人2500円、小中学生1500円です。
