@@ -222,7 +222,7 @@ function inferTransportType(routeInfo) {
 
   if (/新幹線|shinkansen/.test(name)) return 'shinkansen';
   if (/シャトル|shuttle|リゾートライナー|resort\s*liner|エアポートライナー|airport\s*liner/.test(name)) return 'shuttle';
-  if (/高速|急行|express|limousine|リムジン|airport\s*bus/.test(name)) return 'bus_express';
+  if (/高速|急行|ハイウェイ|highway|express|limousine|リムジン|airport\s*bus/.test(name)) return 'bus_express';
   if (/フェリー|ferry|船/.test(name)) return 'ferry';
   if (/ゆいレール|モノレール|monorail|rail|train|tram/.test(name)) return 'train_local';
 
