@@ -997,7 +997,7 @@ body {
         <div class="ep-field">
           <div class="type-groups" id="typeGroups">
             <div class="type-group-row">
-              <button class="type-chip" data-type="plane" onclick="epSetType('plane')">✈ Plane</button>
+              <button class="type-chip" data-type="plane" onclick="epSetType('plane')">✈️ Plane</button>
               <button class="type-chip" data-type="ferry" onclick="epSetType('ferry')">🚢 Ferry</button>
             </div>
             <div class="type-group-label">— Train —</div>
@@ -1590,7 +1590,7 @@ var playbackSpeed = 1;
 
 /* ─── Context-aware search config ─── */
 var SEARCH_CTX = {
-  plane:         { placeholder: '空港名を検索…',                suffix: '空港',   hint: '✈ 空港を優先'       },
+  plane:         { placeholder: '空港名を検索…',                suffix: '空港',   hint: '✈️ 空港を優先'       },
   ferry:         { placeholder: '港・フェリーターミナルを検索…', suffix: '港',    hint: '🚢 港を優先'        },
   shinkansen:    { placeholder: '新幹線の駅名を検索…',          suffix: '駅',    hint: '🚄 駅を優先'        },
   train_limited: { placeholder: '駅名を検索…',                  suffix: '駅',    hint: '🚃 駅を優先'        },
@@ -2916,7 +2916,7 @@ function haversineKm(lat1, lng1, lat2, lng2) {
 
 function computeJourneyStats() {
   var TYPE_ICONS = {
-    plane: '✈', ferry: '🚢', shinkansen: '🚄',
+    plane: '✈️', ferry: '🚢', shinkansen: '🚄',
     train_limited: '🚃', train_local: '🚃',
     bus_express: '🚍', bus_local: '🚌', shuttle: '🚐',
     car: '🚗', bike: '🚴', walk: '🚶'
