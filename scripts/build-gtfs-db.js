@@ -12,10 +12,11 @@ function printUsage() {
   const script = path.relative(process.cwd(), __filename);
   console.log(`Usage:
   node ${script} --input ./gtfs --output ./gtfs_db.json
+  node ${script} --input ./gtfs/yuirail --output ./yuirail_gtfs_db.json
   node ${script} --shapes ./shapes.txt --routes ./routes.txt --trips ./trips.txt --output ./gtfs_db.json
 
 Options:
-  --input <dir>              Directory containing shapes.txt, routes.txt, trips.txt
+  --input <dir>              GTFS feed directory, or parent directory containing provider feed directories
   --shapes <file>            Path to shapes.txt
   --routes <file>            Path to routes.txt
   --trips <file>             Path to trips.txt
@@ -67,6 +68,7 @@ function parseArgs(argv) {
     i += 1;
   }
 
+  args.explicitFiles = !!(args.shapes || args.routes || args.trips);
   args.shapes = args.shapes || path.join(args.input, 'shapes.txt');
   args.routes = args.routes || path.join(args.input, 'routes.txt');
   args.trips = args.trips || path.join(args.input, 'trips.txt');
@@ -107,6 +109,93 @@ function readCsv(filePath) {
       record.__rowNumber = rowIndex + 2;
       return record;
     });
+}
+
+function fileExists(filePath) {
+  return fs.existsSync(filePath) && fs.statSync(filePath).isFile();
+}
+
+function feedFilesForDir(dirPath) {
+  return {
+    shapes: path.join(dirPath, 'shapes.txt'),
+    routes: path.join(dirPath, 'routes.txt'),
+    trips: path.join(dirPath, 'trips.txt'),
+  };
+}
+
+function isCompleteFeed(files) {
+  return fileExists(files.shapes) && fileExists(files.routes) && fileExists(files.trips);
+}
+
+function discoverInputFeeds(args) {
+  const direct = {
+    providerId: sanitizeProviderId(path.basename(args.input) || 'gtfs'),
+    shapes: args.shapes,
+    routes: args.routes,
+    trips: args.trips,
+    namespaceIds: false,
+  };
+
+  if (isCompleteFeed(direct) || args.explicitFiles) {
+    return [direct];
+  }
+
+  if (!fs.existsSync(args.input) || !fs.statSync(args.input).isDirectory()) {
+    throw new Error(`Input directory not found: ${args.input}`);
+  }
+
+  const feeds = fs.readdirSync(args.input, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => {
+      const providerDir = path.join(args.input, entry.name);
+      return Object.assign({
+        providerId: sanitizeProviderId(entry.name),
+        namespaceIds: true,
+      }, feedFilesForDir(providerDir));
+    })
+    .filter(isCompleteFeed)
+    .sort((a, b) => a.providerId.localeCompare(b.providerId));
+
+  if (!feeds.length) {
+    throw new Error(`No complete GTFS feeds found in ${args.input}`);
+  }
+
+  return feeds;
+}
+
+function sanitizeProviderId(value) {
+  return String(value || 'gtfs').trim().replace(/[^A-Za-z0-9_-]+/g, '_').toLowerCase();
+}
+
+function namespaceValue(providerId, value, namespaceIds) {
+  if (!namespaceIds || value === undefined || value === null || value === '') return value || '';
+  return `${providerId}:${value}`;
+}
+
+function namespaceRecords(records, providerId, namespaceIds, fields) {
+  return records.map((record) => {
+    const next = Object.assign({}, record, { providerId });
+    fields.forEach((field) => {
+      if (Object.prototype.hasOwnProperty.call(next, field)) {
+        next[field] = namespaceValue(providerId, next[field], namespaceIds);
+      }
+    });
+    return next;
+  });
+}
+
+function readFeed(feed) {
+  return {
+    providerId: feed.providerId,
+    files: {
+      shapes: feed.shapes,
+      routes: feed.routes,
+      trips: feed.trips,
+    },
+    shapeRecords: namespaceRecords(readCsv(feed.shapes), feed.providerId, feed.namespaceIds, ['shape_id']),
+    routeRecords: namespaceRecords(readCsv(feed.routes), feed.providerId, feed.namespaceIds, ['route_id']),
+    tripRecords: namespaceRecords(readCsv(feed.trips), feed.providerId, feed.namespaceIds, ['route_id', 'trip_id', 'shape_id']),
+  };
 }
 
 function parseCsv(text) {
@@ -411,9 +500,10 @@ function attachShapeRouteInfo(shapes, shapeToRoute) {
 }
 
 function buildDb(args) {
-  const shapeRecords = readCsv(args.shapes);
-  const routeRecords = readCsv(args.routes);
-  const tripRecords = readCsv(args.trips);
+  const feeds = discoverInputFeeds(args).map(readFeed);
+  const shapeRecords = feeds.flatMap((feed) => feed.shapeRecords);
+  const routeRecords = feeds.flatMap((feed) => feed.routeRecords);
+  const tripRecords = feeds.flatMap((feed) => feed.tripRecords);
 
   const routes = buildRoutes(routeRecords);
   const { shapes, skippedPointCount } = buildShapes(shapeRecords, args.precision);
@@ -432,9 +522,14 @@ function buildDb(args) {
       coordinatePrecision: args.precision,
     },
     source: {
-      shapes: path.basename(args.shapes),
-      routes: path.basename(args.routes),
-      trips: path.basename(args.trips),
+      input: path.basename(args.input),
+      feedCount: feeds.length,
+      feeds: feeds.map((feed) => ({
+        providerId: feed.providerId,
+        shapes: path.relative(process.cwd(), feed.files.shapes),
+        routes: path.relative(process.cwd(), feed.files.routes),
+        trips: path.relative(process.cwd(), feed.files.trips),
+      })),
     },
     stats: {
       routeCount: Object.keys(routes).length,

@@ -4,10 +4,21 @@
 It is intentionally lighter than full GTFS because the runtime only needs route
 geometry and enough route metadata to choose a plausible shape.
 
-Generate it with:
+Generate a combined database from provider subfolders with:
 
 ```sh
 node scripts/build-gtfs-db.js --input ./gtfs --output ./gtfs_db.json --pretty
+```
+
+`--input ./gtfs` expects child folders such as `gtfs/yuirail`, `gtfs/oas`, and
+`gtfs/yanbaru`. Each complete child feed must contain `shapes.txt`, `routes.txt`,
+and `trips.txt`. In this combined mode, ids are namespaced as
+`providerId:source_id` so different providers cannot overwrite each other.
+
+Generate a single-provider database with:
+
+```sh
+node scripts/build-gtfs-db.js --input ./gtfs/yuirail --output ./yuirail_gtfs_db.json --pretty
 ```
 
 Or with explicit files:
@@ -57,21 +68,21 @@ node scripts/build-gtfs-db.js \
     }
   },
   "shapes": {
-    "shape_557_1": {
+    "yuirail:shape_557_1": {
       "points": [
         [26.124, 127.665],
         [26.19584, 127.64686]
       ],
-      "routeId": "383",
+      "routeId": "yuirail:383",
       "routeName": "ゆいレール",
       "transportType": "train_local"
     },
-    "shape_424_1": {
+    "oas:shape_424_1": {
       "points": [
         [26.195, 127.646],
         [26.694, 127.878]
       ],
-      "routeId": "424",
+      "routeId": "oas:424",
       "routeName": "リゾートライナーA",
       "transportType": "shuttle"
     }
@@ -109,7 +120,8 @@ node scripts/build-gtfs-db.js \
   `shape_pt_sequence`. This order matches current Leaflet usage in the app.
 - `shapes[shapeId].routeId`: the primary route for this shape, selected from
   `trips.txt` by highest trip count. This is intentionally duplicated here so the
-  replay runtime can resolve a shape with a single lookup.
+  replay runtime can resolve a shape with a single lookup. In combined `./gtfs`
+  mode, `shapeId` and `routeId` are namespaced as `providerId:source_id`.
 - `shapes[shapeId].routeName`: display name for the primary route, preferring
   `route_long_name`, then `route_short_name`, then `route_id`.
 - `shapes[shapeId].transportType`: Route Replay transport type inferred from route
