@@ -1,0 +1,4 @@
+route_id,agency_id,route_short_name,route_long_name,route_type,route_color,route_text_color
+RT_000001,1000020472093,,循環線,3,DD5A3E,FFFFFF
+RT_000003,1000020472093,,二見以北線,3,912F83,FFFFFF
+RT_000005,1000020472093,,羽地・屋我地線,3,12559C,FFFFFF

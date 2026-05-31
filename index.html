@@ -1429,7 +1429,17 @@ function handleGtfsImport(e) {
   var reader = new FileReader();
   reader.onload = function(ev) {
     try {
-      var arr = JSON.parse(ev.target.result);
+      var data = JSON.parse(ev.target.result);
+      if (loadGtfsDbObject(data)) {
+        stopAnim(); playing = false; setPlayBtn(false); currentStop = -1;
+        removeCurrentPin();
+        initRouteLines();
+        renderMapMarkers();
+        renderTimeline();
+        alert(Object.keys(GTFS_DB.shapes || {}).length + ' shapes を読み込みました');
+        return;
+      }
+      var arr = data;
       if (!Array.isArray(arr)) arr = [arr];
       var added = 0;
       arr.forEach(function(entry) {
@@ -1527,6 +1537,7 @@ var GTFS_PROX_DB = {
 (function() {
   Object.keys(GTFS_PROX_DB).forEach(function(k) {
     var db = GTFS_PROX_DB[k];
+    if (!db || !db.stops) return;
     if (!db.shape) db.shape = db.stops.map(function(s){ return [s.lat, s.lng]; });
   });
 })();
@@ -1534,11 +1545,84 @@ var GTFS_PROX_DB = {
 /* ─── GTFS shape DB (loaded from gtfs_db.json) ─── */
 var GTFS_DB = {};
 
-function findGtfsShape(fromLat, fromLng, toLat, toLng, type) {
+function loadGtfsDbObject(data) {
+  if (!data || !data.shapes || typeof data.shapes !== 'object') return false;
+  GTFS_DB.shapes = data.shapes || {};
+  GTFS_DB.shapeToRoute = data.shapeToRoute || {};
+  GTFS_DB.routeToShapes = data.routeToShapes || {};
+  GTFS_DB.schemaVersion = data.schemaVersion || null;
+  GTFS_DB.source = data.source || null;
+  return true;
+}
+
+function loadDefaultGtfsDb() {
+  if (typeof fetch !== 'function') return;
+  fetch('gtfs_db.json', { cache: 'no-store' })
+    .then(function(r) { if (!r.ok) throw new Error('not found'); return r.json(); })
+    .then(function(data) {
+      if (!loadGtfsDbObject(data)) return;
+      initRouteLines();
+      renderMapMarkers();
+      renderTimeline();
+    })
+    .catch(function() {});
+}
+
+function normalizeShapePoints(points) {
+  if (!Array.isArray(points)) return null;
+  var out = [];
+  points.forEach(function(p) {
+    if (!Array.isArray(p) || p.length < 2) return;
+    var lat = parseFloat(p[0]), lng = parseFloat(p[1]);
+    if (isNaN(lat) || isNaN(lng)) return;
+    out.push([lat, lng]);
+  });
+  return out.length >= 2 ? out : null;
+}
+
+function closestShapePointIndex(points, lat, lng) {
+  var best = -1, bestDist = Infinity;
+  for (var i = 0; i < points.length; i++) {
+    var d = haversineKm(lat, lng, points[i][0], points[i][1]);
+    if (d < bestDist) { bestDist = d; best = i; }
+  }
+  return best;
+}
+
+function sliceShapeBetweenStops(points, fromLat, fromLng, toLat, toLng) {
+  var fromIdx = closestShapePointIndex(points, fromLat, fromLng);
+  var toIdx = closestShapePointIndex(points, toLat, toLng);
+  if (fromIdx < 0 || toIdx < 0 || fromIdx === toIdx) return points;
+  var seg = fromIdx < toIdx ? points.slice(fromIdx, toIdx + 1) : points.slice(toIdx, fromIdx + 1).reverse();
+  return seg.length >= 2 ? seg : points;
+}
+
+function explicitSegmentShapeId(from, to) {
+  return (from && (from.shapeId || from.shape_id || from.gtfsShapeId || from.segmentShapeId ||
+         (from.gtfs && (from.gtfs.shapeId || from.gtfs.shape_id)))) ||
+         (to && (to.arrivalShapeId || to.arrival_shape_id || to.inboundShapeId || to.inbound_shape_id ||
+         (to.gtfs && (to.gtfs.inboundShapeId || to.gtfs.inbound_shape_id)))) ||
+         '';
+}
+
+function findShapeById(shapeId, fromLat, fromLng, toLat, toLng) {
+  if (!shapeId || !GTFS_DB.shapes) return null;
+  var shape = GTFS_DB.shapes[shapeId];
+  var points = shape ? normalizeShapePoints(shape.points) : null;
+  if (!points) return null;
+  return sliceShapeBetweenStops(points, fromLat, fromLng, toLat, toLng);
+}
+
+function findGtfsShape(fromLat, fromLng, toLat, toLng, type, shapeId) {
+  var explicit = findShapeById(shapeId, fromLat, fromLng, toLat, toLng);
+  if (explicit) return explicit;
+
+
   var THRESHOLD = 0.5;
   var keys = Object.keys(GTFS_PROX_DB);
   for (var ki = 0; ki < keys.length; ki++) {
     var db = GTFS_PROX_DB[keys[ki]];
+    if (!db || !db.types || !db.stops || !db.shape) continue;
     if (db.types.indexOf(type) < 0) continue;
     var fromIdx = -1, toIdx = -1, fromDist = Infinity, toDist = Infinity;
     for (var si = 0; si < db.stops.length; si++) {
@@ -1667,16 +1751,9 @@ function initRouteLines() {
   var stops=DAYS[currentDay].stops;
   for(var i=0;i<stops.length-1;i++){
     var from=stops[i], to=stops[i+1];
-    // Phase 3: explicit shapeId → Phase 4 fallback: proximity match → bezier/straight
-    var shape = null;
-    if (from.gtfs && from.gtfs.shapeId && GTFS_DB.shapes) {
-      var sd = GTFS_DB.shapes[from.gtfs.shapeId];
-      if (sd && sd.points && sd.points.length >= 2) shape = sd.points;
-    }
-    if (!shape) shape = findGtfsShape(from.lat, from.lng, to.lat, to.lng, from.transport);
-    segShapes.push(shape);
+    segShapes.push(findGtfsShape(from.lat, from.lng, to.lat, to.lng, from.transport, explicitSegmentShapeId(from, to)));
     var c=tcfg(from.transport), pts=fullSegPts(i,i+1);
-    var dash = shape ? null : (c.dashArray||'6 5');
+    var dash = segShapes[i] ? null : (c.dashArray||'6 5');
     segLines.push(L.polyline(pts,{color:'#C4C0B6',weight:Math.max(1.5,c.lineWeight),opacity:.8,dashArray:dash,lineCap:'round'}).addTo(map));
     segProgressLines.push(L.polyline([],{color:LIME,weight:c.progWeight||4,opacity:.9,lineCap:'round',lineJoin:'round'}).addTo(map));
   }
@@ -3226,6 +3303,7 @@ _setPaletteVars(TRIP.palette || 'tropical');
 renderHeader();
 renderDayTabs();
 switchDay(currentDay);
+loadDefaultGtfsDb();
 requestAnimationFrame(function() {
   requestAnimationFrame(function() {
     if (isMobile()) setSheet('peek', false);
@@ -3235,16 +3313,6 @@ document.addEventListener('click', function(e) {
   if (!e.target.closest('.card-menu-wrap')) closeCardMenu();
 });
 
-/* ── Phase 1: load gtfs_db.json ── */
-fetch('./gtfs_db.json')
-  .then(function(r) { if (!r.ok) throw new Error(r.status); return r.json(); })
-  .then(function(data) {
-    GTFS_DB = data;
-    initRouteLines();
-    renderMapMarkers();
-    console.log('[Limey] gtfs_db.json loaded —', Object.keys(GTFS_DB.shapes || {}).length, 'shapes');
-  })
-  .catch(function(e) { console.warn('[Limey] gtfs_db.json not available:', e.message); });
 </script>
 </body>
 </html>

@@ -1,0 +1,3 @@
+route_id,agency_id,route_short_name,route_long_name,route_desc,route_type,route_color,route_text_color
+383,4360001000447,ゆいレール,沖縄都市モノレール線（下り：てだこ浦西方面）,,2,FF0000,FFFFFF
+384,4360001000447,ゆいレール,沖縄都市モノレール（上り：那覇空港方面）,,2,FF0000,FFFFFF
