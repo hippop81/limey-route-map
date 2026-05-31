@@ -450,6 +450,38 @@ body {
 }
 .ep-search-ctx-hint.visible { opacity: 1; max-height: 20px; }
 
+/* ── Shape ID searchable dropdown ── */
+.shape-combo { position: relative; }
+.shape-dropdown {
+  display: none; position: absolute; top: calc(100% + 3px); left: 0; right: 0;
+  max-height: 220px; overflow-y: auto;
+  background: var(--white); border: 1px solid var(--warm-gray); border-radius: var(--radius);
+  box-shadow: 0 8px 24px rgba(0,0,0,.13); z-index: 230;
+}
+.shape-dropdown.open { display: block; }
+.shape-option {
+  padding: 9px 11px; cursor: pointer;
+  border-bottom: 1px solid var(--light-gray); transition: background .12s;
+}
+.shape-option:last-child { border-bottom: none; }
+.shape-option:hover, .shape-option.active { background: rgba(0,122,138,.07); }
+.shape-option-main {
+  font-family: var(--font-head); font-size: 12px; font-weight: 700;
+  color: var(--primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.shape-option-sub {
+  font-family: var(--font-body); font-size: 10px; color: var(--secondary);
+  margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.shape-status {
+  min-height: 16px; margin-top: 4px;
+  font-family: var(--font-body); font-size: 10px; font-weight: 600;
+  letter-spacing: .02em; color: var(--secondary);
+}
+.shape-status.ok { color: var(--peacock); }
+.shape-status.warn { color: #c04444; }
+.shape-status.loading { color: var(--secondary); }
+
 /* ── Settings day card ── */
 .settings-day-card {
   background: var(--white); border: 1px solid var(--light-gray);
@@ -944,6 +976,20 @@ body {
             <input class="ep-input" id="ef-duration" type="text" placeholder="2h30m">
           </div>
         </div>
+        <div class="ep-field">
+          <label class="ep-lbl">GTFS Shape ID</label>
+          <div class="shape-combo" id="shapeCombo">
+            <input class="ep-input" id="ef-shape-id" type="text"
+              placeholder="yuirail:shapes_383_1"
+              autocomplete="off"
+              oninput="onShapeInput()"
+              onfocus="openShapeDropdown()"
+              onkeydown="onShapeKeydown(event)"
+              onblur="setTimeout(closeShapeDropdown, 180)">
+            <div class="shape-status" id="shapeStatus"></div>
+            <div class="shape-dropdown" id="shapeDropdown"></div>
+          </div>
+        </div>
       </div>
 
       <div class="ep-section">
@@ -1376,6 +1422,8 @@ var GTFS_DB = {
   shapes: {},
   shapeToRoute: {},
   routeToShapes: {},
+  loading: true,
+  loaded: false,
   yui_rail: {
     name: 'ゆいレール',
     types: ['train_limited', 'train_local'],
@@ -1410,6 +1458,7 @@ var GTFS_DB = {
     if (!db.shape) db.shape = db.stops.map(function(s){ return [s.lat, s.lng]; });
   });
 })();
+if (typeof window !== 'undefined') window.GTFS_DB = GTFS_DB;
 
 function loadGtfsDbObject(data) {
   if (!data || !data.shapes || typeof data.shapes !== 'object') return false;
@@ -1418,11 +1467,16 @@ function loadGtfsDbObject(data) {
   GTFS_DB.routeToShapes = data.routeToShapes || {};
   GTFS_DB.schemaVersion = data.schemaVersion || null;
   GTFS_DB.source = data.source || null;
+  GTFS_DB.loading = false;
+  GTFS_DB.loaded = true;
+  renderShapeStatus();
+  if (isShapeDropdownOpen()) renderShapeDropdown();
   return true;
 }
 
 function loadDefaultGtfsDb() {
-  if (typeof fetch !== 'function') return;
+  if (typeof fetch !== 'function') { GTFS_DB.loading = false; return; }
+  GTFS_DB.loading = true;
   fetch('gtfs_db.json', { cache: 'no-store' })
     .then(function(r) { if (!r.ok) throw new Error('not found'); return r.json(); })
     .then(function(data) {
@@ -1431,7 +1485,11 @@ function loadDefaultGtfsDb() {
       renderMapMarkers();
       renderTimeline();
     })
-    .catch(function() {});
+    .catch(function() {
+      GTFS_DB.loading = false;
+      renderShapeStatus();
+      if (isShapeDropdownOpen()) renderShapeDropdown();
+    });
 }
 
 function normalizeShapePoints(points) {
@@ -2020,6 +2078,7 @@ function openEP(idx, insertAfter) {
   document.getElementById('ef-label').value    = s ? (s.label || '') : '';
   document.getElementById('ef-fare').value     = s ? (s.fare || '') : '';
   document.getElementById('ef-duration').value = s ? (s.duration || '') : '';
+  document.getElementById('ef-shape-id').value = s ? explicitSegmentShapeId(s, null) : '';
   document.getElementById('ef-lat').value      = s ? s.lat      : '';
   document.getElementById('ef-lng').value      = s ? s.lng      : '';
   document.getElementById('ef-is-day-end').checked = s ? !!s.isDayEnd : false;
@@ -2027,6 +2086,7 @@ function openEP(idx, insertAfter) {
   epType = s ? (s.transport || 'bus_local') : 'bus_local';
   refreshTypeChips();
   updateSearchContext();
+  renderShapeStatus();
   epCategories = s ? (Array.isArray(s.categories) ? s.categories.slice() : []) : [];
   refreshCategoryChips();
 
@@ -2054,6 +2114,8 @@ function epSetType(type) {
   var labels = { plane: 'Flight', ferry: 'Ferry', shinkansen: '新幹線', train_limited: '特急', train_local: '電車', bus_express: '高速バス', bus_local: 'バス', shuttle: 'シャトル', car: '車', bike: '自転車', walk: '徒歩' };
   if (!input.value && labels[type]) input.value = labels[type];
   updateSearchContext();
+  renderShapeStatus();
+  if (isShapeDropdownOpen()) renderShapeDropdown();
 }
 function refreshTypeChips() {
   document.querySelectorAll('.type-chip').forEach(function(c) {
@@ -2070,6 +2132,144 @@ function refreshCategoryChips() {
   document.querySelectorAll('.cat-chip').forEach(function(c) {
     c.classList.toggle('sel', epCategories.indexOf(c.dataset.cat) >= 0);
   });
+}
+
+
+var shapeOptions = [];
+var shapeActiveIndex = -1;
+
+function getGtfsShapes() {
+  var root = (typeof window !== 'undefined' && window.GTFS_DB) ? window.GTFS_DB : GTFS_DB;
+  return (root && root.shapes) ? root.shapes : {};
+}
+function getGtfsLoading() {
+  var root = (typeof window !== 'undefined' && window.GTFS_DB) ? window.GTFS_DB : GTFS_DB;
+  return !!(root && root.loading && !root.loaded);
+}
+function isShapeDropdownOpen() {
+  var box = document.getElementById('shapeDropdown');
+  return !!(box && box.classList.contains('open'));
+}
+function shapeEmoji(type) {
+  if (type === 'train_local' || type === 'train_limited') return '🚃';
+  if (type === 'bus_express') return '🚍';
+  if (type === 'bus_local') return '🚌';
+  if (type === 'shuttle') return '🚐';
+  return '·';
+}
+function shapeProviderName(shapeId) {
+  var idx = String(shapeId || '').indexOf(':');
+  return idx > 0 ? String(shapeId).slice(0, idx) : '';
+}
+function shapeDisplayName(shape, shapeId) {
+  return shapeEmoji(shape.transportType) + ' ' + (shape.routeName || shape.routeId || shapeProviderName(shapeId) || 'GTFS') + ' — ' + shapeId;
+}
+function shapeSearchText(shape, shapeId) {
+  return [shapeId, shape.routeName, shape.routeId, shape.transportType, shapeProviderName(shapeId)]
+    .join(' ').toLowerCase();
+}
+function buildShapeOptions(query) {
+  var shapes = getGtfsShapes();
+  var q = (query || '').trim().toLowerCase();
+  var keys = Object.keys(shapes || {}).sort();
+  var opts = [];
+  for (var i = 0; i < keys.length; i++) {
+    var id = keys[i], shape = shapes[id] || {};
+    if (epType && shape.transportType && shape.transportType !== epType) continue;
+    if (q && shapeSearchText(shape, id).indexOf(q) < 0) continue;
+    opts.push({ shapeId: id, shape: shape, label: shapeDisplayName(shape, id), provider: shapeProviderName(id) });
+    if (opts.length >= 20) break;
+  }
+  return opts;
+}
+function renderShapeDropdown() {
+  var box = document.getElementById('shapeDropdown');
+  var input = document.getElementById('ef-shape-id');
+  if (!box || !input) return;
+  if (getGtfsLoading()) {
+    shapeOptions = [];
+    shapeActiveIndex = -1;
+    box.innerHTML = '<div class="ep-search-msg">⏳ 読み込み中...</div>';
+    box.classList.add('open');
+    return;
+  }
+  shapeOptions = buildShapeOptions(input.value);
+  if (!shapeOptions.length) {
+    shapeActiveIndex = -1;
+    box.innerHTML = '<div class="ep-search-msg">候補が見つかりません</div>';
+    box.classList.add('open');
+    return;
+  }
+  if (shapeActiveIndex < 0 || shapeActiveIndex >= shapeOptions.length) shapeActiveIndex = 0;
+  box.innerHTML = shapeOptions.map(function(opt, i) {
+    var active = i === shapeActiveIndex ? ' active' : '';
+    var pointCount = opt.shape && Array.isArray(opt.shape.points) ? opt.shape.points.length : 0;
+    return '<div class="shape-option' + active + '" onmousedown="selectShapeOption(' + i + ')">' +
+      '<div class="shape-option-main">' + escHtml(opt.label) + '</div>' +
+      '<div class="shape-option-sub">' + escHtml([opt.provider, opt.shape.transportType, pointCount + ' points'].filter(Boolean).join(' · ')) + '</div>' +
+      '</div>';
+  }).join('');
+  box.classList.add('open');
+}
+function openShapeDropdown() {
+  shapeActiveIndex = 0;
+  renderShapeDropdown();
+}
+function closeShapeDropdown() {
+  var box = document.getElementById('shapeDropdown');
+  if (box) box.classList.remove('open');
+}
+function onShapeInput() {
+  shapeActiveIndex = 0;
+  renderShapeStatus();
+  renderShapeDropdown();
+}
+function selectShapeOption(i) {
+  var opt = shapeOptions[i];
+  var input = document.getElementById('ef-shape-id');
+  if (!opt || !input) return;
+  input.value = opt.shapeId;
+  closeShapeDropdown();
+  renderShapeStatus();
+  input.focus();
+}
+function onShapeKeydown(e) {
+  var boxOpen = isShapeDropdownOpen();
+  if (e.key === 'Escape') { closeShapeDropdown(); e.preventDefault(); return; }
+  if (e.key === 'ArrowDown') {
+    if (!boxOpen) renderShapeDropdown();
+    if (shapeOptions.length) shapeActiveIndex = Math.min(shapeOptions.length - 1, shapeActiveIndex + 1);
+    renderShapeDropdown(); e.preventDefault(); return;
+  }
+  if (e.key === 'ArrowUp') {
+    if (!boxOpen) renderShapeDropdown();
+    if (shapeOptions.length) shapeActiveIndex = Math.max(0, shapeActiveIndex - 1);
+    renderShapeDropdown(); e.preventDefault(); return;
+  }
+  if (e.key === 'Enter' && boxOpen && shapeOptions.length && shapeActiveIndex >= 0) {
+    selectShapeOption(shapeActiveIndex); e.preventDefault(); return;
+  }
+}
+function renderShapeStatus() {
+  var input = document.getElementById('ef-shape-id');
+  var status = document.getElementById('shapeStatus');
+  if (!input || !status) return;
+  var shapeId = input.value.trim();
+  status.className = 'shape-status';
+  if (!shapeId) { status.textContent = ''; return; }
+  if (getGtfsLoading()) {
+    status.textContent = '⏳ 読み込み中...';
+    status.classList.add('loading');
+    return;
+  }
+  var shape = getGtfsShapes()[shapeId];
+  if (shape && Array.isArray(shape.points)) {
+    status.textContent = '✓ points ' + shape.points.length;
+    status.classList.add('ok');
+  } else {
+    status.textContent = '⚠ not found';
+    status.classList.add('warn');
+  }
 }
 
 function updateSearchContext() {
@@ -2097,6 +2297,7 @@ function epSave() {
 
   if (!valid) return;
 
+  var shapeId = document.getElementById('ef-shape-id').value.trim();
   var newStop = {
     time:       document.getElementById('ef-time').value.trim() || '—',
     name:       name,
@@ -2110,6 +2311,7 @@ function epSave() {
     lat:        lat,
     lng:        lng
   };
+  if (shapeId) newStop.shapeId = shapeId;
 
   var stops = DAYS[currentDay].stops;
   var finalIdx;
