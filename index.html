@@ -1922,17 +1922,21 @@ function startPlay() {
   if(currentStop>=stops.length-1){finishPlay();return;}
   animNext();
 }
-function _cameraFollow(f, t, c, ctrlPt_) {
+function _cameraFollow(f, t, c, shapePts, ctrlPt_) {
   var rhythm = c.rhythmLabel;
   if (rhythm === 'air' || rhythm === 'sea') {
     var bounds = L.latLngBounds([f, t]);
-    if (ctrlPt_) bounds.extend(ctrlPt_);
-    map.fitBounds(bounds.pad(0.35), { maxZoom: 9, animate: true, duration: 1.2 });
-  } else if (rhythm === 'trail' || rhythm === 'stroll') {
-    map.flyTo([(f[0]+t[0])/2,(f[1]+t[1])/2], 16, { animate: true, duration: 0.7 });
-  } else {
-    map.flyTo([(f[0]+t[0])/2,(f[1]+t[1])/2], 13, { animate: true, duration: 0.8 });
+    if (shapePts && shapePts.length) { shapePts.forEach(function(p){ bounds.extend(p); }); }
+    else if (ctrlPt_) { bounds.extend(ctrlPt_); }
+    var pad = rhythm === 'air' ? 0.45 : 0.35;
+    var mz  = rhythm === 'air' ? 8    : 9;
+    map.fitBounds(bounds.pad(pad), { maxZoom: mz, animate: true, duration: 1.2 });
+    return;
   }
+  var mid = (shapePts && shapePts.length >= 2) ? polylineInterp(shapePts, 0.5) : [(f[0]+t[0])/2, (f[1]+t[1])/2];
+  var zoom = rhythm === 'stroll' ? 16 : rhythm === 'trail' ? 15 : rhythm === 'road' ? 12 : 13;
+  var dur  = rhythm === 'stroll' ? 0.5 : 0.8;
+  map.flyTo(mid, zoom, { animate: true, duration: dur });
 }
 function animNext() {
   var stops=DAYS[currentDay].stops, from=stops[currentStop], to=stops[currentStop+1], c=tcfg(from.transport);
@@ -1945,7 +1949,7 @@ function animNext() {
   var dl=t[0]-f[0],dn=t[1]-f[1],dist=Math.sqrt(dl*dl+dn*dn);
   anim.duration=Math.max(700,Math.min(2800,dist*4400))/c.speedMult/playbackSpeed;
   anim.startTime=performance.now();
-  _cameraFollow(f, t, c, anim.ctrlPt);
+  _cameraFollow(f, t, c, anim.shapePts, anim.ctrlPt);
   anim.raf=requestAnimationFrame(animTick);
 }
 function animTick(ts) {
