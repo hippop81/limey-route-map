@@ -682,7 +682,14 @@ body {
     color: var(--peacock); padding-left: 0;
   }
 
-  .controls { padding-bottom: max(16px, env(safe-area-inset-bottom, 16px)); }
+  .controls { padding-bottom: max(16px, env(safe-area-inset-bottom, 16px)); padding-top: 8px; }
+  .ctrl-seek-row { flex-direction: row; align-items: center; gap: 10px; }
+  .ctrl-seek { flex: 1; }
+  .ctrl-seek-meta { flex-direction: column; align-items: flex-end; gap: 2px; flex-shrink: 0; }
+  .ctrl-seek-label { display: none; }
+  /* Edit mode: hide replay controls and mini-play */
+  .sidebar.edit-on .controls { display: none; }
+  .sidebar.edit-on .sheet-mini-play { display: none; }
   .leaflet-control-zoom { margin-top: 16px !important; margin-left: 16px !important; }
   .stop-card { max-width: 640px; }
 }
@@ -2187,13 +2194,14 @@ function toggleEditMode() {
   var btn = document.getElementById('editToggleBtn');
   btn.textContent = editMode ? '✓ Done' : '✏ Edit Trip';
   btn.classList.toggle('on', editMode);
+  var sidebar = document.getElementById('sidebar');
+  if (sidebar) sidebar.classList.toggle('edit-on', editMode);
   var tabBar = document.getElementById('editTabBar');
   if (tabBar) tabBar.style.display = editMode ? 'flex' : 'none';
   if (editMode) {
     if (isMobile()) setSheet('full');
   } else {
     closeEP();
-    // reset to Stops tab
     _switchToStopsTab();
     if (isMobile()) setSheet('peek');
   }
