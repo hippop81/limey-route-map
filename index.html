@@ -1464,8 +1464,10 @@ function sliceShapeBetweenStops(points, fromLat, fromLng, toLat, toLng) {
 }
 
 function explicitSegmentShapeId(from, to) {
-  return (from && (from.shapeId || from.gtfsShapeId || from.segmentShapeId || (from.gtfs && from.gtfs.shapeId))) ||
-         (to && (to.arrivalShapeId || to.inboundShapeId || (to.gtfs && to.gtfs.inboundShapeId))) ||
+  return (from && (from.shapeId || from.shape_id || from.gtfsShapeId || from.segmentShapeId ||
+         (from.gtfs && (from.gtfs.shapeId || from.gtfs.shape_id)))) ||
+         (to && (to.arrivalShapeId || to.arrival_shape_id || to.inboundShapeId || to.inbound_shape_id ||
+         (to.gtfs && (to.gtfs.inboundShapeId || to.gtfs.inbound_shape_id)))) ||
          '';
 }
 
