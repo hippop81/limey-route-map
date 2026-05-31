@@ -1393,6 +1393,7 @@ var GTFS_DB = {
 (function() {
   Object.keys(GTFS_DB).forEach(function(k) {
     var db = GTFS_DB[k];
+    if (!db || !db.stops) return;
     if (!db.shape) db.shape = db.stops.map(function(s){ return [s.lat, s.lng]; });
   });
 })();
