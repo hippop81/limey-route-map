@@ -62,8 +62,6 @@ node scripts/build-gtfs-db.js \
         [26.124, 127.665],
         [26.19584, 127.64686]
       ],
-      "bounds": [26.124, 127.64686, 26.19584, 127.665],
-      "pointCount": 2,
       "routeId": "383",
       "routeName": "ゆいレール",
       "transportType": "train_local"
@@ -73,8 +71,6 @@ node scripts/build-gtfs-db.js \
         [26.195, 127.646],
         [26.694, 127.878]
       ],
-      "bounds": [26.195, 127.646, 26.694, 127.878],
-      "pointCount": 2,
       "routeId": "424",
       "routeName": "リゾートライナーA",
       "transportType": "shuttle"

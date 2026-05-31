@@ -400,11 +400,12 @@ function attachShapeRouteInfo(shapes, shapeToRoute) {
   const result = {};
   Object.keys(shapes).sort().forEach((shapeId) => {
     const primaryRoute = (shapeToRoute[shapeId] || [])[0] || null;
-    result[shapeId] = Object.assign({}, shapes[shapeId], {
+    result[shapeId] = {
+      points: shapes[shapeId].points,
       routeId: primaryRoute ? primaryRoute.routeId : '',
       routeName: routeDisplayName(primaryRoute),
       transportType: inferTransportType(primaryRoute),
-    });
+    };
   });
   return result;
 }
@@ -420,7 +421,7 @@ function buildDb(args) {
   const shapesWithRouteInfo = attachShapeRouteInfo(shapes, indexes.shapeToRoute);
 
   const pointCount = Object.values(shapesWithRouteInfo)
-    .reduce((sum, shape) => sum + shape.pointCount, 0);
+    .reduce((sum, shape) => sum + shape.points.length, 0);
 
   return {
     schemaVersion: SCHEMA_VERSION,
