@@ -57,14 +57,27 @@ node scripts/build-gtfs-db.js \
     }
   },
   "shapes": {
-    "shape_117_northbound": {
+    "shape_557_1": {
       "points": [
-        [26.196, 127.646],
-        [26.215, 127.681]
+        [26.124, 127.665],
+        [26.19584, 127.64686]
       ],
-      "bounds": [26.196, 127.646, 26.215, 127.681],
+      "bounds": [26.124, 127.64686, 26.19584, 127.665],
       "pointCount": 2,
-      "routeIds": ["117"]
+      "routeId": "383",
+      "routeName": "ゆいレール",
+      "transportType": "train_local"
+    },
+    "shape_424_1": {
+      "points": [
+        [26.195, 127.646],
+        [26.694, 127.878]
+      ],
+      "bounds": [26.195, 127.646, 26.694, 127.878],
+      "pointCount": 2,
+      "routeId": "424",
+      "routeName": "リゾートライナーA",
+      "transportType": "shuttle"
     }
   },
   "shapeToRoute": {
@@ -98,10 +111,17 @@ node scripts/build-gtfs-db.js \
 - `schemaVersion`: bump when runtime field names or coordinate semantics change.
 - `shapes[shapeId].points`: ordered `[lat, lng]` pairs from `shapes.txt`, sorted by
   `shape_pt_sequence`. This order matches current Leaflet usage in the app.
-- `shapes[shapeId].routeIds`: route ids observed through `trips.txt`. A shape can
-  theoretically be shared by multiple routes, so this is an array.
-- `shapeToRoute`: primary MVP index for "I have a shape, which route metadata can
-  I show?". It is built through `trips.txt`, not by guessing from `shape_id`.
+- `shapes[shapeId].routeId`: the primary route for this shape, selected from
+  `trips.txt` by highest trip count. This is intentionally duplicated here so the
+  replay runtime can resolve a shape with a single lookup.
+- `shapes[shapeId].routeName`: display name for the primary route, preferring
+  `route_long_name`, then `route_short_name`, then `route_id`.
+- `shapes[shapeId].transportType`: Route Replay transport type inferred from route
+  name and GTFS `route_type`, for example `train_local`, `shuttle`, `bus_express`,
+  `bus_local`, or `ferry`.
+- `shapeToRoute`: secondary index for debugging and ambiguous cases where a shape
+  is shared by multiple routes. It is built through `trips.txt`, not by guessing
+  from `shape_id`.
 - `routeToShapes`: runtime-friendly reverse index for "I know route and direction,
   which shapes are available?".
 - `directionIds`: copied from `trips.txt.direction_id`. It is useful for filtering,

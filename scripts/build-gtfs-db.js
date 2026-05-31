@@ -209,6 +209,35 @@ function normalizeColor(value) {
   return color.startsWith('#') ? color : `#${color}`;
 }
 
+function routeDisplayName(routeInfo) {
+  if (!routeInfo) return '';
+  return routeInfo.routeLongName || routeInfo.routeShortName || routeInfo.routeId || '';
+}
+
+function inferTransportType(routeInfo) {
+  if (!routeInfo) return 'bus_local';
+
+  const name = `${routeInfo.routeShortName || ''} ${routeInfo.routeLongName || ''}`.toLowerCase();
+  const routeType = routeInfo.routeType;
+
+  if (/新幹線|shinkansen/.test(name)) return 'shinkansen';
+  if (/シャトル|shuttle|リゾートライナー|resort\s*liner/.test(name)) return 'shuttle';
+  if (/高速|急行|express|limousine|リムジン|airport\s*bus/.test(name)) return 'bus_express';
+  if (/フェリー|ferry|船/.test(name)) return 'ferry';
+  if (/ゆいレール|モノレール|monorail|rail|train|tram/.test(name)) return 'train_local';
+
+  if (routeType === 4) return 'ferry';
+  if (routeType === 0 || routeType === 1 || routeType === 2 || routeType === 12) return 'train_local';
+  if (routeType === 3 || routeType === 11) return 'bus_local';
+
+  // Extended GTFS route types commonly seen in regional feeds.
+  if (routeType >= 100 && routeType < 200) return 'train_local';
+  if (routeType >= 700 && routeType < 800) return 'bus_local';
+  if (routeType >= 1000 && routeType < 1100) return 'ferry';
+
+  return 'bus_local';
+}
+
 function buildShapes(records, precision) {
   requireColumns(records, ['shape_id', 'shape_pt_lat', 'shape_pt_lon', 'shape_pt_sequence'], 'shapes.txt');
 
@@ -367,11 +396,14 @@ function buildIndexes(tripRecords, routes, shapes, maxExampleTrips) {
   };
 }
 
-function attachShapeRouteIds(shapes, shapeToRoute) {
+function attachShapeRouteInfo(shapes, shapeToRoute) {
   const result = {};
   Object.keys(shapes).sort().forEach((shapeId) => {
+    const primaryRoute = (shapeToRoute[shapeId] || [])[0] || null;
     result[shapeId] = Object.assign({}, shapes[shapeId], {
-      routeIds: uniqSorted((shapeToRoute[shapeId] || []).map((item) => item.routeId)),
+      routeId: primaryRoute ? primaryRoute.routeId : '',
+      routeName: routeDisplayName(primaryRoute),
+      transportType: inferTransportType(primaryRoute),
     });
   });
   return result;
@@ -385,9 +417,9 @@ function buildDb(args) {
   const routes = buildRoutes(routeRecords);
   const { shapes, skippedPointCount } = buildShapes(shapeRecords, args.precision);
   const indexes = buildIndexes(tripRecords, routes, shapes, args.maxExampleTrips);
-  const shapesWithRouteIds = attachShapeRouteIds(shapes, indexes.shapeToRoute);
+  const shapesWithRouteInfo = attachShapeRouteInfo(shapes, indexes.shapeToRoute);
 
-  const pointCount = Object.values(shapesWithRouteIds)
+  const pointCount = Object.values(shapesWithRouteInfo)
     .reduce((sum, shape) => sum + shape.pointCount, 0);
 
   return {
@@ -406,14 +438,14 @@ function buildDb(args) {
     stats: {
       routeCount: Object.keys(routes).length,
       tripCount: tripRecords.length,
-      shapeCount: Object.keys(shapesWithRouteIds).length,
+      shapeCount: Object.keys(shapesWithRouteInfo).length,
       pointCount,
       skippedPointCount,
       tripsWithoutShape: indexes.tripsWithoutShape,
       tripsWithMissingShape: indexes.tripsWithMissingShape,
     },
     routes,
-    shapes: shapesWithRouteIds,
+    shapes: shapesWithRouteInfo,
     shapeToRoute: indexes.shapeToRoute,
     routeToShapes: indexes.routeToShapes,
   };
