@@ -1411,6 +1411,31 @@ body {
 </div>
 
 <script>
+/* ─── Schema versions ─── */
+var ROUTE_SCHEMA_VERSION = '5.16';
+var DRAFT_STOP_SCHEMA_VERSION = '5.16';
+var DRAFT_TRANSPORT_TYPES = ['walk', 'train_local', 'train_limited', 'shinkansen', 'bus_local', 'bus_express', 'shuttle', 'ferry', 'plane', 'other'];
+var DRAFT_STOP_JSON_SCHEMA = {
+  schemaVersion: DRAFT_STOP_SCHEMA_VERSION,
+  type: 'object',
+  required: ['name', 'transport', 'operatorHint', 'categories', 'activity', 'isDayEnd', 'lat', 'lng', 'confidence', 'inferred'],
+  properties: {
+    name: { type: 'string' },
+    time: { type: ['string', 'null'], pattern: '^([01]\\d|2[0-3]):[0-5]\\d$' },
+    transport: { type: 'string', enum: DRAFT_TRANSPORT_TYPES },
+    operatorHint: { type: ['string', 'null'] },
+    categories: { type: 'array', items: { type: 'string' } },
+    activity: { type: 'string' },
+    isDayEnd: { type: 'boolean' },
+    lat: { type: ['number', 'null'] },
+    lng: { type: ['number', 'null'] },
+    confidence: { type: 'number', minimum: 0, maximum: 1 },
+    inferred: { type: 'boolean' },
+    gtfs: { type: 'object', properties: { shapeId: { type: 'string' } } }
+  }
+};
+if (typeof window !== 'undefined') window.DRAFT_STOP_JSON_SCHEMA = DRAFT_STOP_JSON_SCHEMA;
+
 /* ─── Trip metadata ─── */
 var TRIP = {
   title: 'ROUTE MAP',
@@ -2026,6 +2051,22 @@ var cam = {
   lastFollowPos:   null     // for hysteresis check
 };
 
+/* ─── Camera state ─── */
+var CAMERA_CONFIG = {
+  DEPARTURE: { zoom: 15, alpha: 0.12, offsetMeters: 50 },
+  TRANSIT:   { zoom: 12, alpha: 0.08, offsetMeters: 150 },
+  ARRIVAL:   { zoom: 14, alpha: 0.10, offsetMeters: 80 },
+  hysteresis: {
+    depToTransit: 0.15,
+    transitToArr: 0.88,
+    arrToTransit: 0.80,
+    depToTransitBack: 0.08
+  },
+  zoomAlpha: 0.06,
+  directionSampleWindow: 4
+};
+var cameraState = { mode: 'ARRIVAL', lat: null, lng: null, zoom: null, targetLat: null, targetLng: null, targetZoom: CAMERA_CONFIG.ARRIVAL.zoom, directionSamples: [], smoothedDirection: null };
+
 /* ─── Edit state ─── */
 var editMode      = false;
 var epIdx         = -1;
@@ -2053,6 +2094,69 @@ var SEARCH_CTX = {
 
 /* ─── Easing ─── */
 function ease(t, n) { if(n==='linear') return t; if(n==='easeOut') return t*(2-t); return t<.5?2*t*t:-1+(4-2*t)*t; }
+function lerp(prev, target, alpha) { return prev + (target - prev) * alpha; }
+function cameraConfigForState(state) { return CAMERA_CONFIG[state] || CAMERA_CONFIG.TRANSIT; }
+function ensureCameraState() {
+  var center = map.getCenter ? map.getCenter() : null;
+  if (cameraState.lat === null) cameraState.lat = center ? center.lat : (DAYS[currentDay] ? DAYS[currentDay].center[0] : 0);
+  if (cameraState.lng === null) cameraState.lng = center ? center.lng : (DAYS[currentDay] ? DAYS[currentDay].center[1] : 0);
+  if (cameraState.zoom === null) cameraState.zoom = map.getZoom ? map.getZoom() : (DAYS[currentDay] ? DAYS[currentDay].zoom : cameraConfigForState(cameraState.mode).zoom);
+}
+function snapCameraState(lat, lng, zoom) {
+  cameraState.lat = lat; cameraState.lng = lng; cameraState.zoom = zoom;
+  cameraState.targetLat = lat; cameraState.targetLng = lng; cameraState.targetZoom = zoom;
+  cameraState.directionSamples = []; cameraState.smoothedDirection = null;
+}
+function metersPerLngAtLat(lat) { return 111320 * Math.max(0.2, Math.cos(lat * Math.PI / 180)); }
+function directionFromPoints(prevLatLng, nextLatLng) {
+  if (!prevLatLng || !nextLatLng) return null;
+  var midLat = (prevLatLng[0] + nextLatLng[0]) / 2;
+  var north = (nextLatLng[0] - prevLatLng[0]) * 111320;
+  var east = (nextLatLng[1] - prevLatLng[1]) * metersPerLngAtLat(midLat);
+  var mag = Math.sqrt(north*north + east*east);
+  return mag > 0.001 ? { north: north / mag, east: east / mag } : null;
+}
+function addCameraDirectionSample(dir) {
+  if (!dir) return cameraState.smoothedDirection;
+  cameraState.directionSamples.push(dir);
+  var max = Math.max(3, Math.min(5, CAMERA_CONFIG.directionSampleWindow || 4));
+  while (cameraState.directionSamples.length > max) cameraState.directionSamples.shift();
+  var north = 0, east = 0;
+  cameraState.directionSamples.forEach(function(d) { north += d.north; east += d.east; });
+  var mag = Math.sqrt(north*north + east*east);
+  cameraState.smoothedDirection = mag > 0.001 ? { north: north / mag, east: east / mag } : null;
+  return cameraState.smoothedDirection;
+}
+function offsetLatLngByDirection(latLng, dir, meters) {
+  if (!dir || !meters) return latLng;
+  return [latLng[0] + (dir.north * meters) / 111320, latLng[1] + (dir.east * meters) / metersPerLngAtLat(latLng[0])];
+}
+function cameraModeForProgress(progress) {
+  var h = CAMERA_CONFIG.hysteresis, p = clamp01(progress), m = cameraState.mode;
+  if (m === 'DEPARTURE') return p >= h.depToTransit ? 'TRANSIT' : 'DEPARTURE';
+  if (m === 'TRANSIT') {
+    if (p >= h.transitToArr) return 'ARRIVAL';
+    if (p <= h.depToTransitBack) return 'DEPARTURE';
+    return 'TRANSIT';
+  }
+  if (m === 'ARRIVAL') return p < h.arrToTransit ? 'TRANSIT' : 'ARRIVAL';
+  return p >= h.transitToArr ? 'ARRIVAL' : (p >= h.depToTransit ? 'TRANSIT' : 'DEPARTURE');
+}
+function updateCameraState(state, targetLatLng, directionVector) {
+  if (!targetLatLng) return;
+  ensureCameraState();
+  var cfg = cameraConfigForState(state);
+  var dir = addCameraDirectionSample(directionVector);
+  var target = offsetLatLngByDirection(targetLatLng, dir, cfg.offsetMeters || 0);
+  cameraState.mode = state;
+  cameraState.targetLat = target[0];
+  cameraState.targetLng = target[1];
+  cameraState.targetZoom = cfg.zoom;
+  cameraState.lat = lerp(cameraState.lat, cameraState.targetLat, cfg.alpha);
+  cameraState.lng = lerp(cameraState.lng, cameraState.targetLng, cfg.alpha);
+  cameraState.zoom = lerp(cameraState.zoom, cameraState.targetZoom, CAMERA_CONFIG.zoomAlpha);
+  map.setView([cameraState.lat, cameraState.lng], cameraState.zoom, { animate: false });
+}
 
 /* ─── Bezier helpers ─── */
 function bezierPt(p0, c, p1, t) { var m=1-t; return [m*m*p0[0]+2*m*t*c[0]+t*t*p1[0], m*m*p0[1]+2*m*t*c[1]+t*t*p1[1]]; }
