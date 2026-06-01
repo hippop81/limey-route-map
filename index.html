@@ -1840,15 +1840,19 @@ var routeSegments = [], cumulativeDist = [0], totalDist = 0, segmentGeometries =
 /* ─── Time engine ─── */
 var segmentTable = [];
 var te = {
-  normalizedTime: 0,   // 0.0–1.0 across full journey
-  baseTime:       0,   // normalizedTime at last speed-change or seek
-  baseRealTime:   0,   // performance.now() at last speed-change or seek
-  raf:            null,
-  totalDuration:  1,   // ms at 1× speed
-  lastSegIdx:     -1,  // for camera retrigger
-  lastStopIdx:    -1,  // for arrival detection
-  lastRenderTs:   0    // for seek-bar throttle
+  normalizedTime:   0,    // 0.0–1.0 across full journey
+  baseTime:         0,    // normalizedTime at last speed-change or seek
+  baseRealTime:     0,    // performance.now() at last speed-change or seek
+  raf:              null,
+  totalDuration:    1,    // ms at 1× speed
+  lastSegIdx:       -1,   // for camera retrigger
+  lastStopIdx:      -1,   // for arrival detection
+  currentPos:       null, // [lat, lng] — latest computed position
+  currentTransport: null, // transport type at currentPos
+  currentSegIdx:    -1,   // segment index at currentPos
+  currentSeg:       null  // full segmentTable entry at currentPos
 };
+var _renderTimer = null;
 
 /* ─── Edit state ─── */
 var editMode      = false;
@@ -1896,8 +1900,36 @@ function fallbackGeometryPoints(from, to, type) {
 function buildSegmentGeometry(from, to) {
   var shapeId = explicitSegmentShapeId(from, to);
   var shapePts = shapeId ? findShapeById(shapeId, from.lat, from.lng, to.lat, to.lng) : null;
-  if (shapePts) return { type: 'shape', shapeId: shapeId, points: shapePts, fallback: false };
-  return { type: fallbackUsesArc(from.transport) ? 'arc' : 'line', shapeId: shapeId || '', points: fallbackGeometryPoints(from, to, from.transport), fallback: true };
+  if (shapePts) return { type: 'shape', shapeId: shapeId, points: shapePts, fallback: false, provenance: 'gtfs' };
+  // Proximity DB fallback (GTFS_PROX_DB station matching)
+  var proxPts = findProxDbShape(from.lat, from.lng, to.lat, to.lng, from.transport);
+  if (proxPts) return { type: 'shape', shapeId: '', points: proxPts, fallback: false, provenance: 'prox-db' };
+  var usesArc = fallbackUsesArc(from.transport);
+  return { type: usesArc ? 'arc' : 'line', shapeId: shapeId || '', points: fallbackGeometryPoints(from, to, from.transport), fallback: true, provenance: usesArc ? 'inferred' : 'fallback' };
+}
+function findProxDbShape(fromLat, fromLng, toLat, toLng, type) {
+  var THRESHOLD = 0.5;
+  var keys = Object.keys(GTFS_PROX_DB);
+  for (var ki = 0; ki < keys.length; ki++) {
+    var db = GTFS_PROX_DB[keys[ki]];
+    if (!db || !db.types || !db.stops || !db.shape) continue;
+    if (db.types.indexOf(type) < 0) continue;
+    var fromIdx = -1, toIdx = -1, fromDist = Infinity, toDist = Infinity;
+    for (var si = 0; si < db.stops.length; si++) {
+      var s = db.stops[si];
+      var d1 = haversineKm(fromLat, fromLng, s.lat, s.lng);
+      var d2 = haversineKm(toLat,   toLng,   s.lat, s.lng);
+      if (d1 < fromDist) { fromDist = d1; fromIdx = si; }
+      if (d2 < toDist)   { toDist   = d2; toIdx   = si; }
+    }
+    if (fromIdx < 0 || toIdx < 0 || fromIdx === toIdx) continue;
+    if (fromDist > THRESHOLD || toDist > THRESHOLD) continue;
+    var pts = fromIdx < toIdx
+      ? db.shape.slice(fromIdx, toIdx + 1)
+      : db.shape.slice(toIdx, fromIdx + 1).reverse();
+    if (pts.length >= 2) return pts;
+  }
+  return null;
 }
 function buildRouteMetrics(day) {
   var d = DAYS[day || currentDay];
@@ -2129,10 +2161,10 @@ function buildSegmentTable() {
     var cats = Array.isArray(to.categories) ? to.categories : [];
     var pauseMs = cats.reduce(function(mx,k){ var cfg=CATEGORIES[k]; return cfg?Math.max(mx,cfg.pauseMs):mx; }, c.pauseMs);
     if (i === stops.length - 2) pauseMs = 0;
-    var confidence, curveBias = null;
-    if (segShapes[i]) { confidence = 'gtfs'; }
-    else if (c.curve) { confidence = 'inferred'; curveBias = c.curve; }
-    else { confidence = 'fallback'; }
+    var geom = segmentGeometries[i];
+    var provenance = geom ? geom.provenance : null;
+    var confidence = provenance || (segShapes[i] ? 'gtfs' : (c.curve ? 'inferred' : 'fallback'));
+    var curveBias = (confidence === 'inferred' && c.curve) ? c.curve : null;
     segs.push({ i:i, travelMs:travelMs, pauseMs:pauseMs, confidence:confidence, curveBias:curveBias, fromPt:f, toPt:t_, transport:from.transport, easing:c.easing });
   }
   var initialPauseMs = tcfg(stops[0].transport).pauseMs;
@@ -2203,12 +2235,12 @@ function _seekTo(nT) {
   updateAllProgress(); renderMapMarkers(); renderTimeline(); updatePeekInfo(); updateSeekBar();
   if (playing) {
     if (te.raf) { cancelAnimationFrame(te.raf); te.raf = null; }
-    te.raf = requestAnimationFrame(_timeLoop);
+    te.raf = requestAnimationFrame(_calcLoop);
   }
 }
 
-/* ─── RAF time loop (replaces animNext + animTick) ─── */
-function _timeLoop(ts) {
+/* ─── Calc loop: position & state — runs every RAF frame ─── */
+function _calcLoop(ts) {
   if (!playing) return;
   te.normalizedTime = Math.min(1, te.baseTime + (ts - te.baseRealTime) * playbackSpeed / te.totalDuration);
   var nT = te.normalizedTime;
@@ -2241,21 +2273,32 @@ function _timeLoop(ts) {
     currentStop = newStopIdx;
   }
 
-  /* Move pin */
-  var pos = getPositionAtTime(nT);
-  if (pos) moveCurrentPin(pos[0], pos[1], seg ? seg.transport : (DAYS[currentDay].stops[0]||{}).transport);
+  /* Compute & cache position for render tick */
+  te.currentPos       = getPositionAtTime(nT);
+  te.currentTransport = seg ? seg.transport : ((DAYS[currentDay].stops[0]||{}).transport);
+  te.currentSegIdx    = segIdx;
+  te.currentSeg       = seg;
+
+  if (nT >= 1) { finishPlay(); return; }
+  te.raf = requestAnimationFrame(_calcLoop);
+}
+
+/* ─── Render tick: Leaflet DOM updates — throttled to 50ms ─── */
+function _renderTick() {
+  if (!playing) return;
+  var pos = te.currentPos, transport = te.currentTransport;
+  var seg = te.currentSeg, segIdx = te.currentSegIdx;
+  var nT  = te.normalizedTime;
+
+  if (pos) moveCurrentPin(pos[0], pos[1], transport);
 
   /* Progress line for active travelling segment */
-  if (segIdx >= 0 && nT >= segmentTable[segIdx].startT && nT < segmentTable[segIdx].endT) {
+  if (seg && segIdx >= 0 && nT >= segmentTable[segIdx].startT && nT < segmentTable[segIdx].endT) {
     var _lt = (nT - segmentTable[segIdx].startT) / (segmentTable[segIdx].endT - segmentTable[segIdx].startT);
     segProgressLines[segIdx].setLatLngs(partialSegPts(segIdx, ease(_lt, seg.easing)));
   }
 
-  /* Seek bar (throttled to ~50ms) */
-  if (ts - te.lastRenderTs >= 50) { te.lastRenderTs = ts; updateSeekBar(); }
-
-  if (nT >= 1) { finishPlay(); return; }
-  te.raf = requestAnimationFrame(_timeLoop);
+  updateSeekBar();
 }
 
 /* ─── Playback ─── */
@@ -2281,7 +2324,9 @@ function startPlay() {
   }
   te.baseTime = te.normalizedTime;
   te.baseRealTime = performance.now();
-  te.raf = requestAnimationFrame(_timeLoop);
+  if (_renderTimer) { clearInterval(_renderTimer); _renderTimer = null; }
+  _renderTimer = setInterval(_renderTick, 50);
+  te.raf = requestAnimationFrame(_calcLoop);
 }
 function _cameraFollow(f, t, c, shapePts, ctrlPt_) {
   var rhythm = c.rhythmLabel;
@@ -2301,13 +2346,42 @@ function _cameraFollow(f, t, c, shapePts, ctrlPt_) {
 }
 function stopAnim() {
   if (te.raf) { cancelAnimationFrame(te.raf); te.raf = null; }
+  if (_renderTimer) { clearInterval(_renderTimer); _renderTimer = null; }
 }
 function finishPlay() {
   if (te.raf) { cancelAnimationFrame(te.raf); te.raf = null; }
+  if (_renderTimer) { clearInterval(_renderTimer); _renderTimer = null; }
   playing = false; te.normalizedTime = 1;
   currentStop = DAYS[currentDay].stops.length - 1;
   removeCurrentPin(); renderMapMarkers(); renderTimeline();
   setPlayBtn(false); updatePeekInfo(); updateSeekBar();
+}
+
+/* ─── Camera-safe state interface ─── */
+function getCurrentState() {
+  var pos = te.currentPos;
+  if (!pos) {
+    var stopPt = DAYS[currentDay].stops[Math.max(0, currentStop)];
+    pos = stopPt ? [stopPt.lat, stopPt.lng] : null;
+  }
+  var heading = null;
+  var seg = te.currentSeg;
+  if (seg && pos) {
+    var nT = te.normalizedTime;
+    var lt = seg.endT > seg.startT ? (nT - seg.startT) / (seg.endT - seg.startT) : 0;
+    var ahead = getPositionAtTime(Math.min(1, nT + 0.002));
+    if (ahead && (ahead[0] !== pos[0] || ahead[1] !== pos[1])) {
+      heading = Math.atan2(ahead[1] - pos[1], ahead[0] - pos[0]) * 180 / Math.PI;
+    }
+  }
+  var confidence = seg ? seg.confidence : 'fallback';
+  return {
+    lat:           pos ? pos[0] : null,
+    lng:           pos ? pos[1] : null,
+    heading:       heading,
+    normalizedTime: te.normalizedTime,
+    confidence:    confidence
+  };
 }
 
 /* ─── Playback controls ─── */
