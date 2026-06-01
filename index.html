@@ -1682,6 +1682,12 @@ var routeSegments = [], cumulativeDist = [0], totalDist = 0, segmentGeometries =
 /* ─── Animation state ─── */
 var anim = { active: false, raf: null, pauseTimer: null, fromIdx: 0, toIdx: 1, fromPt: [0,0], toPt: [0,0], ctrlPt: null, startTime: 0, duration: 1400, pauseMs: 950, easing: 'easeInOut' };
 
+/* ─── Camera state ─── */
+var CAMERA_ALPHA = { DEPARTURE: 0.12, TRANSIT: 0.08, ARRIVAL: 0.10 };
+var CAMERA_ZOOM_ALPHA = 0.06;
+var CAMERA_DEFAULT_ZOOM = 13;
+var cameraState = { mode: 'ARRIVAL', lat: null, lng: null, zoom: null, targetLat: null, targetLng: null, targetZoom: CAMERA_DEFAULT_ZOOM };
+
 /* ─── Edit state ─── */
 var editMode      = false;
 var epIdx         = -1;
@@ -1709,6 +1715,32 @@ var SEARCH_CTX = {
 
 /* ─── Easing ─── */
 function ease(t, n) { if(n==='linear') return t; if(n==='easeOut') return t*(2-t); return t<.5?2*t*t:-1+(4-2*t)*t; }
+function lerp(prev, target, alpha) { return prev + (target - prev) * alpha; }
+function cameraAlphaForState(state) { return CAMERA_ALPHA[state] || CAMERA_ALPHA.TRANSIT; }
+function ensureCameraState() {
+  var center = map.getCenter ? map.getCenter() : null;
+  if (cameraState.lat === null) cameraState.lat = center ? center.lat : (DAYS[currentDay] ? DAYS[currentDay].center[0] : 0);
+  if (cameraState.lng === null) cameraState.lng = center ? center.lng : (DAYS[currentDay] ? DAYS[currentDay].center[1] : 0);
+  if (cameraState.zoom === null) cameraState.zoom = map.getZoom ? map.getZoom() : (DAYS[currentDay] ? DAYS[currentDay].zoom : CAMERA_DEFAULT_ZOOM);
+}
+function snapCameraState(lat, lng, zoom) {
+  cameraState.lat = lat; cameraState.lng = lng; cameraState.zoom = zoom;
+  cameraState.targetLat = lat; cameraState.targetLng = lng; cameraState.targetZoom = zoom;
+}
+function updateCameraState(state, targetLatLng, targetZoom) {
+  if (!targetLatLng) return;
+  ensureCameraState();
+  var alpha = cameraAlphaForState(state);
+  var z = targetZoom !== undefined ? targetZoom : cameraState.zoom;
+  cameraState.mode = state;
+  cameraState.targetLat = targetLatLng[0];
+  cameraState.targetLng = targetLatLng[1];
+  cameraState.targetZoom = z;
+  cameraState.lat = lerp(cameraState.lat, cameraState.targetLat, alpha);
+  cameraState.lng = lerp(cameraState.lng, cameraState.targetLng, alpha);
+  cameraState.zoom = lerp(cameraState.zoom, cameraState.targetZoom, CAMERA_ZOOM_ALPHA);
+  map.setView([cameraState.lat, cameraState.lng], cameraState.zoom, { animate: false });
+}
 
 /* ─── Bezier helpers ─── */
 function bezierPt(p0, c, p1, t) { var m=1-t; return [m*m*p0[0]+2*m*t*c[0]+t*t*p1[0], m*m*p0[1]+2*m*t*c[1]+t*t*p1[1]]; }
@@ -1928,7 +1960,8 @@ function jumpTo(i) {
   removeCurrentPin(); renderMapMarkers(); renderTimeline(); updateAllProgress();
   updatePeekInfo();
   var s=DAYS[currentDay].stops[i];
-  map.flyTo([s.lat,s.lng],13,{duration:.7});
+  snapCameraState(s.lat, s.lng, 13);
+  map.setView([s.lat,s.lng],13,{animate:false});
   if(mapMarkers[i]) mapMarkers[i].openPopup();
   scrollToCard(i);
   if(isMobile() && sheetState==='peek') setSheet('half');
@@ -1941,7 +1974,7 @@ function startPlay() {
   if(currentStop<0) {
     currentStop=0; renderMapMarkers(); renderTimeline(); updateAllProgress();
     var s0=stops[0]; moveCurrentPin(s0.lat,s0.lng,s0.transport);
-    map.flyTo([s0.lat,s0.lng],13,{duration:.5});
+    updateCameraState('DEPARTURE', [s0.lat,s0.lng], CAMERA_DEFAULT_ZOOM);
     if(mapMarkers[0]) mapMarkers[0].openPopup();
     scrollToCard(0);
     anim.pauseTimer=setTimeout(function(){if(playing)animNext();},tcfg(s0.transport).pauseMs/playbackSpeed);
@@ -1962,6 +1995,7 @@ function animNext() {
   var dist = routeSegments[currentStop] ? routeSegments[currentStop].dist : haversineKm(from.lat, from.lng, to.lat, to.lng);
   anim.duration=Math.max(700,Math.min(2800,dist*900))/c.speedMult/playbackSpeed;
   anim.startTime=performance.now();
+  updateCameraState('DEPARTURE', f, CAMERA_DEFAULT_ZOOM);
   anim.raf=requestAnimationFrame(animTick);
 }
 function animTick(ts) {
@@ -1969,6 +2003,7 @@ function animTick(ts) {
   var t=Math.min(1,(ts-anim.startTime)/anim.duration), te=ease(t,anim.easing);
   var pos=anim.shapePts?polylineInterp(anim.shapePts,te):anim.ctrlPt?bezierPt(anim.fromPt,anim.ctrlPt,anim.toPt,te):[anim.fromPt[0]+(anim.toPt[0]-anim.fromPt[0])*te,anim.fromPt[1]+(anim.toPt[1]-anim.fromPt[1])*te];
   moveCurrentPin(pos[0],pos[1],DAYS[currentDay].stops[anim.fromIdx].transport);
+  updateCameraState('TRANSIT', [pos[0], pos[1]], CAMERA_DEFAULT_ZOOM);
   segProgressLines[anim.fromIdx].setLatLngs(partialSegPts(anim.fromIdx,te));
   if(t<1){anim.raf=requestAnimationFrame(animTick);return;}
   anim.active=false; currentStop=anim.toIdx;
@@ -1976,7 +2011,7 @@ function animTick(ts) {
   renderMapMarkers(); renderTimeline(); scrollToCard(currentStop);
   updatePeekInfo();
   var arr=DAYS[currentDay].stops[currentStop];
-  map.panTo([arr.lat,arr.lng],{animate:true,duration:.4});
+  updateCameraState('ARRIVAL', [arr.lat,arr.lng], CAMERA_DEFAULT_ZOOM);
   if(mapMarkers[currentStop]) mapMarkers[currentStop].openPopup();
   if(currentStop>=DAYS[currentDay].stops.length-1){finishPlay();return;}
   var _arr=DAYS[currentDay].stops[currentStop];
@@ -2056,7 +2091,8 @@ function resetAnim() {
   stopAnim();playing=false;currentStop=-1;removeCurrentPin();setPlayBtn(false);
   renderTimeline();initRouteLines();renderMapMarkers();
   updatePeekInfo();
-  map.setView(DAYS[currentDay].center,DAYS[currentDay].zoom,{animate:true});
+  snapCameraState(DAYS[currentDay].center[0], DAYS[currentDay].center[1], DAYS[currentDay].zoom);
+  map.setView(DAYS[currentDay].center,DAYS[currentDay].zoom,{animate:false});
 }
 function switchDay(day) {
   stopAnim();playing=false;currentStop=-1;removeCurrentPin();setPlayBtn(false);
@@ -2064,7 +2100,8 @@ function switchDay(day) {
   renderDayTabs();
   renderTimeline();initRouteLines();renderMapMarkers();
   updatePeekInfo();
-  map.setView(DAYS[day].center,DAYS[day].zoom,{animate:true});
+  snapCameraState(DAYS[day].center[0], DAYS[day].center[1], DAYS[day].zoom);
+  map.setView(DAYS[day].center,DAYS[day].zoom,{animate:false});
 }
 
 /* ─── Mobile / desktop ─── */
