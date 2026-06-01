@@ -857,6 +857,110 @@ body {
 .pf-stat-unit { font-family: var(--font-body); font-size: 10px; font-weight: 600; color: var(--secondary); text-transform: uppercase; letter-spacing: .06em; display: block; margin-top: 2px; }
 .pf-stat-div { width: 1px; background: var(--warm-gray); margin: 4px 0; }
 
+/* ── AI Draft modal ── */
+.ai-draft-modal {
+  position: fixed; inset: 0; z-index: 2800;
+  background: rgba(34,34,34,.55); backdrop-filter: blur(4px);
+  display: flex; align-items: flex-end; justify-content: center;
+  opacity: 0; pointer-events: none;
+  transition: opacity var(--dur) var(--ease);
+}
+.ai-draft-modal.open { opacity: 1; pointer-events: all; }
+.ai-draft-inner {
+  background: var(--cream); border-radius: 16px 16px 0 0;
+  width: 100%; max-width: 480px; height: 92dvh; max-height: 92dvh;
+  display: flex; flex-direction: column; overflow: hidden;
+  transform: translateY(40px);
+  transition: transform var(--dur) var(--ease);
+}
+.ai-draft-modal.open .ai-draft-inner { transform: translateY(0); }
+.ai-draft-body {
+  flex: 1 1 auto; min-height: 0; overflow-y: auto;
+  padding: 16px; padding-bottom: max(60px, env(safe-area-inset-bottom, 60px));
+  -webkit-overflow-scrolling: touch;
+}
+.ai-key-row { margin-bottom: 14px; }
+.ai-key-hint { font-family: var(--font-body); font-size: 10px; color: var(--secondary); margin-top: 4px; }
+.ai-textarea {
+  width: 100%; box-sizing: border-box;
+  min-height: 120px; resize: vertical;
+  font-family: var(--font-body); font-size: 13px; color: var(--primary);
+  background: var(--white); border: 1.5px solid var(--warm-gray); border-radius: 8px;
+  padding: 10px 12px; line-height: 1.55; outline: none;
+  transition: border-color .15s;
+}
+.ai-textarea:focus { border-color: var(--peacock); }
+.ai-gen-btn { width: 100%; margin-top: 10px; }
+.ai-preview-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin: 18px 0 10px; padding-top: 16px;
+  border-top: 1px solid var(--warm-gray);
+}
+.ai-preview-count {
+  font-family: var(--font-body); font-size: 10px; font-weight: 700;
+  color: var(--peacock); background: rgba(0,122,138,.1);
+  padding: 2px 8px; border-radius: 10px;
+}
+.ai-confirm-btn { width: 100%; margin-top: 14px; }
+/* Draft card */
+.draft-card {
+  background: var(--white); border: 1.5px solid var(--warm-gray);
+  border-radius: 10px; padding: 12px; margin-bottom: 8px;
+  transition: border-color .15s;
+}
+.draft-card:focus-within { border-color: var(--peacock); }
+.draft-card-hd { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.draft-conf {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+}
+.draft-time-inp {
+  font-family: var(--font-body); font-size: 13px; font-weight: 700; color: var(--primary);
+  background: transparent; border: none; outline: none;
+  width: 52px; padding: 0;
+}
+.draft-transport-sel {
+  font-family: var(--font-body); font-size: 10px; font-weight: 700;
+  color: var(--peacock); background: rgba(0,122,138,.1);
+  border: 1px solid rgba(0,122,138,.25); border-radius: 10px;
+  padding: 2px 6px; cursor: pointer; outline: none; flex-shrink: 0;
+}
+.draft-dayend-lbl {
+  font-family: var(--font-body); font-size: 10px; color: var(--secondary);
+  display: flex; align-items: center; gap: 3px; margin-left: auto; cursor: pointer;
+}
+.draft-name-inp {
+  font-family: var(--font-head); font-size: 15px; font-weight: 700; color: var(--primary);
+  background: transparent; border: none; border-bottom: 1.5px solid var(--warm-gray);
+  outline: none; width: 100%; padding: 2px 0 4px; margin-bottom: 8px;
+  transition: border-color .15s;
+}
+.draft-name-inp:focus { border-bottom-color: var(--peacock); }
+.draft-cats { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 6px; }
+.draft-cat-btn {
+  font-family: var(--font-body); font-size: 10px; font-weight: 600;
+  background: var(--light-gray); color: var(--secondary);
+  border: 1.5px solid transparent; border-radius: 20px;
+  padding: 3px 8px; cursor: pointer; transition: background .15s, color .15s, border-color .15s;
+}
+.draft-cat-btn.sel {
+  background: rgba(0,122,138,.1); color: var(--peacock);
+  border-color: rgba(0,122,138,.3);
+}
+.draft-op-hint {
+  font-family: var(--font-body); font-size: 10px; color: var(--secondary); margin-top: 3px;
+}
+.ai-err {
+  background: rgba(192,68,68,.08); color: rgba(192,68,68,.9);
+  border: 1px solid rgba(192,68,68,.25); border-radius: 8px;
+  font-family: var(--font-body); font-size: 12px; padding: 10px 12px; margin-top: 10px;
+}
+.ai-day-sel-row { display: flex; align-items: center; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+.ai-day-sel-lbl { font-family: var(--font-body); font-size: 11px; font-weight: 600; color: var(--primary); }
+.ai-day-sel {
+  font-family: var(--font-body); font-size: 12px; color: var(--primary);
+  background: var(--white); border: 1.5px solid var(--warm-gray); border-radius: 8px;
+  padding: 5px 10px; outline: none; cursor: pointer;
+}
 /* ── Export modal ── */
 .export-sheet {
   display: none; position: fixed; inset: 0; z-index: 3100;
@@ -1189,6 +1293,7 @@ body {
       <div class="ep-section">
         <span class="ep-section-label">データ</span>
         <div style="display:flex;flex-direction:column;gap:8px">
+          <button class="ep-btn-save" onclick="openAIDraftModal();closeSettings()" style="width:100%;background:var(--peacock)">🤖 AI 旅程生成</button>
           <button class="ep-btn-save" onclick="exportJSON()" style="width:100%">↓ JSON Export</button>
           <button class="ep-btn-outline" onclick="triggerImport()">↑ JSON Import</button>
           <button class="ep-btn-outline" onclick="triggerGtfsImport()">🚃 GTFS JSON Import</button>
@@ -1205,6 +1310,45 @@ body {
   </div>
 
 </div><!-- .sidebar -->
+
+<!-- ── AI Draft modal ── -->
+<div class="ai-draft-modal" id="aiDraftModal" onclick="if(event.target===this)closeAIDraftModal()">
+  <div class="ai-draft-inner">
+    <div class="profile-ph">
+      <span class="profile-ph-title">🤖 AI 旅程生成</span>
+      <button class="profile-ph-close" onclick="closeAIDraftModal()">閉じる</button>
+    </div>
+    <div class="ai-draft-body">
+
+      <div class="ai-key-row">
+        <label class="ep-lbl">Anthropic API Key</label>
+        <input class="ep-input" id="aiApiKey" type="password" placeholder="sk-ant-…" autocomplete="off" spellcheck="false">
+        <div class="ai-key-hint">🔒 このデバイスのみ保存 — 旅データには含まれません</div>
+      </div>
+
+      <div>
+        <label class="ep-lbl">旅程テキスト</label>
+        <textarea class="ai-textarea" id="aiTextarea" placeholder="例：&#10;7月1日 09:00 羽田空港から飛行機で出発&#10;11:30 那覇空港着、ゆいレールで国際通りへ&#10;13:00 タコス屋でランチ&#10;15:00 美ら海水族館（観光）&#10;18:00 名護のホテルに宿泊"></textarea>
+        <div id="aiErrMsg"></div>
+        <button class="ep-btn-save ai-gen-btn" id="aiGenBtn" onclick="generateDraftStops()">✨ 旅程を生成</button>
+      </div>
+
+      <div id="aiDraftPreview" style="display:none">
+        <div class="ai-preview-header">
+          <span class="ep-section-label" style="margin:0">🤖 AI生成（確認してください）</span>
+          <span class="ai-preview-count" id="aiPreviewCount"></span>
+        </div>
+        <div id="aiDraftCards"></div>
+        <div class="ai-day-sel-row">
+          <span class="ai-day-sel-lbl">追加先</span>
+          <select class="ai-day-sel" id="aiTargetDay"></select>
+        </div>
+        <button class="ep-btn-save ai-confirm-btn" id="aiConfirmBtn" onclick="confirmDraftStops()">旅程に追加 →</button>
+      </div>
+
+    </div>
+  </div>
+</div>
 
 <!-- ── Poster modal ── -->
 <div class="poster-modal" id="posterModal" onclick="if(event.target===this)closePosterModal()">
@@ -1965,6 +2109,10 @@ function buildRouteMetrics(day) {
   var segments = [], cum = [0], geoms = [], sum = 0;
   for (var i = 0; i < stops.length - 1; i++) {
     var from = stops[i], to = stops[i+1];
+    /* skip segments where either endpoint has no coordinates yet (AI draft) */
+    if (from.lat == null || from.lng == null || to.lat == null || to.lng == null) {
+      segments.push(null); cum.push(sum); geoms.push(null); continue;
+    }
     var dist = haversineKm(from.lat, from.lng, to.lat, to.lng);
     sum += dist;
     segments.push({ from: from, to: to, dist: dist });
@@ -2003,12 +2151,18 @@ function partialSegPts(fi, te) {
 
 /* ─── Route lines ─── */
 function initRouteLines() {
-  segLines.forEach(function(l){map.removeLayer(l);}); segProgressLines.forEach(function(l){map.removeLayer(l);});
+  segLines.forEach(function(l){if(l)map.removeLayer(l);}); segProgressLines.forEach(function(l){if(l)map.removeLayer(l);});
   segLines=[]; segProgressLines=[];
   buildRouteMetrics(currentDay);
   var stops=DAYS[currentDay].stops;
   for(var i=0;i<stops.length-1;i++){
     var from=stops[i];
+    /* skip null-coord segments (AI draft stops awaiting location) */
+    if (!segmentGeometries[i] || from.lat == null || from.lng == null ||
+        stops[i+1].lat == null || stops[i+1].lng == null) {
+      segLines.push(null); segProgressLines.push(L.polyline([],{color:LIME,weight:4,opacity:.9,lineCap:'round'}).addTo(map));
+      continue;
+    }
     var c=tcfg(from.transport), pts=fullSegPts(i,i+1);
     var dash = segmentGeometries[i] && segmentGeometries[i].type === 'shape' ? null : (c.dashArray||'6 5');
     segLines.push(L.polyline(pts,{color:'#C4C0B6',weight:Math.max(1.5,c.lineWeight),opacity:.8,dashArray:dash,lineCap:'round'}).addTo(map));
@@ -2074,13 +2228,14 @@ function showCategoryArrivalPulse(lat, lng) {
 
 /* ─── Markers ─── */
 function renderMapMarkers() {
-  mapMarkers.forEach(function(m){map.removeLayer(m);}); mapMarkers=[];
+  mapMarkers.forEach(function(m){if(m)map.removeLayer(m);}); mapMarkers=[];
   var d=DAYS[currentDay];
   for(var i=0;i<d.stops.length;i++){
     (function(idx){
       var s=d.stops[idx];
       var _inT=playing&&segmentTable[idx]&&te.normalizedTime>=segmentTable[idx].startT&&te.normalizedTime<segmentTable[idx].endT;
       var state=idx<currentStop?'passed':(idx===currentStop&&!_inT?'active':'default');
+      if (s.lat == null || s.lng == null) { mapMarkers.push(null); return; }
       var m=L.marker([s.lat,s.lng],{icon:stopIcon(state,s),zIndexOffset:state==='active'?500:0}).addTo(map);
       m.bindPopup(popupHtml(s));
       m.on('click',function(){jumpTo(idx);});
@@ -2182,6 +2337,8 @@ function buildSegmentTable() {
   var segs = [];
   for (var i = 0; i < stops.length - 1; i++) {
     var from = stops[i], to = stops[i+1];
+    /* skip null-coord stops (AI draft stops) */
+    if (from.lat == null || from.lng == null || to.lat == null || to.lng == null) continue;
     var c = tcfg(from.transport);
     var f = [from.lat, from.lng], t_ = [to.lat, to.lng];
     var dl = t_[0]-f[0], dn = t_[1]-f[1], dist = Math.sqrt(dl*dl+dn*dn);
@@ -3441,6 +3598,284 @@ function openSettings() {
 
 function closeSettings() {
   document.getElementById('settingsPanel').classList.remove('open');
+}
+
+/* ─────────────────────────────────────────────────────────────
+   AI 旅程生成 (P1.5)
+   ─────────────────────────────────────────────────────────────*/
+var AI_SYSTEM_PROMPT = [
+  'You are a travel itinerary parser.',
+  'Extract stops from the user\'s input.',
+  '',
+  'Return valid JSON only.',
+  'No markdown. No explanations.',
+  '',
+  'Output format:',
+  '{',
+  '  "stops": [',
+  '    {',
+  '      "name": "羽田空港",',
+  '      "time": "06:00",',
+  '      "transport": "plane",',
+  '      "categories": [],',
+  '      "activity": "",',
+  '      "operatorHint": "",',
+  '      "isDayEnd": false,',
+  '      "confidence": 0.95,',
+  '      "inferred": false',
+  '    }',
+  '  ]',
+  '}',
+  '',
+  'Transport inference priority:',
+  '1. Explicit mention (「飛行機で」「ゆいレール」)',
+  '2. Known operator mapping (「ゆいレール」→ train_local)',
+  '3. Distance heuristic',
+  '4. Default → walk',
+  '',
+  'Valid transport values:',
+  'plane, ferry, shinkansen, train_limited, train_local,',
+  'bus_express, bus_local, shuttle, car, bike, walk',
+  '',
+  'Category inference (multiple allowed):',
+  '「食べる」「ランチ」「タコス」→ food',
+  '「カフェ」「コーヒー」→ cafe',
+  '「泊まる」「ホテル」「宿」→ stay (also set isDayEnd: true)',
+  '「ライブ」「コンサート」「観戦」→ event',
+  '「観光」「水族館」「公園」→ sightseeing',
+  '「神社」「仏閣」「城」「遺跡」→ heritage',
+  '「買い物」「ショッピング」→ shopping',
+  '「温泉」「サウナ」「銭湯」→ onsen',
+  '',
+  'isDayEnd: true when 「泊まる」「宿泊」「ホテル」「宿」or last stop of the day.',
+  '',
+  'Do NOT output shapeId.',
+  'Output operatorHint instead.',
+  '(例: 「ゆいレール」→ operatorHint: "Yui Rail")'
+].join('\n');
+
+var _draftStops = [];  // working copy for preview
+var _aiAbortCtrl = null;
+
+var TRANSPORT_EMOJI = {
+  plane:'✈️', ferry:'🚢', shinkansen:'🚄', train_limited:'🚃', train_local:'🚃',
+  bus_express:'🚍', bus_local:'🚌', shuttle:'🚐', car:'🚗', bike:'🚴', walk:'🚶'
+};
+var TRANSPORT_LABEL = {
+  plane:'PLANE', ferry:'FERRY', shinkansen:'SHINKANSEN', train_limited:'LTD EXP',
+  train_local:'LOCAL', bus_express:'HWY BUS', bus_local:'BUS', shuttle:'SHUTTLE',
+  car:'CAR', bike:'BIKE', walk:'WALK'
+};
+
+function openAIDraftModal() {
+  var stored = localStorage.getItem('limey_api_key') || '';
+  document.getElementById('aiApiKey').value = stored;
+  document.getElementById('aiDraftPreview').style.display = 'none';
+  document.getElementById('aiErrMsg').innerHTML = '';
+  _draftStops = [];
+  /* populate Day selector */
+  var sel = document.getElementById('aiTargetDay');
+  sel.innerHTML = '';
+  Object.keys(DAYS).map(Number).sort(function(a,b){return a-b;}).forEach(function(d) {
+    var opt = document.createElement('option');
+    opt.value = d;
+    opt.textContent = 'Day ' + d + (DAYS[d].label ? ' · ' + DAYS[d].label : '');
+    if (d === currentDay) opt.selected = true;
+    sel.appendChild(opt);
+  });
+  document.getElementById('aiDraftModal').classList.add('open');
+}
+function closeAIDraftModal() {
+  if (_aiAbortCtrl) { _aiAbortCtrl.abort(); _aiAbortCtrl = null; }
+  document.getElementById('aiDraftModal').classList.remove('open');
+}
+
+async function generateDraftStops() {
+  var key  = document.getElementById('aiApiKey').value.trim();
+  if (!key) { _aiShowErr('Anthropic API Key を入力してください。'); return; }
+  localStorage.setItem('limey_api_key', key);
+
+  var text = document.getElementById('aiTextarea').value.trim();
+  if (!text) { _aiShowErr('旅程テキストを入力してください。'); return; }
+
+  document.getElementById('aiErrMsg').innerHTML = '';
+  var btn = document.getElementById('aiGenBtn');
+  btn.textContent = '生成中…'; btn.disabled = true;
+  document.getElementById('aiDraftPreview').style.display = 'none';
+
+  try {
+    _aiAbortCtrl = new AbortController();
+    var resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type':            'application/json',
+        'x-api-key':               key,
+        'anthropic-version':       '2023-06-01',
+        'anthropic-dangerous-allow-cors': 'true'
+      },
+      body: JSON.stringify({
+        model:      'claude-haiku-4-5',
+        max_tokens: 2048,
+        system:     AI_SYSTEM_PROMPT,
+        messages:   [{ role: 'user', content: text }]
+      }),
+      signal: _aiAbortCtrl.signal
+    });
+
+    if (!resp.ok) {
+      var errData = await resp.json().catch(function() { return {}; });
+      var msg = (errData.error && errData.error.message) || ('HTTP ' + resp.status);
+      throw new Error(msg);
+    }
+
+    var data   = await resp.json();
+    var rawTxt = (data.content && data.content[0] && data.content[0].text) || '';
+    /* strip potential markdown code fences */
+    rawTxt = rawTxt.replace(/^```[a-z]*\n?/i,'').replace(/\n?```$/,'').trim();
+    var parsed = JSON.parse(rawTxt);
+    var stops  = Array.isArray(parsed.stops) ? parsed.stops : [];
+
+    _draftStops = stops.map(function(s) {
+      var transport = Object.keys(TCFG).indexOf(s.transport) >= 0 ? s.transport : 'walk';
+      return {
+        name:         (s.name         || '').trim() || '（名前未定）',
+        time:         (s.time         || ''),
+        transport:    transport,
+        categories:   Array.isArray(s.categories) ? s.categories.filter(function(c) { return !!CATEGORIES[c]; }) : [],
+        activity:     s.activity      || '',
+        operatorHint: s.operatorHint  || '',
+        isDayEnd:     !!s.isDayEnd,
+        confidence:   typeof s.confidence === 'number' ? s.confidence : 0.8,
+        inferred:     true,
+        lat:          null,
+        lng:          null
+      };
+    });
+
+    if (_draftStops.length === 0) throw new Error('Stopが抽出できませんでした。テキストを詳しく書いてみてください。');
+
+    renderDraftPreviews();
+    document.getElementById('aiDraftPreview').style.display = 'block';
+    document.getElementById('aiPreviewCount').textContent = _draftStops.length + ' stops';
+
+  } catch(e) {
+    if (e.name !== 'AbortError') _aiShowErr('エラー: ' + e.message);
+  } finally {
+    btn.textContent = '✨ 旅程を生成'; btn.disabled = false;
+    _aiAbortCtrl = null;
+  }
+}
+
+function _aiShowErr(msg) {
+  document.getElementById('aiErrMsg').innerHTML =
+    '<div class="ai-err">' + escHtml(msg) + '</div>';
+}
+
+function renderDraftPreviews() {
+  var html = '';
+  _draftStops.forEach(function(s, i) {
+    var confColor = s.confidence >= 0.85 ? '#28b56a' : s.confidence >= 0.65 ? '#f5a623' : '#e05454';
+    var transportOpts = Object.keys(TCFG).map(function(k) {
+      return '<option value="' + k + '"' + (k === s.transport ? ' selected' : '') + '>' +
+        (TRANSPORT_EMOJI[k] || '') + ' ' + (TRANSPORT_LABEL[k] || k.toUpperCase()) + '</option>';
+    }).join('');
+    var catBtns = Object.keys(CATEGORIES).map(function(k) {
+      var sel = s.categories.indexOf(k) >= 0 ? ' sel' : '';
+      return '<button class="draft-cat-btn' + sel + '" data-cat="' + k + '" onclick="_draftToggleCat(' + i + ',this)">' +
+        CATEGORIES[k].icon + ' ' + CATEGORIES[k].label + '</button>';
+    }).join('');
+    var opHint = s.operatorHint
+      ? '<div class="draft-op-hint">🚉 ' + escHtml(s.operatorHint) + '</div>' : '';
+    var actHint = s.activity
+      ? '<div class="draft-op-hint">📝 ' + escHtml(s.activity) + '</div>' : '';
+    html +=
+      '<div class="draft-card" id="dcard-' + i + '">' +
+        '<div class="draft-card-hd">' +
+          '<span class="draft-conf" style="background:' + confColor + '" title="AI信頼度: ' + Math.round(s.confidence*100) + '%"></span>' +
+          '<input class="draft-time-inp" type="text" value="' + escHtml(s.time) + '" maxlength="5" placeholder="--:--" oninput="_draftSetTime(' + i + ',this.value)">' +
+          '<select class="draft-transport-sel" onchange="_draftSetTransport(' + i + ',this.value)">' + transportOpts + '</select>' +
+          '<label class="draft-dayend-lbl"><input type="checkbox"' + (s.isDayEnd ? ' checked' : '') + ' onchange="_draftSetDayEnd(' + i + ',this.checked)"> 終点</label>' +
+        '</div>' +
+        '<input class="draft-name-inp" type="text" value="' + escHtml(s.name) + '" placeholder="スポット名" oninput="_draftSetName(' + i + ',this.value)">' +
+        '<div class="draft-cats">' + catBtns + '</div>' +
+        opHint + actHint +
+      '</div>';
+  });
+  document.getElementById('aiDraftCards').innerHTML = html;
+}
+
+/* Inline editing callbacks */
+function _draftSetName(i, v)       { _draftStops[i].name = v; }
+function _draftSetTime(i, v)       { _draftStops[i].time = v; }
+function _draftSetTransport(i, v)  { _draftStops[i].transport = v; }
+function _draftSetDayEnd(i, v)     { _draftStops[i].isDayEnd = v; }
+function _draftToggleCat(i, btn) {
+  var k = btn.dataset.cat;
+  var idx = _draftStops[i].categories.indexOf(k);
+  if (idx >= 0) { _draftStops[i].categories.splice(idx, 1); btn.classList.remove('sel'); }
+  else          { _draftStops[i].categories.push(k);        btn.classList.add('sel'); }
+}
+
+function confirmDraftStops() {
+  if (!_draftStops.length) return;
+  var targetDay = parseInt(document.getElementById('aiTargetDay').value, 10) || currentDay;
+  var day = DAYS[targetDay];
+  if (!day) return;
+
+  _draftStops.forEach(function(s) {
+    /* Build stop compatible with existing data structure (schemaVersion 5.16) */
+    day.stops.push({
+      name:      s.name,
+      time:      s.time,
+      transport: s.transport,
+      categories: s.categories.slice(),
+      isDayEnd:  s.isDayEnd,
+      label:     s.operatorHint || '',
+      memo:      s.activity     || '',
+      fare:      '',
+      durHours:  0,
+      durMins:   0,
+      lat:       null,  /* user sets location via Edit panel */
+      lng:       null
+    });
+  });
+
+  /* Persist only after user confirms */
+  saveToStorage();
+
+  /* Refresh UI */
+  stopAnim(); playing = false; setPlayBtn(false);
+  te.normalizedTime = 0; te.baseTime = 0; te.lastStopIdx = -1; te.lastSegIdx = -1;
+  removeCurrentPin();
+  if (targetDay !== currentDay) {
+    currentDay = targetDay;
+    renderDayTabs();
+  }
+  initRouteLines();
+  renderMapMarkers();
+  renderTimeline();
+  updateAllProgress();
+  closeAIDraftModal();
+
+  /* Brief toast feedback */
+  _aiToast('✅ ' + _draftStops.length + ' stops を Day ' + targetDay + ' に追加しました');
+}
+
+function _aiToast(msg) {
+  var el = document.createElement('div');
+  el.style.cssText = [
+    'position:fixed', 'bottom:calc(env(safe-area-inset-bottom,0px) + 90px)', 'left:50%',
+    'transform:translateX(-50%)', 'z-index:9999',
+    'background:var(--primary)', 'color:var(--white)',
+    'font-family:var(--font-body)', 'font-size:12px', 'font-weight:600',
+    'padding:8px 16px', 'border-radius:20px',
+    'box-shadow:0 4px 16px rgba(0,0,0,.25)',
+    'pointer-events:none', 'white-space:nowrap',
+    'opacity:1', 'transition:opacity .4s'
+  ].join(';');
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(function() { el.style.opacity = '0'; setTimeout(function() { el.remove(); }, 450); }, 2400);
 }
 
 function renderSettingsDaysList() {
