@@ -969,7 +969,7 @@ body {
 
   <div class="controls">
     <div class="ctrl-seek-row">
-      <input type="range" class="ctrl-seek" id="seekBar" min="0" max="4" value="0" step="1"
+      <input type="range" class="ctrl-seek" id="seekBar" min="0" max="1000" value="0" step="0.1"
         oninput="onSeekInput(this.value)" onchange="onSeekChange(this.value)">
       <div class="ctrl-seek-meta">
         <span class="ctrl-seek-label" id="seekStopLabel">— Stops</span>
@@ -1460,6 +1460,7 @@ function handleGtfsImport(e) {
       var data = JSON.parse(ev.target.result);
       if (loadGtfsDbObject(data)) {
         stopAnim(); playing = false; setPlayBtn(false); currentStop = -1;
+        te.normalizedTime=0;te.baseTime=0;te.lastStopIdx=-1;te.lastSegIdx=-1;
         removeCurrentPin();
         initRouteLines();
         renderMapMarkers();
@@ -1479,6 +1480,7 @@ function handleGtfsImport(e) {
       });
       if (!added) { alert('有効な GTFS エントリが見つかりませんでした'); return; }
       stopAnim(); playing = false; setPlayBtn(false); currentStop = -1;
+      te.normalizedTime=0;te.baseTime=0;te.lastStopIdx=-1;te.lastSegIdx=-1;
       removeCurrentPin();
       initRouteLines();
       renderMapMarkers();
@@ -1720,8 +1722,18 @@ var currentStop = -1;
 var playing     = false;
 var mapMarkers  = [], segLines = [], segProgressLines = [], segShapes = [], currentPin = null;
 
-/* ─── Animation state ─── */
-var anim = { active: false, raf: null, pauseTimer: null, fromIdx: 0, toIdx: 1, fromPt: [0,0], toPt: [0,0], ctrlPt: null, startTime: 0, duration: 1400, pauseMs: 950, easing: 'easeInOut' };
+/* ─── Time engine ─── */
+var segmentTable = [];
+var te = {
+  normalizedTime: 0,   // 0.0–1.0 across full journey
+  baseTime:       0,   // normalizedTime at last speed-change or seek
+  baseRealTime:   0,   // performance.now() at last speed-change or seek
+  raf:            null,
+  totalDuration:  1,   // ms at 1× speed
+  lastSegIdx:     -1,  // for camera retrigger
+  lastStopIdx:    -1,  // for arrival detection
+  lastRenderTs:   0    // for seek-bar throttle
+};
 
 /* ─── Edit state ─── */
 var editMode      = false;
@@ -1785,11 +1797,21 @@ function initRouteLines() {
     segLines.push(L.polyline(pts,{color:'#C4C0B6',weight:Math.max(1.5,c.lineWeight),opacity:.8,dashArray:dash,lineCap:'round'}).addTo(map));
     segProgressLines.push(L.polyline([],{color:LIME,weight:c.progWeight||4,opacity:.9,lineCap:'round',lineJoin:'round'}).addTo(map));
   }
+  buildSegmentTable();
 }
 function updateAllProgress() {
-  var stops=DAYS[currentDay].stops;
-  for(var i=0;i<stops.length-1;i++){
-    segProgressLines[i].setLatLngs(i<currentStop?fullSegPts(i,i+1):[]);
+  var nT = te.normalizedTime;
+  for (var i = 0; i < segProgressLines.length; i++) {
+    var seg = segmentTable[i];
+    if (!seg) { segProgressLines[i].setLatLngs([]); continue; }
+    if (nT <= seg.startT) {
+      segProgressLines[i].setLatLngs([]);
+    } else if (nT >= seg.endT) {
+      segProgressLines[i].setLatLngs(fullSegPts(i, i+1));
+    } else {
+      var _lt = (nT - seg.startT) / (seg.endT - seg.startT);
+      segProgressLines[i].setLatLngs(partialSegPts(i, ease(_lt, seg.easing)));
+    }
   }
 }
 
@@ -1840,7 +1862,8 @@ function renderMapMarkers() {
   for(var i=0;i<d.stops.length;i++){
     (function(idx){
       var s=d.stops[idx];
-      var state=idx<currentStop?'passed':(idx===currentStop&&!anim.active?'active':'default');
+      var _inT=playing&&segmentTable[idx]&&te.normalizedTime>=segmentTable[idx].startT&&te.normalizedTime<segmentTable[idx].endT;
+      var state=idx<currentStop?'passed':(idx===currentStop&&!_inT?'active':'default');
       var m=L.marker([s.lat,s.lng],{icon:stopIcon(state,s),zIndexOffset:state==='active'?500:0}).addTo(map);
       m.bindPopup(popupHtml(s));
       m.on('click',function(){jumpTo(idx);});
@@ -1875,7 +1898,8 @@ function renderTimeline() {
   for(var i=0;i<d.stops.length;i++){
     var s=d.stops[i];
     var terminal=!!s.isDayEnd;
-    var isActive=i===currentStop&&!anim.active, isPassed=i<currentStop;
+    var _inT=playing&&segmentTable[i]&&te.normalizedTime>=segmentTable[i].startT&&te.normalizedTime<segmentTable[i].endT;
+    var isActive=i===currentStop&&!_inT, isPassed=i<currentStop;
     var rowCls=isActive?' active':isPassed?' passed':'';
     var segCls=isPassed?' passed':'';
     if(s.transport==='bike') segCls+=' t-bike';
@@ -1921,10 +1945,11 @@ function renderTimeline() {
 
 /* ─── Jump ─── */
 function jumpTo(i) {
-  stopAnim(); playing=false; setPlayBtn(false); currentStop=i;
-  removeCurrentPin(); renderMapMarkers(); renderTimeline(); updateAllProgress();
-  updatePeekInfo();
-  var s=DAYS[currentDay].stops[i];
+  var stops = DAYS[currentDay].stops;
+  var nT = i <= 0 ? 0 : i >= stops.length-1 ? 1 : (segmentTable[i-1] ? segmentTable[i-1].endT : 0);
+  stopAnim(); playing=false; setPlayBtn(false);
+  _seekTo(nT);
+  var s = stops[i];
   map.flyTo([s.lat,s.lng],13,{duration:.7});
   if(mapMarkers[i]) mapMarkers[i].openPopup();
   scrollToCard(i);
@@ -1932,20 +1957,174 @@ function jumpTo(i) {
 }
 function scrollToCard(i) { var el=document.getElementById('sr'+i); if(el) el.scrollIntoView({behavior:'smooth',block:'nearest'}); }
 
+/* ─── Time engine: segment table ─── */
+function buildSegmentTable() {
+  segmentTable = [];
+  var stops = DAYS[currentDay].stops;
+  if (stops.length < 2) { te.totalDuration = 1; return; }
+  var segs = [];
+  for (var i = 0; i < stops.length - 1; i++) {
+    var from = stops[i], to = stops[i+1];
+    var c = tcfg(from.transport);
+    var f = [from.lat, from.lng], t_ = [to.lat, to.lng];
+    var dl = t_[0]-f[0], dn = t_[1]-f[1], dist = Math.sqrt(dl*dl+dn*dn);
+    var travelMs = Math.max(700, Math.min(2800, dist * 4400)) / c.speedMult;
+    var cats = Array.isArray(to.categories) ? to.categories : [];
+    var pauseMs = cats.reduce(function(mx,k){ var cfg=CATEGORIES[k]; return cfg?Math.max(mx,cfg.pauseMs):mx; }, c.pauseMs);
+    if (i === stops.length - 2) pauseMs = 0;
+    var confidence, curveBias = null;
+    if (segShapes[i]) { confidence = 'gtfs'; }
+    else if (c.curve) { confidence = 'inferred'; curveBias = c.curve; }
+    else { confidence = 'fallback'; }
+    segs.push({ i:i, travelMs:travelMs, pauseMs:pauseMs, confidence:confidence, curveBias:curveBias, fromPt:f, toPt:t_, transport:from.transport, easing:c.easing });
+  }
+  var initialPauseMs = tcfg(stops[0].transport).pauseMs;
+  var total = initialPauseMs;
+  for (var i = 0; i < segs.length; i++) total += segs[i].travelMs + segs[i].pauseMs;
+  te.totalDuration = Math.max(1, total);
+  var elapsed = initialPauseMs;
+  for (var i = 0; i < segs.length; i++) {
+    var s = segs[i];
+    var startT = elapsed / te.totalDuration;
+    elapsed += s.travelMs;
+    var endT = elapsed / te.totalDuration;
+    elapsed += s.pauseMs;
+    segmentTable.push({ index:s.i, startT:startT, endT:endT, pauseEndT:elapsed/te.totalDuration,
+      transport:s.transport, confidence:s.confidence, curveBias:s.curveBias,
+      fromPt:s.fromPt, toPt:s.toPt, easing:s.easing });
+  }
+}
+
+/* Binary search: find segment entry covering nT */
+function _segAtTime(nT) {
+  if (!segmentTable.length) return null;
+  var lo = 0, hi = segmentTable.length - 1;
+  while (lo <= hi) {
+    var mid = (lo + hi) >> 1;
+    var s = segmentTable[mid];
+    if (nT < s.startT) hi = mid - 1;
+    else if (nT > s.pauseEndT) lo = mid + 1;
+    else return s;
+  }
+  return nT <= segmentTable[0].startT ? segmentTable[0] : segmentTable[segmentTable.length-1];
+}
+
+/* Geometry resolver: gtfs → bezier → lerp */
+function getPositionAtTime(nT) {
+  if (!segmentTable.length) return null;
+  var seg = _segAtTime(nT);
+  if (!seg) return null;
+  if (nT <= seg.startT) return seg.fromPt;
+  if (nT >= seg.endT)   return seg.toPt;
+  var lt = (nT - seg.startT) / (seg.endT - seg.startT);
+  var te_ = ease(lt, seg.easing);
+  if (seg.confidence === 'gtfs') {
+    var pts = segShapes[seg.index];
+    return pts ? polylineInterp(pts, te_) : seg.fromPt;
+  }
+  if (seg.confidence === 'inferred') {
+    var ctrl_ = ctrlPt(seg.fromPt, seg.toPt, seg.curveBias);
+    return bezierPt(seg.fromPt, ctrl_, seg.toPt, te_);
+  }
+  return [seg.fromPt[0]+(seg.toPt[0]-seg.fromPt[0])*te_, seg.fromPt[1]+(seg.toPt[1]-seg.fromPt[1])*te_];
+}
+
+/* Seek to normalised position (works playing or paused) */
+function _seekTo(nT) {
+  nT = Math.max(0, Math.min(1, nT));
+  te.normalizedTime = nT;
+  te.baseTime = nT;
+  te.baseRealTime = performance.now();
+  var seg = _segAtTime(nT);
+  var newStop = !seg || nT <= 0 ? 0 : nT >= seg.endT ? seg.index+1 : seg.index;
+  currentStop = newStop;
+  te.lastStopIdx = newStop;
+  te.lastSegIdx  = -1;
+  var pos = getPositionAtTime(nT);
+  var transport = seg ? seg.transport : ((DAYS[currentDay].stops[0]||{}).transport);
+  if (pos) moveCurrentPin(pos[0], pos[1], transport); else removeCurrentPin();
+  updateAllProgress(); renderMapMarkers(); renderTimeline(); updatePeekInfo(); updateSeekBar();
+  if (playing) {
+    if (te.raf) { cancelAnimationFrame(te.raf); te.raf = null; }
+    te.raf = requestAnimationFrame(_timeLoop);
+  }
+}
+
+/* ─── RAF time loop (replaces animNext + animTick) ─── */
+function _timeLoop(ts) {
+  if (!playing) return;
+  te.normalizedTime = Math.min(1, te.baseTime + (ts - te.baseRealTime) * playbackSpeed / te.totalDuration);
+  var nT = te.normalizedTime;
+  var seg = _segAtTime(nT);
+  var segIdx = seg ? seg.index : -1;
+
+  /* Camera: fire once per segment entry */
+  if (segIdx !== te.lastSegIdx && segIdx >= 0 && nT >= segmentTable[segIdx].startT) {
+    te.lastSegIdx = segIdx;
+    var _c = tcfg(seg.transport);
+    var _shp = segShapes[segIdx] || null;
+    var _ctrl = (!_shp && seg.curveBias) ? ctrlPt(seg.fromPt, seg.toPt, seg.curveBias) : null;
+    _cameraFollow(seg.fromPt, seg.toPt, _c, _shp, _ctrl);
+  }
+
+  /* Current stop index */
+  var newStopIdx = (!seg || nT < seg.startT) ? 0 : nT >= seg.endT ? seg.index+1 : seg.index;
+
+  /* Stop arrival event */
+  if (newStopIdx > te.lastStopIdx) {
+    te.lastStopIdx = newStopIdx;
+    currentStop = newStopIdx;
+    renderMapMarkers(); renderTimeline(); scrollToCard(currentStop);
+    if (mapMarkers[currentStop]) mapMarkers[currentStop].openPopup();
+    var _arr = DAYS[currentDay].stops[currentStop];
+    map.panTo([_arr.lat, _arr.lng], {animate:true, duration:0.4});
+    if (Array.isArray(_arr.categories) && _arr.categories.length) showCategoryArrivalPulse(_arr.lat, _arr.lng);
+    updatePeekInfo();
+  } else {
+    currentStop = newStopIdx;
+  }
+
+  /* Move pin */
+  var pos = getPositionAtTime(nT);
+  if (pos) moveCurrentPin(pos[0], pos[1], seg ? seg.transport : (DAYS[currentDay].stops[0]||{}).transport);
+
+  /* Progress line for active travelling segment */
+  if (segIdx >= 0 && nT >= segmentTable[segIdx].startT && nT < segmentTable[segIdx].endT) {
+    var _lt = (nT - segmentTable[segIdx].startT) / (segmentTable[segIdx].endT - segmentTable[segIdx].startT);
+    segProgressLines[segIdx].setLatLngs(partialSegPts(segIdx, ease(_lt, seg.easing)));
+  }
+
+  /* Seek bar (throttled to ~50ms) */
+  if (ts - te.lastRenderTs >= 50) { te.lastRenderTs = ts; updateSeekBar(); }
+
+  if (nT >= 1) { finishPlay(); return; }
+  te.raf = requestAnimationFrame(_timeLoop);
+}
+
 /* ─── Playback ─── */
 function startPlay() {
-  var stops=DAYS[currentDay].stops;
-  if(currentStop<0) {
-    currentStop=0; renderMapMarkers(); renderTimeline(); updateAllProgress();
-    var s0=stops[0]; moveCurrentPin(s0.lat,s0.lng,s0.transport);
-    map.flyTo([s0.lat,s0.lng],13,{duration:.5});
-    if(mapMarkers[0]) mapMarkers[0].openPopup();
-    scrollToCard(0);
-    anim.pauseTimer=setTimeout(function(){if(playing)animNext();},tcfg(s0.transport).pauseMs/playbackSpeed);
-    return;
+  var stops = DAYS[currentDay].stops;
+  if (!segmentTable.length || stops.length < 2) return;
+  if (te.normalizedTime >= 1) {
+    te.normalizedTime = 0; te.baseTime = 0; currentStop = -1;
+    te.lastStopIdx = -1; te.lastSegIdx = -1;
+    removeCurrentPin(); renderMapMarkers(); renderTimeline(); updateAllProgress();
   }
-  if(currentStop>=stops.length-1){finishPlay();return;}
-  animNext();
+  if (te.normalizedTime <= 0 || currentStop < 0) {
+    te.normalizedTime = 0; te.baseTime = 0;
+    currentStop = 0; te.lastStopIdx = 0; te.lastSegIdx = -1;
+    renderMapMarkers(); renderTimeline(); updateAllProgress();
+    var s0 = stops[0];
+    moveCurrentPin(s0.lat, s0.lng, s0.transport);
+    map.flyTo([s0.lat, s0.lng], 13, {duration: 0.5});
+    if (mapMarkers[0]) mapMarkers[0].openPopup();
+    scrollToCard(0);
+  } else {
+    te.lastSegIdx = -1;
+  }
+  te.baseTime = te.normalizedTime;
+  te.baseRealTime = performance.now();
+  te.raf = requestAnimationFrame(_timeLoop);
 }
 function _cameraFollow(f, t, c, shapePts, ctrlPt_) {
   var rhythm = c.rhythmLabel;
@@ -1963,50 +2142,21 @@ function _cameraFollow(f, t, c, shapePts, ctrlPt_) {
   var dur  = rhythm === 'stroll' ? 0.5 : 0.8;
   map.flyTo(mid, zoom, { animate: true, duration: dur });
 }
-function animNext() {
-  var stops=DAYS[currentDay].stops, from=stops[currentStop], to=stops[currentStop+1], c=tcfg(from.transport);
-  var f=[from.lat,from.lng],t=[to.lat,to.lng];
-  anim.active=true; anim.fromIdx=currentStop; anim.toIdx=currentStop+1;
-  anim.fromPt=f; anim.toPt=t;
-  anim.shapePts = segShapes[currentStop] || null;
-  anim.ctrlPt = (!anim.shapePts && c.curve) ? ctrlPt(f,t,c.curve) : null;
-  anim.easing=c.easing; anim.pauseMs=c.pauseMs;
-  var dl=t[0]-f[0],dn=t[1]-f[1],dist=Math.sqrt(dl*dl+dn*dn);
-  anim.duration=Math.max(700,Math.min(2800,dist*4400))/c.speedMult/playbackSpeed;
-  anim.startTime=performance.now();
-  _cameraFollow(f, t, c, anim.shapePts, anim.ctrlPt);
-  anim.raf=requestAnimationFrame(animTick);
-}
-function animTick(ts) {
-  if(!anim.active) return;
-  var t=Math.min(1,(ts-anim.startTime)/anim.duration), te=ease(t,anim.easing);
-  var pos=anim.shapePts?polylineInterp(anim.shapePts,te):anim.ctrlPt?bezierPt(anim.fromPt,anim.ctrlPt,anim.toPt,te):[anim.fromPt[0]+(anim.toPt[0]-anim.fromPt[0])*te,anim.fromPt[1]+(anim.toPt[1]-anim.fromPt[1])*te];
-  moveCurrentPin(pos[0],pos[1],DAYS[currentDay].stops[anim.fromIdx].transport);
-  segProgressLines[anim.fromIdx].setLatLngs(partialSegPts(anim.fromIdx,te));
-  if(t<1){anim.raf=requestAnimationFrame(animTick);return;}
-  anim.active=false; currentStop=anim.toIdx;
-  segProgressLines[anim.fromIdx].setLatLngs(fullSegPts(anim.fromIdx,anim.toIdx));
-  renderMapMarkers(); renderTimeline(); scrollToCard(currentStop);
-  updatePeekInfo();
-  var arr=DAYS[currentDay].stops[currentStop];
-  map.panTo([arr.lat,arr.lng],{animate:true,duration:.4});
-  if(mapMarkers[currentStop]) mapMarkers[currentStop].openPopup();
-  if(currentStop>=DAYS[currentDay].stops.length-1){finishPlay();return;}
-  var _arr=DAYS[currentDay].stops[currentStop];
-  var _cats=Array.isArray(_arr.categories)?_arr.categories:[];
-  var _pauseMs=_cats.reduce(function(mx,k){var cfg=CATEGORIES[k];return cfg?Math.max(mx,cfg.pauseMs):mx;},anim.pauseMs);
-  if(_cats.length) showCategoryArrivalPulse(_arr.lat,_arr.lng);
-  anim.pauseTimer=setTimeout(function(){if(playing)animNext();},_pauseMs/playbackSpeed);
-}
 function stopAnim() {
-  anim.active=false;
-  if(anim.raf){cancelAnimationFrame(anim.raf);anim.raf=null;}
-  if(anim.pauseTimer){clearTimeout(anim.pauseTimer);anim.pauseTimer=null;}
+  if (te.raf) { cancelAnimationFrame(te.raf); te.raf = null; }
 }
-function finishPlay() { stopAnim();playing=false;removeCurrentPin();renderMapMarkers();setPlayBtn(false);updatePeekInfo(); }
+function finishPlay() {
+  if (te.raf) { cancelAnimationFrame(te.raf); te.raf = null; }
+  playing = false; te.normalizedTime = 1;
+  currentStop = DAYS[currentDay].stops.length - 1;
+  removeCurrentPin(); renderMapMarkers(); renderTimeline();
+  setPlayBtn(false); updatePeekInfo(); updateSeekBar();
+}
 
 /* ─── Playback controls ─── */
 function setPlaybackSpeed(s) {
+  te.baseTime = te.normalizedTime;
+  te.baseRealTime = performance.now();
   playbackSpeed = s;
   document.querySelectorAll('.speed-chip').forEach(function(c) {
     c.classList.toggle('sel', parseFloat(c.dataset.speed) === s);
@@ -2023,34 +2173,45 @@ function stepNext() {
   jumpTo(currentStop + 1);
 }
 function onSeekInput(val) {
-  var idx = parseInt(val);
-  var stops = DAYS[currentDay].stops;
+  var nT = parseFloat(val) / 1000;
   var bar = document.getElementById('seekBar');
   var lbl = document.getElementById('seekStopLabel');
-  if (bar) { var pct = stops.length > 1 ? idx / (stops.length - 1) * 100 : 0; bar.style.setProperty('--seek-pct', pct + '%'); }
-  if (lbl && idx >= 0 && idx < stops.length) lbl.textContent = (idx + 1) + ' / ' + stops.length + '  ' + stops[idx].name;
+  if (bar) bar.style.setProperty('--seek-pct', (nT * 100) + '%');
+  if (segmentTable.length) {
+    var pos = getPositionAtTime(nT);
+    var seg = _segAtTime(nT);
+    if (pos) moveCurrentPin(pos[0], pos[1], seg ? seg.transport : (DAYS[currentDay].stops[0]||{}).transport);
+    if (lbl && seg) {
+      var stops = DAYS[currentDay].stops;
+      var badge = seg.confidence === 'gtfs' ? ' ·GTFS' : seg.confidence === 'inferred' ? ' ·~' : '';
+      lbl.textContent = stops[seg.index].name + ' → ' + stops[seg.index+1].name + badge;
+    }
+  }
 }
 function onSeekChange(val) {
-  var idx = parseInt(val);
-  if (isNaN(idx) || idx < 0) return;
-  jumpTo(idx);
+  var nT = parseFloat(val) / 1000;
+  if (isNaN(nT)) return;
+  _seekTo(nT);
 }
 function updateSeekBar() {
   var bar = document.getElementById('seekBar');
   var lbl = document.getElementById('seekStopLabel');
-  var stops = DAYS[currentDay].stops;
   if (!bar) return;
-  bar.max = stops.length - 1;
-  var val = Math.max(0, currentStop);
-  bar.value = val;
-  var pct = stops.length > 1 ? val / (stops.length - 1) * 100 : 0;
-  bar.style.setProperty('--seek-pct', (currentStop >= 0 ? pct : 0) + '%');
-  if (lbl) {
-    if (currentStop >= 0 && currentStop < stops.length)
-      lbl.textContent = (currentStop + 1) + ' / ' + stops.length + '  ' + stops[currentStop].name;
-    else
-      lbl.textContent = stops.length + ' Stops';
+  var nT = te.normalizedTime;
+  bar.value = nT * 1000;
+  bar.style.setProperty('--seek-pct', (nT * 100) + '%');
+  if (!lbl) return;
+  var stops = DAYS[currentDay].stops;
+  if (playing && segmentTable.length) {
+    var seg = _segAtTime(nT);
+    if (seg && nT >= seg.startT && nT < seg.endT) {
+      var badge = seg.confidence === 'gtfs' ? ' ·GTFS' : seg.confidence === 'inferred' ? ' ·~' : '';
+      lbl.textContent = stops[seg.index].name + ' → ' + stops[seg.index+1].name + badge;
+      return;
+    }
   }
+  if (currentStop >= 0 && currentStop < stops.length) lbl.textContent = stops[currentStop].name;
+  else lbl.textContent = stops.length + ' Stops';
 }
 
 /* ─── Controls ─── */
@@ -2066,17 +2227,21 @@ function togglePlay() {
   }
 }
 function resetAnim() {
-  stopAnim();playing=false;currentStop=-1;removeCurrentPin();setPlayBtn(false);
+  stopAnim();playing=false;
+  te.normalizedTime=0;te.baseTime=0;te.lastSegIdx=-1;te.lastStopIdx=-1;
+  currentStop=-1;removeCurrentPin();setPlayBtn(false);
   renderTimeline();initRouteLines();renderMapMarkers();
-  updatePeekInfo();
+  updatePeekInfo();updateSeekBar();
   map.setView(DAYS[currentDay].center,DAYS[currentDay].zoom,{animate:true});
 }
 function switchDay(day) {
-  stopAnim();playing=false;currentStop=-1;removeCurrentPin();setPlayBtn(false);
+  stopAnim();playing=false;
+  te.normalizedTime=0;te.baseTime=0;te.lastSegIdx=-1;te.lastStopIdx=-1;
+  currentStop=-1;removeCurrentPin();setPlayBtn(false);
   currentDay=day;
   renderDayTabs();
   renderTimeline();initRouteLines();renderMapMarkers();
-  updatePeekInfo();
+  updatePeekInfo();updateSeekBar();
   map.setView(DAYS[day].center,DAYS[day].zoom,{animate:true});
   if (editMode) switchEditTab(_editTab);
 }
@@ -2328,6 +2493,7 @@ function epSave() {
   }
 
   stopAnim(); playing = false; currentStop = -1;
+  te.normalizedTime=0;te.baseTime=0;te.lastStopIdx=-1;te.lastSegIdx=-1;
   removeCurrentPin(); setPlayBtn(false);
 
   saveToStorage();
@@ -2352,6 +2518,7 @@ function epDelete() {
 }
 function doDelete(idx) {
   stopAnim(); playing = false; currentStop = -1;
+  te.normalizedTime=0;te.baseTime=0;te.lastStopIdx=-1;te.lastSegIdx=-1;
   removeCurrentPin(); setPlayBtn(false);
   removePickPreviewPin();
   DAYS[currentDay].stops.splice(idx, 1);
@@ -2379,7 +2546,9 @@ function onDrop(e, idx) {
   stops.splice(idx, 0, moved);
   _dragIdx = -1;
   saveToStorage();
-  stopAnim(); playing=false; currentStop=-1; removeCurrentPin(); setPlayBtn(false);
+  stopAnim(); playing=false; currentStop=-1;
+  te.normalizedTime=0;te.baseTime=0;te.lastStopIdx=-1;te.lastSegIdx=-1;
+  removeCurrentPin(); setPlayBtn(false);
   initRouteLines(); renderMapMarkers(); renderTimeline();
 }
 function onDragEnd(e) {
