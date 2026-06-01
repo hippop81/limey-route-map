@@ -2025,12 +2025,26 @@ var _renderTimer = null;
 
 /* ─── Camera State Machine ─── */
 var CAMERA_CONFIG = {
-  smoothFrames:           4,     // direction vector averaging window (Cursor)
-  hysteresisKm:          0.08,   // min displacement to re-center in TRAVEL (Cursor)
-  minDepartureIntervalMs: 50,    // rapid segment switch protection (Codex)
-  DEPARTURE: { durationMs: 700, offsetMeters: 200 },
-  ARRIVAL:   { triggerRatio: 0.80, longSegKm: 50, triggerRemKm: 5, offsetMeters: 100 },
-  zoom: {                        // per-rhythm zoom levels for each phase (Cursor)
+  /* State machine (Codex) */
+  smoothFrames:            4,      // direction vector averaging window
+  hysteresisKm:           0.08,   // min displacement to re-center in TRAVEL
+  minDepartureIntervalMs: 50,     // rapid segment switch protection
+  /* Per-state lerp params (Cursor) */
+  DEPARTURE: { durationMs: 700, zoom: 15, alpha: 0.12, offsetMeters: 200 },
+  TRANSIT:   {                  zoom: 12, alpha: 0.08, offsetMeters: 150 },
+  ARRIVAL:   { triggerRatio: 0.80, longSegKm: 50, triggerRemKm: 5,
+               zoom: 14, alpha: 0.10, offsetMeters: 100 },
+  /* Hysteresis thresholds (Cursor) */
+  hysteresis: {
+    depToTransit:    0.15,
+    transitToArr:    0.88,
+    arrToTransit:    0.80,
+    depToTransitBack: 0.08
+  },
+  zoomAlpha:            0.06,
+  directionSampleWindow: 4,
+  /* Per-rhythm zoom levels for each phase (Codex) */
+  zoom: {
     stroll:  { depart: 16, travel: 16, arrive: 17 },
     trail:   { depart: 15, travel: 14, arrive: 16 },
     rail:    { depart: 14, travel: 13, arrive: 15 },
@@ -2045,25 +2059,10 @@ var cam = {
   state:           'IDLE',  // IDLE | DEPARTURE | TRAVEL | ARRIVAL
   segIdx:          -1,
   lastSegChangeMs:  0,
-  dirHistory:      [],      // [{dlat, dlng}, ...] smoothed heading history (Cursor)
+  dirHistory:      [],      // [{dlat, dlng}, ...] smoothed heading history
   arrivalLock:     false,
   isSeeking:       false,
   lastFollowPos:   null     // for hysteresis check
-};
-
-/* ─── Camera state ─── */
-var CAMERA_CONFIG = {
-  DEPARTURE: { zoom: 15, alpha: 0.12, offsetMeters: 50 },
-  TRANSIT:   { zoom: 12, alpha: 0.08, offsetMeters: 150 },
-  ARRIVAL:   { zoom: 14, alpha: 0.10, offsetMeters: 80 },
-  hysteresis: {
-    depToTransit: 0.15,
-    transitToArr: 0.88,
-    arrToTransit: 0.80,
-    depToTransitBack: 0.08
-  },
-  zoomAlpha: 0.06,
-  directionSampleWindow: 4
 };
 var cameraState = { mode: 'ARRIVAL', lat: null, lng: null, zoom: null, targetLat: null, targetLng: null, targetZoom: CAMERA_CONFIG.ARRIVAL.zoom, directionSamples: [], smoothedDirection: null };
 
@@ -2496,14 +2495,15 @@ function getPositionAtTime(nT) {
   if (nT >= seg.endT)   return seg.toPt;
   var lt = (nT - seg.startT) / (seg.endT - seg.startT);
   var te_ = ease(lt, seg.easing);
-  if (seg.confidence === 'gtfs') {
-    var pts = segShapes[seg.index];
-    return pts ? polylineInterp(pts, te_) : seg.fromPt;
-  }
+  /* Any segment with a cached shape (gtfs OR prox-db) → arc-length interpolation */
+  var pts = segShapes[seg.index];
+  if (pts) return polylineInterp(pts, te_);
+  /* Inferred (plane/ferry) → bezier arc */
   if (seg.confidence === 'inferred') {
     var ctrl_ = ctrlPt(seg.fromPt, seg.toPt, seg.curveBias);
     return bezierPt(seg.fromPt, ctrl_, seg.toPt, te_);
   }
+  /* Fallback → linear */
   return [seg.fromPt[0]+(seg.toPt[0]-seg.fromPt[0])*te_, seg.fromPt[1]+(seg.toPt[1]-seg.fromPt[1])*te_];
 }
 
