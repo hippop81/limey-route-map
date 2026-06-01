@@ -1139,6 +1139,7 @@ body {
 /* ─── Schema versions ─── */
 var ROUTE_SCHEMA_VERSION = '5.16';
 var DRAFT_STOP_SCHEMA_VERSION = '5.16';
+var DRAFT_TRANSPORT_TYPES = ['walk', 'train_local', 'train_limited', 'shinkansen', 'bus_local', 'bus_express', 'shuttle', 'ferry', 'plane', 'other'];
 var DRAFT_STOP_JSON_SCHEMA = {
   schemaVersion: DRAFT_STOP_SCHEMA_VERSION,
   type: 'object',
@@ -1146,8 +1147,8 @@ var DRAFT_STOP_JSON_SCHEMA = {
   properties: {
     name: { type: 'string' },
     time: { type: ['string', 'null'], pattern: '^([01]\\d|2[0-3]):[0-5]\\d$' },
-    transport: { type: 'string' },
-    operatorHint: { type: 'string' },
+    transport: { type: 'string', enum: DRAFT_TRANSPORT_TYPES },
+    operatorHint: { type: ['string', 'null'] },
     categories: { type: 'array', items: { type: 'string' } },
     activity: { type: 'string' },
     isDayEnd: { type: 'boolean' },
@@ -1443,15 +1444,15 @@ function tcfg(type) { return TCFG[type] || TCFG.bus_local; }
 
 
 /* ─── DraftStop schema / conversion ─── */
-function validTransportTypes() { return Object.keys(TCFG); }
-function isValidTransportType(type) { return !!TCFG[type]; }
+function validTransportTypes() { return DRAFT_TRANSPORT_TYPES.slice(); }
+function isValidTransportType(type) { return DRAFT_TRANSPORT_TYPES.indexOf(type) >= 0; }
 function normalizeDraftStop(draft) {
   draft = draft || {};
   return {
     name: String(draft.name || '').trim(),
     time: draft.time === null || draft.time === undefined || draft.time === '' ? null : String(draft.time).trim(),
     transport: String(draft.transport || 'bus_local').trim(),
-    operatorHint: String(draft.operatorHint || '').trim(),
+    operatorHint: draft.operatorHint === null || draft.operatorHint === undefined ? null : String(draft.operatorHint).trim(),
     categories: Array.isArray(draft.categories) ? draft.categories.filter(function(c){ return typeof c === 'string' && c.trim(); }) : [],
     activity: String(draft.activity || '').trim(),
     isDayEnd: !!draft.isDayEnd,
@@ -1463,25 +1464,25 @@ function normalizeDraftStop(draft) {
   };
 }
 function validateDraftStop(draft) {
-  var d = normalizeDraftStop(draft), warnings = [], valid = true;
-  if (!d.name) { warnings.push('name is required'); valid = false; }
-  if (d.time !== null && !/^([01]\d|2[0-3]):[0-5]\d$/.test(d.time)) { warnings.push('time must be HH:MM or null'); valid = false; }
-  if (!isValidTransportType(d.transport)) { warnings.push('unknown transport type: ' + d.transport); valid = false; }
-  if (!Array.isArray(d.categories)) { warnings.push('categories must be an array'); valid = false; }
+  var d = normalizeDraftStop(draft), warnings = [], errors = [];
+  if (!d.name) errors.push('name is required');
+  if (d.time !== null && !/^([01]\d|2[0-3]):[0-5]\d$/.test(d.time)) errors.push('time must be HH:MM or null');
+  if (!isValidTransportType(d.transport)) errors.push('unknown transport type: ' + d.transport);
+  if (!Array.isArray(d.categories)) errors.push('categories must be an array');
   if (d.lat === null || d.lng === null) warnings.push('lat/lng is null; geocoding is required');
-  else if (!isFinite(d.lat) || !isFinite(d.lng)) { warnings.push('lat/lng must be numbers or null'); valid = false; }
-  if (!isFinite(d.confidence) || d.confidence < 0 || d.confidence > 1) { warnings.push('confidence must be 0.0-1.0'); valid = false; }
-  return { valid: valid, warnings: warnings };
+  else if (!isFinite(d.lat) || !isFinite(d.lng)) errors.push('lat/lng must be numbers or null');
+  if (!isFinite(d.confidence) || d.confidence < 0 || d.confidence > 1) errors.push('confidence must be 0.0-1.0');
+  return { valid: errors.length === 0, warnings: warnings, errors: errors };
 }
-function draftConfidenceLabel(confidence) {
+function getConfidenceLabel(confidence) {
   var c = Number(confidence);
-  if (c >= 0.9) return { icon: '✓', label: '高信頼', level: 'high' };
-  if (c >= 0.7) return { icon: '⚠', label: '要確認', level: 'medium' };
-  return { icon: '✗', label: '要編集', level: 'low' };
+  if (c >= 0.9) return { icon: '✓', text: 'High' };
+  if (c >= 0.7) return { icon: '⚠', text: 'Medium' };
+  return { icon: '✗', text: 'Low' };
 }
 function renderDraftConfidence(confidence) {
-  var c = draftConfidenceLabel(confidence);
-  return c.icon + ' ' + c.label;
+  var c = getConfidenceLabel(confidence);
+  return c.icon + ' ' + c.text;
 }
 function normalizeSearchToken(s) {
   return String(s || '').toLowerCase().replace(/[\s　_-]+/g, '');
@@ -1529,9 +1530,9 @@ function geocodeDraftStop(draft) {
 function draftToStop(draft) {
   var d = normalizeDraftStop(draft);
   var validation = validateDraftStop(d);
-  if (!validation.valid) return Promise.reject(new Error(validation.warnings.join('; ')));
+  if (!validation.valid) return Promise.reject(new Error(validation.errors.join('; ')));
   return geocodeDraftStop(d).then(function(coords) {
-    var candidates = suggestShapeIdsForOperator(d.operatorHint, d.transport);
+    var candidates = suggestShapeIdsForOperator(d.operatorHint || '', d.transport);
     var stop = {
       name: d.name,
       time: d.time || '—',
@@ -1541,14 +1542,14 @@ function draftToStop(draft) {
       transport: d.transport,
       categories: d.categories.slice(),
       isDayEnd: d.isDayEnd,
-      label: d.operatorHint,
+      label: d.operatorHint || '',
       fare: '',
       duration: '',
       confidence: d.confidence,
       inferred: d.inferred,
-      draftConfidence: draftConfidenceLabel(d.confidence),
       shapeIdCandidates: candidates,
       draftWarnings: validation.warnings.slice(),
+      draftErrors: validation.errors.slice(),
       geocodeSource: coords.source
     };
     if (d.gtfs && d.gtfs.shapeId) {
@@ -1561,7 +1562,7 @@ function draftToStop(draft) {
 if (typeof window !== 'undefined') {
   window.validateDraftStop = validateDraftStop;
   window.draftToStop = draftToStop;
-  window.draftConfidenceLabel = draftConfidenceLabel;
+  window.getConfidenceLabel = getConfidenceLabel;
   window.renderDraftConfidence = renderDraftConfidence;
   window.suggestShapeIdsForOperator = suggestShapeIdsForOperator;
 }
