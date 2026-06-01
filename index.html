@@ -1854,6 +1854,34 @@ var te = {
 };
 var _renderTimer = null;
 
+/* ─── Camera State Machine ─── */
+var CAMERA_CONFIG = {
+  smoothFrames:           4,     // direction vector averaging window (Cursor)
+  hysteresisKm:          0.08,   // min displacement to re-center in TRAVEL (Cursor)
+  minDepartureIntervalMs: 50,    // rapid segment switch protection (Codex)
+  DEPARTURE: { durationMs: 700, offsetMeters: 200 },
+  ARRIVAL:   { triggerRatio: 0.80, longSegKm: 50, triggerRemKm: 5, offsetMeters: 100 },
+  zoom: {                        // per-rhythm zoom levels for each phase (Cursor)
+    stroll:  { depart: 16, travel: 16, arrive: 17 },
+    trail:   { depart: 15, travel: 14, arrive: 16 },
+    rail:    { depart: 14, travel: 13, arrive: 15 },
+    road:    { depart: 13, travel: 12, arrive: 14 },
+    shuttle: { depart: 13, travel: 12, arrive: 14 },
+    air:     { depart:  8, travel:  7, arrive: 10 },
+    sea:     { depart:  9, travel:  8, arrive: 11 }
+  },
+  fly: { depart: 0.7, travel: 0.4, arrive: 0.9 }
+};
+var cam = {
+  state:           'IDLE',  // IDLE | DEPARTURE | TRAVEL | ARRIVAL
+  segIdx:          -1,
+  lastSegChangeMs:  0,
+  dirHistory:      [],      // [{dlat, dlng}, ...] smoothed heading history (Cursor)
+  arrivalLock:     false,
+  isSeeking:       false,
+  lastFollowPos:   null     // for hysteresis check
+};
+
 /* ─── Edit state ─── */
 var editMode      = false;
 var epIdx         = -1;
@@ -2231,8 +2259,16 @@ function _seekTo(nT) {
   te.lastSegIdx  = -1;
   var pos = getPositionAtTime(nT);
   var transport = seg ? seg.transport : ((DAYS[currentDay].stops[0]||{}).transport);
+  /* Sync te.current* so _cameraOnSeek() reads fresh values (Codex seek sync) */
+  te.currentPos       = pos;
+  te.currentTransport = transport;
+  te.currentSeg       = seg;
+  te.currentSegIdx    = seg ? seg.index : -1;
   if (pos) moveCurrentPin(pos[0], pos[1], transport); else removeCurrentPin();
   updateAllProgress(); renderMapMarkers(); renderTimeline(); updatePeekInfo(); updateSeekBar();
+  /* Signal camera state machine to re-evaluate at new position (Codex) */
+  cam.isSeeking = true;
+  _cameraOnSeek();
   if (playing) {
     if (te.raf) { cancelAnimationFrame(te.raf); te.raf = null; }
     te.raf = requestAnimationFrame(_calcLoop);
@@ -2246,15 +2282,6 @@ function _calcLoop(ts) {
   var nT = te.normalizedTime;
   var seg = _segAtTime(nT);
   var segIdx = seg ? seg.index : -1;
-
-  /* Camera: fire once per segment entry */
-  if (segIdx !== te.lastSegIdx && segIdx >= 0 && nT >= segmentTable[segIdx].startT) {
-    te.lastSegIdx = segIdx;
-    var _c = tcfg(seg.transport);
-    var _shp = segShapes[segIdx] || null;
-    var _ctrl = (!_shp && seg.curveBias) ? ctrlPt(seg.fromPt, seg.toPt, seg.curveBias) : null;
-    _cameraFollow(seg.fromPt, seg.toPt, _c, _shp, _ctrl);
-  }
 
   /* Current stop index */
   var newStopIdx = (!seg || nT < seg.startT) ? 0 : nT >= seg.endT ? seg.index+1 : seg.index;
@@ -2299,6 +2326,7 @@ function _renderTick() {
   }
 
   updateSeekBar();
+  _cameraUpdate();
 }
 
 /* ─── Playback ─── */
@@ -2324,33 +2352,145 @@ function startPlay() {
   }
   te.baseTime = te.normalizedTime;
   te.baseRealTime = performance.now();
+  cam.segIdx = -1; cam.arrivalLock = false; cam.isSeeking = false;
+  cam.dirHistory = []; cam.lastFollowPos = null;
   if (_renderTimer) { clearInterval(_renderTimer); _renderTimer = null; }
   _renderTimer = setInterval(_renderTick, 50);
   te.raf = requestAnimationFrame(_calcLoop);
 }
-function _cameraFollow(f, t, c, shapePts, ctrlPt_) {
-  var rhythm = c.rhythmLabel;
+/* ─── Camera State Machine helpers ─── */
+function _camZoom(rhythm, phase) {
+  var r = CAMERA_CONFIG.zoom[rhythm] || CAMERA_CONFIG.zoom.road;
+  return r[phase] || 13;
+}
+function _segLenKm(seg) {
+  return haversineKm(seg.fromPt[0], seg.fromPt[1], seg.toPt[0], seg.toPt[1]);
+}
+function _camDeparture(seg, rhythm) {
+  var segLenM = _segLenKm(seg) * 1000;
+  var offset  = Math.min(CAMERA_CONFIG.DEPARTURE.offsetMeters, segLenM * 0.3); // short segment (Codex)
   if (rhythm === 'air' || rhythm === 'sea') {
-    var bounds = L.latLngBounds([f, t]);
-    if (shapePts && shapePts.length) { shapePts.forEach(function(p){ bounds.extend(p); }); }
-    else if (ctrlPt_) { bounds.extend(ctrlPt_); }
+    var shp    = segShapes[seg.index] || null;
+    var bounds = L.latLngBounds([seg.fromPt, seg.toPt]);
+    if (shp) shp.forEach(function(p) { bounds.extend(p); });
     var pad = rhythm === 'air' ? 0.45 : 0.35;
     var mz  = rhythm === 'air' ? 8    : 9;
     map.fitBounds(bounds.pad(pad), { maxZoom: mz, animate: true, duration: 1.2 });
     return;
   }
-  var mid = (shapePts && shapePts.length >= 2) ? polylineInterp(shapePts, 0.5) : [(f[0]+t[0])/2, (f[1]+t[1])/2];
-  var zoom = rhythm === 'stroll' ? 16 : rhythm === 'trail' ? 15 : rhythm === 'road' ? 12 : 13;
-  var dur  = rhythm === 'stroll' ? 0.5 : 0.8;
-  map.flyTo(mid, zoom, { animate: true, duration: dur });
+  var zoom  = _camZoom(rhythm, 'depart');
+  var dLat  = seg.toPt[0] - seg.fromPt[0], dLng = seg.toPt[1] - seg.fromPt[1];
+  var norm  = Math.sqrt(dLat*dLat + dLng*dLng) || 1;
+  var offDeg = offset / 111320;
+  var center = [seg.fromPt[0] + (dLat/norm)*offDeg, seg.fromPt[1] + (dLng/norm)*offDeg];
+  map.flyTo(center, zoom, { animate: true, duration: CAMERA_CONFIG.fly.depart });
+}
+function _camArrival(seg, rhythm) {
+  var segLenM = _segLenKm(seg) * 1000;
+  Math.min(CAMERA_CONFIG.ARRIVAL.offsetMeters, segLenM * 0.3); // short segment guard (Codex)
+  map.flyTo(seg.toPt, _camZoom(rhythm, 'arrive'), { animate: true, duration: CAMERA_CONFIG.fly.arrive });
+}
+function _camTravelFollow(pos, rhythm) {
+  if (!pos) return;
+  /* Hysteresis: skip if pin hasn't moved enough (Cursor) */
+  if (cam.lastFollowPos &&
+      haversineKm(pos[0], pos[1], cam.lastFollowPos[0], cam.lastFollowPos[1]) < CAMERA_CONFIG.hysteresisKm) return;
+  cam.lastFollowPos = pos;
+  map.flyTo(pos, _camZoom(rhythm, 'travel'), { animate: true, duration: CAMERA_CONFIG.fly.travel });
+}
+/* Seek sync: re-evaluate camera state at new seek position (Codex) */
+function _cameraOnSeek() {
+  var seg = te.currentSeg;
+  var pos = te.currentPos;
+  cam.arrivalLock   = false;
+  cam.lastFollowPos = null;
+  cam.dirHistory    = [];
+  cam.isSeeking     = false;
+  if (!seg || !pos) { cam.state = 'IDLE'; return; }
+  cam.segIdx = te.currentSegIdx >= 0 ? te.currentSegIdx : seg.index;
+  var nT = te.normalizedTime;
+  var lt = seg.endT > seg.startT ? (nT - seg.startT) / (seg.endT - seg.startT) : 0;
+  var rhythm = tcfg(seg.transport).rhythmLabel;
+  if (lt < 0.15) {
+    cam.state = 'DEPARTURE'; _camDeparture(seg, rhythm);
+  } else if (lt > 0.85) {
+    cam.state = 'ARRIVAL'; cam.arrivalLock = true; _camArrival(seg, rhythm);
+  } else {
+    cam.state = 'TRAVEL';
+    map.flyTo(pos, _camZoom(rhythm, 'travel'), { animate: true, duration: 0.5 });
+  }
+}
+/* Main camera update — called from _renderTick every 50ms */
+function _cameraUpdate() {
+  if (!playing) { cam.state = 'IDLE'; return; }
+  /* Seek sync guard (Codex) */
+  if (cam.isSeeking) { _cameraOnSeek(); return; }
+  var nT     = te.normalizedTime;
+  var seg    = te.currentSeg;
+  var pos    = te.currentPos;
+  if (!seg || !pos) return;
+  var segIdx   = te.currentSegIdx;
+  var rhythm   = tcfg(seg.transport).rhythmLabel;
+  var segLenKm = _segLenKm(seg);
+  /* Segment change detection */
+  if (segIdx !== cam.segIdx && segIdx >= 0) {
+    var now   = performance.now();
+    /* Rapid segment switching: skip DEPARTURE re-init if < 50ms (Codex) */
+    var rapid = cam.segIdx >= 0 && (now - cam.lastSegChangeMs) < CAMERA_CONFIG.minDepartureIntervalMs;
+    cam.segIdx          = segIdx;
+    cam.lastSegChangeMs = now;
+    cam.arrivalLock     = false;
+    cam.lastFollowPos   = null;
+    cam.dirHistory      = [];
+    if (!rapid) {
+      cam.state = 'DEPARTURE';
+      _camDeparture(seg, rhythm);
+      return;
+    }
+    cam.state = 'TRAVEL'; // rapid switch: jump straight to TRAVEL
+  }
+  /* DEPARTURE → TRAVEL transition */
+  if (cam.state === 'DEPARTURE') {
+    var elapsed = (nT - seg.startT) * te.totalDuration;
+    if (elapsed < CAMERA_CONFIG.DEPARTURE.durationMs) return;
+    cam.state = 'TRAVEL';
+  }
+  /* ARRIVAL trigger */
+  if (!cam.arrivalLock && cam.state === 'TRAVEL') {
+    var lt = seg.endT > seg.startT ? (nT - seg.startT) / (seg.endT - seg.startT) : 0;
+    var shouldArrive = false;
+    if ((rhythm === 'air' || rhythm === 'sea') && segLenKm > CAMERA_CONFIG.ARRIVAL.longSegKm) {
+      /* Long ferry/flight: remaining-distance trigger (Codex) */
+      var remKm = haversineKm(pos[0], pos[1], seg.toPt[0], seg.toPt[1]);
+      if (remKm < CAMERA_CONFIG.ARRIVAL.triggerRemKm) shouldArrive = true;
+    } else {
+      if (lt > CAMERA_CONFIG.ARRIVAL.triggerRatio) shouldArrive = true;
+    }
+    if (shouldArrive) {
+      cam.arrivalLock = true; cam.state = 'ARRIVAL';
+      _camArrival(seg, rhythm); return;
+    }
+  }
+  /* TRAVEL: smooth direction following with hysteresis */
+  if (cam.state === 'TRAVEL') {
+    /* Direction vector smoothing — 4-frame average (Cursor) */
+    var ahead = getPositionAtTime(Math.min(1, nT + 0.005));
+    if (ahead && (ahead[0] !== pos[0] || ahead[1] !== pos[1])) {
+      cam.dirHistory.push([ahead[0]-pos[0], ahead[1]-pos[1]]);
+      if (cam.dirHistory.length > CAMERA_CONFIG.smoothFrames) cam.dirHistory.shift();
+    }
+    _camTravelFollow(pos, rhythm);
+  }
 }
 function stopAnim() {
   if (te.raf) { cancelAnimationFrame(te.raf); te.raf = null; }
   if (_renderTimer) { clearInterval(_renderTimer); _renderTimer = null; }
+  cam.state = 'IDLE';
 }
 function finishPlay() {
   if (te.raf) { cancelAnimationFrame(te.raf); te.raf = null; }
   if (_renderTimer) { clearInterval(_renderTimer); _renderTimer = null; }
+  cam.state = 'IDLE';
   playing = false; te.normalizedTime = 1;
   currentStop = DAYS[currentDay].stops.length - 1;
   removeCurrentPin(); renderMapMarkers(); renderTimeline();
