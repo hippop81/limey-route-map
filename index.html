@@ -3654,8 +3654,116 @@ var AI_SYSTEM_PROMPT = [
   '(例: 「ゆいレール」→ operatorHint: "Yui Rail")'
 ].join('\n');
 
-var _draftStops = [];  // working copy for preview
+var _draftStops  = [];   // working copy for preview
 var _aiAbortCtrl = null;
+var _aiRetryCount = 0;   // retry counter (max 1)
+
+/* ── 1. 安全なJSONパース（Codex 3段階）── */
+function _extractJsonText(raw) {
+  var fencedJson = raw.match(/```json\s*([\s\S]*?)```/i);
+  if (fencedJson) return fencedJson[1].trim();
+  var fenced = raw.match(/```\s*([\s\S]*?)```/);
+  if (fenced) return fenced[1].trim();
+  var firstObj = raw.indexOf('{'), lastObj = raw.lastIndexOf('}');
+  if (firstObj !== -1 && lastObj > firstObj) return raw.slice(firstObj, lastObj + 1).trim();
+  var firstArr = raw.indexOf('['), lastArr = raw.lastIndexOf(']');
+  if (firstArr !== -1 && lastArr > firstArr) return raw.slice(firstArr, lastArr + 1).trim();
+  return raw.trim();
+}
+function _parseJsonSafely(raw) {
+  var jsonText = _extractJsonText(raw);
+  try { return { ok: true, data: JSON.parse(jsonText) }; }
+  catch(e) { return { ok: false, data: null, error: 'AIの出力を読み取れませんでした' }; }
+}
+
+/* ── 2. per-stop validation（Codex）── */
+function _validateDraftStop(raw, index) {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw))
+    return { status: 'invalid', index: index, reason: 'not_an_object', raw: raw };
+  var name = typeof raw.name === 'string' ? raw.name.trim() : '';
+  var memo = typeof raw.memo === 'string' ? raw.memo.trim()
+           : typeof raw.activity === 'string' ? raw.activity.trim() : '';
+  if (!name && !memo)
+    return { status: 'invalid', index: index, reason: 'missing_name', raw: raw };
+  var warnings = [];
+  var lat = Number(raw.lat), lng = Number(raw.lng);
+  var hasCoords = isFinite(lat) && isFinite(lng) &&
+    lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
+  if (!hasCoords) warnings.push('coords_missing');
+  var time = String(raw.time || '').trim();
+  if (!time) warnings.push('time_missing');
+  var confidence = isFinite(Number(raw.confidence))
+    ? Math.max(0, Math.min(1, Number(raw.confidence))) : 0.5;
+  if (confidence <= 0.5) warnings.push('low_confidence');
+  var transport = Object.prototype.hasOwnProperty.call(TCFG, raw.transport) ? raw.transport : 'walk';
+  return {
+    status: warnings.length ? 'needsReview' : 'valid',
+    index: index,
+    draft: {
+      name:               name || '（名前未定）',
+      time:               time,
+      memo:               memo,
+      lat:                hasCoords ? lat : null,
+      lng:                hasCoords ? lng : null,
+      transport:          transport,
+      categories:         Array.isArray(raw.categories)
+                            ? raw.categories.filter(function(c){ return !!CATEGORIES[c]; }) : [],
+      isDayEnd:           !!raw.isDayEnd,
+      operatorHint:       raw.operatorHint || '',
+      confidence:         confidence,
+      needsReview:        warnings.length > 0,
+      validationWarnings: warnings,
+      source:             'ai'
+    }
+  };
+}
+
+/* ── 3. mode 判定（Codex）── */
+function _processDraftStops(parsed) {
+  var items = Array.isArray(parsed) ? parsed : (parsed.stops || []);
+  var results = items.map(function(raw, i) { return _validateDraftStop(raw, i); });
+  var drafts  = results.filter(function(r){ return r.status !== 'invalid'; }).map(function(r){ return r.draft; });
+  var invalids = results.filter(function(r){ return r.status === 'invalid'; });
+  var mode;
+  if (drafts.length === 0) mode = 'fallback';
+  else if (invalids.length === 0 && drafts.every(function(d){ return !d.needsReview; })) mode = 'success';
+  else if (invalids.length > 0) mode = 'partial_success';
+  else mode = 'needs_review';
+  return {
+    mode: mode, drafts: drafts, invalidItems: invalids,
+    summary: {
+      total:       items.length,
+      valid:       drafts.filter(function(d){ return !d.needsReview; }).length,
+      needsReview: drafts.filter(function(d){ return d.needsReview; }).length,
+      invalid:     invalids.length
+    }
+  };
+}
+
+/* ── 4. API失敗時 fallback（Codex）── */
+function _createManualFallbackDraft(originalInput) {
+  return {
+    name:               '',
+    time:               '',
+    memo:               originalInput || '',
+    lat:                null, lng: null,
+    transport:          'walk',
+    categories:         [],
+    isDayEnd:           false,
+    operatorHint:       '',
+    confidence:         0,
+    needsReview:        true,
+    validationWarnings: ['manual_fallback'],
+    source:             'manual_fallback'
+  };
+}
+
+/* ── 5. confidence 表示ヘルパー（Codex）── */
+function _getConfidenceLabel(confidence) {
+  if (confidence >= 0.8) return { color: '#28b56a', icon: '🟢', text: 'High' };
+  if (confidence >= 0.5) return { color: '#f5a623', icon: '🟡', text: 'Medium' };
+  return { color: '#e05454', icon: '🔴', text: 'Low' };
+}
 
 var TRANSPORT_EMOJI = {
   plane:'✈️', ferry:'🚢', shinkansen:'🚄', train_limited:'🚃', train_local:'🚃',
@@ -3690,6 +3798,33 @@ function closeAIDraftModal() {
   document.getElementById('aiDraftModal').classList.remove('open');
 }
 
+/* Low-level Claude API call — returns raw text or throws */
+async function _callClaude(key, text) {
+  _aiAbortCtrl = new AbortController();
+  var resp = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type':                   'application/json',
+      'x-api-key':                      key,
+      'anthropic-version':              '2023-06-01',
+      'anthropic-dangerous-allow-cors': 'true'
+    },
+    body: JSON.stringify({
+      model:    'claude-haiku-4-5',
+      max_tokens: 2048,
+      system:   AI_SYSTEM_PROMPT,
+      messages: [{ role: 'user', content: text }]
+    }),
+    signal: _aiAbortCtrl.signal
+  });
+  if (!resp.ok) {
+    var errData = await resp.json().catch(function(){ return {}; });
+    throw new Error((errData.error && errData.error.message) || ('HTTP ' + resp.status));
+  }
+  var data = await resp.json();
+  return (data.content && data.content[0] && data.content[0].text) || '';
+}
+
 async function generateDraftStops() {
   var key  = document.getElementById('aiApiKey').value.trim();
   if (!key) { _aiShowErr('Anthropic API Key を入力してください。'); return; }
@@ -3702,106 +3837,181 @@ async function generateDraftStops() {
   var btn = document.getElementById('aiGenBtn');
   btn.textContent = '生成中…'; btn.disabled = true;
   document.getElementById('aiDraftPreview').style.display = 'none';
+  _aiRetryCount = 0;
 
   try {
-    _aiAbortCtrl = new AbortController();
-    var resp = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type':            'application/json',
-        'x-api-key':               key,
-        'anthropic-version':       '2023-06-01',
-        'anthropic-dangerous-allow-cors': 'true'
-      },
-      body: JSON.stringify({
-        model:      'claude-haiku-4-5',
-        max_tokens: 2048,
-        system:     AI_SYSTEM_PROMPT,
-        messages:   [{ role: 'user', content: text }]
-      }),
-      signal: _aiAbortCtrl.signal
-    });
+    var rawTxt = null;
+    var parseResult = null;
 
-    if (!resp.ok) {
-      var errData = await resp.json().catch(function() { return {}; });
-      var msg = (errData.error && errData.error.message) || ('HTTP ' + resp.status);
-      throw new Error(msg);
+    /* ─ attempt 1 ─ */
+    try {
+      rawTxt      = await _callClaude(key, text);
+      parseResult = _parseJsonSafely(rawTxt);
+    } catch(e1) {
+      if (e1.name === 'AbortError') { return; }
+      /* API error → retry once */
+      rawTxt = null; parseResult = null;
     }
 
-    var data   = await resp.json();
-    var rawTxt = (data.content && data.content[0] && data.content[0].text) || '';
-    /* strip potential markdown code fences */
-    rawTxt = rawTxt.replace(/^```[a-z]*\n?/i,'').replace(/\n?```$/,'').trim();
-    var parsed = JSON.parse(rawTxt);
-    var stops  = Array.isArray(parsed.stops) ? parsed.stops : [];
+    /* ─ attempt 2 (retry on API error or bad parse) ─ */
+    if (!parseResult || !parseResult.ok) {
+      _aiRetryCount = 1;
+      btn.textContent = '再試行中…';
+      try {
+        rawTxt      = await _callClaude(key, text);
+        parseResult = _parseJsonSafely(rawTxt);
+      } catch(e2) {
+        if (e2.name === 'AbortError') { return; }
+        parseResult = { ok: false, data: null };
+      }
+    }
 
-    _draftStops = stops.map(function(s) {
-      var transport = Object.keys(TCFG).indexOf(s.transport) >= 0 ? s.transport : 'walk';
-      return {
-        name:         (s.name         || '').trim() || '（名前未定）',
-        time:         (s.time         || ''),
-        transport:    transport,
-        categories:   Array.isArray(s.categories) ? s.categories.filter(function(c) { return !!CATEGORIES[c]; }) : [],
-        activity:     s.activity      || '',
-        operatorHint: s.operatorHint  || '',
-        isDayEnd:     !!s.isDayEnd,
-        confidence:   typeof s.confidence === 'number' ? s.confidence : 0.8,
-        inferred:     true,
-        lat:          null,
-        lng:          null
-      };
-    });
+    /* ─ fallback: 2回とも失敗 ─ */
+    if (!parseResult || !parseResult.ok) {
+      _draftStops = [_createManualFallbackDraft(text)];
+      renderDraftPreviews({
+        mode: 'fallback', summary: { total: 1, valid: 0, needsReview: 1, invalid: 0 }
+      });
+      document.getElementById('aiDraftPreview').style.display = 'block';
+      document.getElementById('aiPreviewCount').textContent = '手動入力';
+      _aiShowErr(
+        'うまく読み取れなかったため、手動入力に切り替えました。' +
+        '入力内容はメモに残しています。'
+      );
+      return;
+    }
 
-    if (_draftStops.length === 0) throw new Error('Stopが抽出できませんでした。テキストを詳しく書いてみてください。');
+    /* ─ process & validate ─ */
+    var proc = _processDraftStops(parseResult.data);
+    _draftStops = proc.drafts;
 
-    renderDraftPreviews();
+    if (proc.mode === 'fallback') {
+      /* All stops invalid — one manual fallback card */
+      _draftStops = [_createManualFallbackDraft(text)];
+      renderDraftPreviews({ mode: 'fallback', summary: { total: 1, valid: 0, needsReview: 1, invalid: 0 } });
+      document.getElementById('aiDraftPreview').style.display = 'block';
+      document.getElementById('aiPreviewCount').textContent = '手動入力';
+      _aiShowErr('Stopが抽出できませんでした。テキストを詳しく書いてみてください。');
+      return;
+    }
+
+    renderDraftPreviews(proc);
     document.getElementById('aiDraftPreview').style.display = 'block';
     document.getElementById('aiPreviewCount').textContent = _draftStops.length + ' stops';
 
-  } catch(e) {
-    if (e.name !== 'AbortError') _aiShowErr('エラー: ' + e.message);
+    /* ─ partial_success banner ─ */
+    if (proc.mode === 'partial_success') {
+      _aiShowErr(
+        proc.summary.needsReview + '件のStop候補を作成しました。' +
+        proc.summary.invalid + '件は読み取れませんでした。' +
+        '確認が必要な項目が含まれます。'
+      );
+    } else if (proc.mode === 'needs_review') {
+      _aiShowErr(proc.summary.needsReview + '件の確認が必要な項目があります。');
+    }
+
   } finally {
     btn.textContent = '✨ 旅程を生成'; btn.disabled = false;
-    _aiAbortCtrl = null;
+    _aiAbortCtrl = null; _aiRetryCount = 0;
   }
 }
 
-function _aiShowErr(msg) {
+function _aiShowErr(msg, type) {
+  /* type: 'error'(default) | 'warn' */
+  var style = (type === 'warn')
+    ? 'background:rgba(245,166,35,.1);color:rgba(160,100,0,.9);border:1px solid rgba(245,166,35,.35);'
+    : '';
   document.getElementById('aiErrMsg').innerHTML =
-    '<div class="ai-err">' + escHtml(msg) + '</div>';
+    '<div class="ai-err" style="' + style + '">' + escHtml(msg) + '</div>';
 }
 
-function renderDraftPreviews() {
+function renderDraftPreviews(proc) {
   var html = '';
+
+  /* ─ valid / needsReview cards ─ */
   _draftStops.forEach(function(s, i) {
-    var confColor = s.confidence >= 0.85 ? '#28b56a' : s.confidence >= 0.65 ? '#f5a623' : '#e05454';
+    var conf  = _getConfidenceLabel(s.confidence);
     var transportOpts = Object.keys(TCFG).map(function(k) {
       return '<option value="' + k + '"' + (k === s.transport ? ' selected' : '') + '>' +
         (TRANSPORT_EMOJI[k] || '') + ' ' + (TRANSPORT_LABEL[k] || k.toUpperCase()) + '</option>';
     }).join('');
     var catBtns = Object.keys(CATEGORIES).map(function(k) {
       var sel = s.categories.indexOf(k) >= 0 ? ' sel' : '';
-      return '<button class="draft-cat-btn' + sel + '" data-cat="' + k + '" onclick="_draftToggleCat(' + i + ',this)">' +
+      return '<button class="draft-cat-btn' + sel + '" data-cat="' + k +
+        '" onclick="_draftToggleCat(' + i + ',this)">' +
         CATEGORIES[k].icon + ' ' + CATEGORIES[k].label + '</button>';
     }).join('');
-    var opHint = s.operatorHint
-      ? '<div class="draft-op-hint">🚉 ' + escHtml(s.operatorHint) + '</div>' : '';
-    var actHint = s.activity
-      ? '<div class="draft-op-hint">📝 ' + escHtml(s.activity) + '</div>' : '';
+    var opHint  = s.operatorHint ? '<div class="draft-op-hint">🚉 ' + escHtml(s.operatorHint) + '</div>' : '';
+    var memoHint = s.memo        ? '<div class="draft-op-hint">📝 ' + escHtml(s.memo)         + '</div>' : '';
+
+    /* warning row for needsReview stops */
+    var warnRow = '';
+    if (s.needsReview && s.validationWarnings && s.validationWarnings.length) {
+      var warnMap = {
+        coords_missing:   '📍 位置情報なし — 後でEdit',
+        time_missing:     '⏰ 時刻未設定',
+        low_confidence:   '⚠️ 確認推奨（信頼度低）',
+        manual_fallback:  '✍️ 手動入力 — 内容を確認してください'
+      };
+      var warnTxts = s.validationWarnings.map(function(w){ return warnMap[w] || w; }).join(' · ');
+      warnRow = '<div style="font-family:var(--font-body);font-size:10px;color:#b07000;' +
+        'background:rgba(245,166,35,.1);border-radius:5px;padding:4px 8px;margin-bottom:6px;">' +
+        warnTxts + '</div>';
+    }
+
+    var borderStyle = s.needsReview
+      ? 'border-color:rgba(245,166,35,.55);'
+      : (s.source === 'manual_fallback' ? 'border-color:rgba(192,68,68,.4);' : '');
+
     html +=
-      '<div class="draft-card" id="dcard-' + i + '">' +
+      '<div class="draft-card" id="dcard-' + i + '" style="' + borderStyle + '">' +
         '<div class="draft-card-hd">' +
-          '<span class="draft-conf" style="background:' + confColor + '" title="AI信頼度: ' + Math.round(s.confidence*100) + '%"></span>' +
-          '<input class="draft-time-inp" type="text" value="' + escHtml(s.time) + '" maxlength="5" placeholder="--:--" oninput="_draftSetTime(' + i + ',this.value)">' +
-          '<select class="draft-transport-sel" onchange="_draftSetTransport(' + i + ',this.value)">' + transportOpts + '</select>' +
-          '<label class="draft-dayend-lbl"><input type="checkbox"' + (s.isDayEnd ? ' checked' : '') + ' onchange="_draftSetDayEnd(' + i + ',this.checked)"> 終点</label>' +
+          '<span class="draft-conf" style="background:' + conf.color + '"' +
+            ' title="' + conf.icon + ' ' + conf.text + ' — AI信頼度: ' + Math.round(s.confidence*100) + '%"></span>' +
+          '<input class="draft-time-inp" type="text" value="' + escHtml(s.time) +
+            '" maxlength="5" placeholder="--:--" oninput="_draftSetTime(' + i + ',this.value)">' +
+          '<select class="draft-transport-sel" onchange="_draftSetTransport(' + i + ',this.value)">' +
+            transportOpts + '</select>' +
+          '<label class="draft-dayend-lbl"><input type="checkbox"' +
+            (s.isDayEnd ? ' checked' : '') + ' onchange="_draftSetDayEnd(' + i + ',this.checked)"> 終点</label>' +
         '</div>' +
-        '<input class="draft-name-inp" type="text" value="' + escHtml(s.name) + '" placeholder="スポット名" oninput="_draftSetName(' + i + ',this.value)">' +
+        warnRow +
+        '<input class="draft-name-inp" type="text" value="' + escHtml(s.name) +
+          '" placeholder="スポット名" oninput="_draftSetName(' + i + ',this.value)">' +
         '<div class="draft-cats">' + catBtns + '</div>' +
-        opHint + actHint +
+        opHint + memoHint +
       '</div>';
   });
+
+  /* ─ invalid items (Codex) ─ */
+  if (proc && proc.invalidItems && proc.invalidItems.length) {
+    proc.invalidItems.forEach(function(inv) {
+      var rawName = inv.raw && typeof inv.raw.name === 'string' ? inv.raw.name : '';
+      var reasonMap = { not_an_object: '形式エラー', missing_name: '名前なし' };
+      var reason = reasonMap[inv.reason] || inv.reason;
+      html +=
+        '<div class="draft-card" style="border-color:rgba(192,68,68,.35);opacity:.85;">' +
+          '<div style="font-family:var(--font-body);font-size:11px;font-weight:600;' +
+            'color:rgba(192,68,68,.8);margin-bottom:6px;">❌ 読み取れませんでした（' + escHtml(reason) + '）' +
+            (rawName ? ' — ' + escHtml(rawName) : '') + '</div>' +
+          '<button class="ep-btn-outline" style="width:100%;font-size:11px;padding:7px 0;"' +
+            ' onclick="_addManualFallbackCard()">＋ 手動で追加</button>' +
+        '</div>';
+    });
+  }
+
   document.getElementById('aiDraftCards').innerHTML = html;
+}
+
+/* Add a blank manual-fallback card to the working list */
+function _addManualFallbackCard() {
+  _draftStops.push(_createManualFallbackDraft(''));
+  /* re-render without proc (no invalid items panel) */
+  renderDraftPreviews(null);
+  document.getElementById('aiPreviewCount').textContent = _draftStops.length + ' stops';
+  /* scroll to new card */
+  var cards = document.getElementById('aiDraftCards').children;
+  if (cards.length) cards[cards.length - 1].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 /* Inline editing callbacks */
@@ -3831,7 +4041,7 @@ function confirmDraftStops() {
       categories: s.categories.slice(),
       isDayEnd:  s.isDayEnd,
       label:     s.operatorHint || '',
-      memo:      s.activity     || '',
+      memo:      s.memo         || '',
       fare:      '',
       durHours:  0,
       durMins:   0,
