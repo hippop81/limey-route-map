@@ -1614,6 +1614,7 @@ var currentDay  = 1;
 var currentStop = -1;
 var playing     = false;
 var mapMarkers  = [], segLines = [], segProgressLines = [], segShapes = [], currentPin = null;
+var routeSegments = [], cumulativeDist = [0], totalDist = 0, segmentGeometries = [];
 
 /* ─── Animation state ─── */
 var anim = { active: false, raf: null, pauseTimer: null, fromIdx: 0, toIdx: 1, fromPt: [0,0], toPt: [0,0], ctrlPt: null, startTime: 0, duration: 1400, pauseMs: 950, easing: 'easeInOut' };
@@ -1650,33 +1651,84 @@ function ease(t, n) { if(n==='linear') return t; if(n==='easeOut') return t*(2-t
 function bezierPt(p0, c, p1, t) { var m=1-t; return [m*m*p0[0]+2*m*t*c[0]+t*t*p1[0], m*m*p0[1]+2*m*t*c[1]+t*t*p1[1]]; }
 function ctrlPt(f,t,b)  { var dl=t[0]-f[0],dn=t[1]-f[1]; return [(f[0]+t[0])/2-dn*b,(f[1]+t[1])/2+dl*b]; }
 
-function fullSegPts(fi, ti) {
-  if (segShapes[fi]) return segShapes[fi];
-  var s=DAYS[currentDay].stops, f=[s[fi].lat,s[fi].lng], t=[s[ti].lat,s[ti].lng], c=tcfg(s[fi].transport);
-  if(!c.curve) return [f,t];
-  var ctrl=ctrlPt(f,t,c.curve), pts=[];
-  for(var i=0;i<=48;i++) pts.push(bezierPt(f,ctrl,t,i/48));
+function clamp01(v) { return Math.max(0, Math.min(1, isNaN(v) ? 0 : v)); }
+function lineInterp(f, t, te) { return [f[0] + (t[0]-f[0])*te, f[1] + (t[1]-f[1])*te]; }
+function fallbackUsesArc(type) { return type === 'plane' || type === 'ferry'; }
+function fallbackGeometryPoints(from, to, type) {
+  var f = [from.lat, from.lng], t = [to.lat, to.lng];
+  var c = tcfg(type);
+  if (!fallbackUsesArc(type) || !c.curve) return [f, t];
+  var ctrl = ctrlPt(f, t, c.curve), pts = [];
+  for (var i = 0; i <= 48; i++) pts.push(bezierPt(f, ctrl, t, i/48));
   return pts;
 }
+function buildSegmentGeometry(from, to) {
+  var shapeId = explicitSegmentShapeId(from, to);
+  var shapePts = shapeId ? findShapeById(shapeId, from.lat, from.lng, to.lat, to.lng) : null;
+  if (shapePts) return { type: 'shape', shapeId: shapeId, points: shapePts, fallback: false };
+  return { type: fallbackUsesArc(from.transport) ? 'arc' : 'line', shapeId: shapeId || '', points: fallbackGeometryPoints(from, to, from.transport), fallback: true };
+}
+function buildRouteMetrics(day) {
+  var d = DAYS[day || currentDay];
+  var stops = d && d.stops ? d.stops : [];
+  var segments = [], cum = [0], geoms = [], sum = 0;
+  for (var i = 0; i < stops.length - 1; i++) {
+    var from = stops[i], to = stops[i+1];
+    var dist = haversineKm(from.lat, from.lng, to.lat, to.lng);
+    sum += dist;
+    segments.push({ from: from, to: to, dist: dist });
+    cum.push(sum);
+    geoms.push(buildSegmentGeometry(from, to));
+  }
+  routeSegments = segments;
+  cumulativeDist = cum;
+  totalDist = sum;
+  segmentGeometries = geoms;
+  segShapes = geoms.map(function(g) { return g && g.type === 'shape' ? g.points : null; });
+  return { segments: segments, totalDist: sum, cumulativeDist: cum, geometries: geoms };
+}
+function segmentIndexAtDistance(dist) {
+  if (!routeSegments.length) return -1;
+  if (dist <= 0) return 0;
+  for (var i = 0; i < routeSegments.length; i++) {
+    if (dist <= cumulativeDist[i+1]) return i;
+  }
+  return routeSegments.length - 1;
+}
+function getPositionAtTime(normalizedTime) {
+  var t = clamp01(normalizedTime);
+  var stops = DAYS[currentDay] && DAYS[currentDay].stops ? DAYS[currentDay].stops : [];
+  if (!stops.length) return null;
+  if (!routeSegments.length) return { lat: stops[0].lat, lng: stops[0].lng };
+  var targetDist = totalDist * t;
+  var idx = segmentIndexAtDistance(targetDist);
+  if (idx < 0) return { lat: stops[0].lat, lng: stops[0].lng };
+  var segStart = cumulativeDist[idx], segDist = routeSegments[idx].dist;
+  var localT = segDist > 0 ? (targetDist - segStart) / segDist : 0;
+  var pts = fullSegPts(idx, idx + 1);
+  var pos = polylineInterp(pts, clamp01(localT));
+  return { lat: pos[0], lng: pos[1] };
+}
+function fullSegPts(fi, ti) {
+  var geom = segmentGeometries[fi];
+  if (geom && geom.points) return geom.points;
+  var s = DAYS[currentDay].stops;
+  return fallbackGeometryPoints(s[fi], s[ti], s[fi].transport);
+}
 function partialSegPts(fi, te) {
-  if (segShapes[fi]) return slicePolylineAt(segShapes[fi], te);
-  var s=DAYS[currentDay].stops, f=[s[fi].lat,s[fi].lng], t=[s[fi+1].lat,s[fi+1].lng], c=tcfg(s[fi].transport);
-  if(!c.curve) return [f,[f[0]+(t[0]-f[0])*te,f[1]+(t[1]-f[1])*te]];
-  var ctrl=ctrlPt(f,t,c.curve), N=Math.max(3,Math.ceil(te*36)), pts=[];
-  for(var i=0;i<=N;i++) pts.push(bezierPt(f,ctrl,t,(i/N)*te));
-  return pts;
+  return slicePolylineAt(fullSegPts(fi, fi+1), clamp01(te));
 }
 
 /* ─── Route lines ─── */
 function initRouteLines() {
   segLines.forEach(function(l){map.removeLayer(l);}); segProgressLines.forEach(function(l){map.removeLayer(l);});
-  segLines=[]; segProgressLines=[]; segShapes=[];
+  segLines=[]; segProgressLines=[];
+  buildRouteMetrics(currentDay);
   var stops=DAYS[currentDay].stops;
   for(var i=0;i<stops.length-1;i++){
-    var from=stops[i], to=stops[i+1];
-    segShapes.push(findGtfsShape(from.lat, from.lng, to.lat, to.lng, from.transport, explicitSegmentShapeId(from, to)));
+    var from=stops[i];
     var c=tcfg(from.transport), pts=fullSegPts(i,i+1);
-    var dash = segShapes[i] ? null : (c.dashArray||'6 5');
+    var dash = segmentGeometries[i] && segmentGeometries[i].type === 'shape' ? null : (c.dashArray||'6 5');
     segLines.push(L.polyline(pts,{color:'#C4C0B6',weight:Math.max(1.5,c.lineWeight),opacity:.8,dashArray:dash,lineCap:'round'}).addTo(map));
     segProgressLines.push(L.polyline([],{color:LIME,weight:c.progWeight||4,opacity:.9,lineCap:'round',lineJoin:'round'}).addTo(map));
   }
@@ -1840,11 +1892,12 @@ function animNext() {
   var f=[from.lat,from.lng],t=[to.lat,to.lng];
   anim.active=true; anim.fromIdx=currentStop; anim.toIdx=currentStop+1;
   anim.fromPt=f; anim.toPt=t;
-  anim.shapePts = segShapes[currentStop] || null;
-  anim.ctrlPt = (!anim.shapePts && c.curve) ? ctrlPt(f,t,c.curve) : null;
+  var geom = segmentGeometries[currentStop] || buildSegmentGeometry(from, to);
+  anim.shapePts = geom.points || null;
+  anim.ctrlPt = null;
   anim.easing=c.easing; anim.pauseMs=c.pauseMs;
-  var dl=t[0]-f[0],dn=t[1]-f[1],dist=Math.sqrt(dl*dl+dn*dn);
-  anim.duration=Math.max(700,Math.min(2800,dist*4400))/c.speedMult/playbackSpeed;
+  var dist = routeSegments[currentStop] ? routeSegments[currentStop].dist : haversineKm(from.lat, from.lng, to.lat, to.lng);
+  anim.duration=Math.max(700,Math.min(2800,dist*900))/c.speedMult/playbackSpeed;
   anim.startTime=performance.now();
   anim.raf=requestAnimationFrame(animTick);
 }
