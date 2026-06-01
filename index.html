@@ -1136,6 +1136,30 @@ body {
 </div>
 
 <script>
+/* ─── Schema versions ─── */
+var ROUTE_SCHEMA_VERSION = '5.16';
+var DRAFT_STOP_SCHEMA_VERSION = '5.16';
+var DRAFT_STOP_JSON_SCHEMA = {
+  schemaVersion: DRAFT_STOP_SCHEMA_VERSION,
+  type: 'object',
+  required: ['name', 'transport', 'operatorHint', 'categories', 'activity', 'isDayEnd', 'lat', 'lng', 'confidence', 'inferred'],
+  properties: {
+    name: { type: 'string' },
+    time: { type: ['string', 'null'], pattern: '^([01]\\d|2[0-3]):[0-5]\\d$' },
+    transport: { type: 'string' },
+    operatorHint: { type: 'string' },
+    categories: { type: 'array', items: { type: 'string' } },
+    activity: { type: 'string' },
+    isDayEnd: { type: 'boolean' },
+    lat: { type: ['number', 'null'] },
+    lng: { type: ['number', 'null'] },
+    confidence: { type: 'number', minimum: 0, maximum: 1 },
+    inferred: { type: 'boolean' },
+    gtfs: { type: 'object', properties: { shapeId: { type: 'string' } } }
+  }
+};
+if (typeof window !== 'undefined') window.DRAFT_STOP_JSON_SCHEMA = DRAFT_STOP_JSON_SCHEMA;
+
 /* ─── Trip metadata ─── */
 var TRIP = {
   title: 'ROUTE MAP',
@@ -1277,7 +1301,7 @@ function closeExportSheet() {
   document.getElementById('exportSheet').classList.remove('open');
 }
 function _buildExportBlob() {
-  return new Blob([JSON.stringify({ schemaVersion: '5.8', trip: TRIP, days: DAYS }, null, 2)], { type: 'application/json' });
+  return new Blob([JSON.stringify({ schemaVersion: ROUTE_SCHEMA_VERSION, trip: TRIP, days: DAYS }, null, 2)], { type: 'application/json' });
 }
 function downloadJSON() {
   var blob = _buildExportBlob();
@@ -1416,6 +1440,131 @@ var TCFG = {
   walk:          { curve: 0,    lineWeight: 1.5, dashArray: '2 7',  progWeight: 2,   speedMult: 0.42, pauseMs: 1200, easing: 'easeInOut', pinSize: 32, pulseDur: '2.4s', pulseAnim: 'pulse-slow', rhythmLabel: 'stroll' }
 };
 function tcfg(type) { return TCFG[type] || TCFG.bus_local; }
+
+
+/* ─── DraftStop schema / conversion ─── */
+function validTransportTypes() { return Object.keys(TCFG); }
+function isValidTransportType(type) { return !!TCFG[type]; }
+function normalizeDraftStop(draft) {
+  draft = draft || {};
+  return {
+    name: String(draft.name || '').trim(),
+    time: draft.time === null || draft.time === undefined || draft.time === '' ? null : String(draft.time).trim(),
+    transport: String(draft.transport || 'bus_local').trim(),
+    operatorHint: String(draft.operatorHint || '').trim(),
+    categories: Array.isArray(draft.categories) ? draft.categories.filter(function(c){ return typeof c === 'string' && c.trim(); }) : [],
+    activity: String(draft.activity || '').trim(),
+    isDayEnd: !!draft.isDayEnd,
+    lat: draft.lat === null || draft.lat === undefined || draft.lat === '' ? null : Number(draft.lat),
+    lng: draft.lng === null || draft.lng === undefined || draft.lng === '' ? null : Number(draft.lng),
+    confidence: draft.confidence === undefined ? 0 : Number(draft.confidence),
+    inferred: !!draft.inferred,
+    gtfs: draft.gtfs && draft.gtfs.shapeId ? { shapeId: String(draft.gtfs.shapeId).trim() } : undefined
+  };
+}
+function validateDraftStop(draft) {
+  var d = normalizeDraftStop(draft), warnings = [], valid = true;
+  if (!d.name) { warnings.push('name is required'); valid = false; }
+  if (d.time !== null && !/^([01]\d|2[0-3]):[0-5]\d$/.test(d.time)) { warnings.push('time must be HH:MM or null'); valid = false; }
+  if (!isValidTransportType(d.transport)) { warnings.push('unknown transport type: ' + d.transport); valid = false; }
+  if (!Array.isArray(d.categories)) { warnings.push('categories must be an array'); valid = false; }
+  if (d.lat === null || d.lng === null) warnings.push('lat/lng is null; geocoding is required');
+  else if (!isFinite(d.lat) || !isFinite(d.lng)) { warnings.push('lat/lng must be numbers or null'); valid = false; }
+  if (!isFinite(d.confidence) || d.confidence < 0 || d.confidence > 1) { warnings.push('confidence must be 0.0-1.0'); valid = false; }
+  return { valid: valid, warnings: warnings };
+}
+function draftConfidenceLabel(confidence) {
+  var c = Number(confidence);
+  if (c >= 0.9) return { icon: '✓', label: '高信頼', level: 'high' };
+  if (c >= 0.7) return { icon: '⚠', label: '要確認', level: 'medium' };
+  return { icon: '✗', label: '要編集', level: 'low' };
+}
+function renderDraftConfidence(confidence) {
+  var c = draftConfidenceLabel(confidence);
+  return c.icon + ' ' + c.label;
+}
+function normalizeSearchToken(s) {
+  return String(s || '').toLowerCase().replace(/[\s　_-]+/g, '');
+}
+function operatorHintAliases(hint) {
+  var raw = normalizeSearchToken(hint);
+  var aliases = [raw];
+  if (/yui|ゆい|monorail|rail/.test(raw)) aliases.push('yuirail', 'ゆいレール', '沖縄都市モノレール');
+  if (/oas|airportshuttle|エアポート|リゾートライナー/.test(raw)) aliases.push('oas', 'エアポートライナー', 'リゾートライナー');
+  if (/yanbaru|やんばる/.test(raw)) aliases.push('yanbaru', 'やんばる急行');
+  if (/toyo|東陽/.test(raw)) aliases.push('toyo', '東陽');
+  if (/ryukyu|okinawabus|沖縄バス/.test(raw)) aliases.push('ryukyu', '沖縄バス');
+  if (/tkobus|東京バス/.test(raw)) aliases.push('tkobus', '東京バス');
+  return aliases.map(normalizeSearchToken).filter(Boolean);
+}
+function suggestShapeIdsForOperator(operatorHint, transportType) {
+  var shapes = getGtfsShapes ? getGtfsShapes() : ((GTFS_DB && GTFS_DB.shapes) || {});
+  var aliases = operatorHintAliases(operatorHint);
+  var out = [];
+  Object.keys(shapes || {}).forEach(function(shapeId) {
+    var shape = shapes[shapeId] || {};
+    if (transportType && shape.transportType && shape.transportType !== transportType) return;
+    var provider = shapeProviderName ? shapeProviderName(shapeId) : String(shapeId).split(':')[0];
+    var hay = normalizeSearchToken([shapeId, provider, shape.routeId, shape.routeName, shape.transportType].join(' '));
+    var score = 0;
+    aliases.forEach(function(a) { if (a && hay.indexOf(a) >= 0) score += a.length; });
+    if (score > 0) out.push({ shapeId: shapeId, routeName: shape.routeName || '', routeId: shape.routeId || '', transportType: shape.transportType || '', score: score });
+  });
+  return out.sort(function(a,b){ return b.score - a.score || a.shapeId.localeCompare(b.shapeId); }).slice(0, 10);
+}
+function geocodeDraftStop(draft) {
+  var d = normalizeDraftStop(draft);
+  if (d.lat !== null && d.lng !== null && isFinite(d.lat) && isFinite(d.lng)) return Promise.resolve({ lat: d.lat, lng: d.lng, source: 'draft' });
+  if (typeof fetch !== 'function' || !d.name) return Promise.resolve({ lat: null, lng: null, source: 'none' });
+  var q = [d.name, d.operatorHint, '沖縄'].filter(Boolean).join(' ');
+  var url = 'https://nominatim.openstreetmap.org/search?q=' + encodeURIComponent(q) + '&format=json&limit=1&accept-language=ja,en&addressdetails=0';
+  return fetch(url, { headers: { 'Accept-Language': 'ja,en' } })
+    .then(function(r) { return r.json(); })
+    .then(function(rows) {
+      var item = rows && rows[0];
+      return item ? { lat: parseFloat(item.lat), lng: parseFloat(item.lon), source: 'nominatim' } : { lat: null, lng: null, source: 'none' };
+    })
+    .catch(function() { return { lat: null, lng: null, source: 'none' }; });
+}
+function draftToStop(draft) {
+  var d = normalizeDraftStop(draft);
+  var validation = validateDraftStop(d);
+  if (!validation.valid) return Promise.reject(new Error(validation.warnings.join('; ')));
+  return geocodeDraftStop(d).then(function(coords) {
+    var candidates = suggestShapeIdsForOperator(d.operatorHint, d.transport);
+    var stop = {
+      name: d.name,
+      time: d.time || '—',
+      memo: d.activity,
+      lat: coords.lat,
+      lng: coords.lng,
+      transport: d.transport,
+      categories: d.categories.slice(),
+      isDayEnd: d.isDayEnd,
+      label: d.operatorHint,
+      fare: '',
+      duration: '',
+      confidence: d.confidence,
+      inferred: d.inferred,
+      draftConfidence: draftConfidenceLabel(d.confidence),
+      shapeIdCandidates: candidates,
+      draftWarnings: validation.warnings.slice(),
+      geocodeSource: coords.source
+    };
+    if (d.gtfs && d.gtfs.shapeId) {
+      stop.shapeId = d.gtfs.shapeId;
+      stop.gtfs = { shapeId: d.gtfs.shapeId };
+    }
+    return stop;
+  });
+}
+if (typeof window !== 'undefined') {
+  window.validateDraftStop = validateDraftStop;
+  window.draftToStop = draftToStop;
+  window.draftConfidenceLabel = draftConfidenceLabel;
+  window.renderDraftConfidence = renderDraftConfidence;
+  window.suggestShapeIdsForOperator = suggestShapeIdsForOperator;
+}
 
 /* ─── GTFS ─── */
 var GTFS_DB = {
