@@ -166,26 +166,97 @@ body {
 .rhythm-pill { display: inline-flex; align-items: center; gap: 3px; font-family: var(--font-body); font-size: 8px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--warm-gray); margin-top: 5px; }
 .rhythm-pill .dot { width: 4px; height: 4px; border-radius: 50%; background: var(--warm-gray); }
 
-/* ── Edit mode card UI ── */
-.card-edit-btns {
-  display: none; position: absolute; top: 6px; right: 6px;
-  gap: 2px;
+/* ── Edit mode card ⋮ menu ── */
+.card-menu {
+  display: none; position: absolute; top: 4px; right: 4px;
+  align-items: center; gap: 2px;
 }
-.timeline.edit-mode .card-edit-btns { display: flex; }
-.card-act {
-  width: 22px; height: 22px; border-radius: 5px; border: none;
+.timeline.edit-mode .card-menu { display: flex; }
+.card-menu-btn {
+  width: 24px; height: 24px; border-radius: 5px; border: none;
   background: transparent; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
-  font-size: 11px; transition: all .15s;
+  font-size: 15px; color: var(--secondary); transition: all .15s;
+  line-height: 1;
 }
-.card-act-edit { color: var(--peacock); }
-.card-act-edit:hover { background: rgba(0,122,138,.1); }
-.card-act-del  { color: #c04444; }
-.card-act-del:hover  { background: rgba(192,68,68,.1); }
+.card-menu-btn:hover { background: rgba(0,0,0,.06); color: var(--primary); }
+.card-menu-wrap { position: relative; }
+.card-menu-dropdown {
+  display: none; position: absolute; top: 28px; right: 0; z-index: 300;
+  background: var(--white); border: 1px solid var(--warm-gray);
+  border-radius: 8px; overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0,0,0,.14);
+  min-width: 148px;
+}
+.card-menu-dropdown.open { display: block; }
+.card-menu-item {
+  display: flex; align-items: center; gap: 8px;
+  width: 100%; padding: 10px 14px; border: none; background: transparent;
+  font-family: var(--font-body); font-size: 12px; font-weight: 600;
+  color: var(--primary); cursor: pointer; text-align: left;
+  transition: background .12s; white-space: nowrap;
+}
+.card-menu-item + .card-menu-item { border-top: 1px solid var(--light-gray); }
+.card-menu-item:hover { background: var(--soft-lime); }
+.card-menu-item.danger { color: #c04444; }
+.card-menu-item.danger:hover { background: rgba(192,68,68,.06); }
+.card-menu-sub { border-top: 1px solid var(--light-gray); }
+.card-menu-sub-item {
+  padding: 8px 14px 8px 28px; font-size: 11px; color: var(--secondary);
+}
+.card-menu-sub-item:hover { color: var(--peacock); background: var(--soft-lime); }
+
+/* ── Edit mode tabs ── */
+.edit-tab-bar {
+  display: none; border-bottom: 2px solid var(--light-gray);
+  padding: 0 12px; background: var(--white); flex-shrink: 0;
+}
+.edit-tab {
+  padding: 7px 14px; border: none; background: transparent;
+  font-family: var(--font-body); font-size: 10px; font-weight: 700;
+  letter-spacing: .07em; text-transform: uppercase;
+  color: var(--secondary); cursor: pointer;
+  border-bottom: 2px solid transparent; margin-bottom: -2px;
+  transition: all .15s;
+}
+.edit-tab.active { color: var(--peacock); border-bottom-color: var(--peacock); }
+
+/* ── Day edit panel ── */
+.day-edit-panel {
+  flex: 1; overflow-y: auto; padding: 12px 16px;
+  padding-bottom: max(60px, env(safe-area-inset-bottom, 60px));
+}
+.de-day-card {
+  background: var(--white); border: 1.5px solid var(--light-gray);
+  border-radius: var(--radius); padding: 12px; margin-bottom: 8px;
+  transition: border-color .15s;
+}
+.de-day-card.de-day-active { border-color: var(--peacock); }
+.de-day-hd {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 10px;
+}
+.de-day-num {
+  font-family: var(--font-body); font-size: 10px; font-weight: 700;
+  letter-spacing: .08em; text-transform: uppercase; color: var(--peacock); flex: 1;
+}
+.de-day-stat {
+  font-family: var(--font-body); font-size: 11px; font-weight: 600; color: var(--secondary);
+}
+.de-day-switch {
+  font-family: var(--font-body); font-size: 9px; font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase;
+  color: var(--peacock); background: var(--soft-lime);
+  border: none; border-radius: 4px; padding: 2px 7px; cursor: pointer;
+  opacity: 0; transition: opacity .15s;
+}
+.de-day-card:hover .de-day-switch { opacity: 1; }
+
+/* ── Cost bar totals ── */
+.cost-total { font-family: var(--font-head); font-size: 13px; font-weight: 700; color: var(--peacock); }
 
 .add-row {
   display: none; justify-content: center;
-  margin: 4px 0 8px 26px;
+  margin: 0 0 0 26px;
 }
 .timeline.edit-mode .add-row { display: flex; }
 .btn-add-stop {
@@ -194,8 +265,8 @@ body {
   letter-spacing: .07em; text-transform: uppercase;
   color: var(--secondary); background: transparent;
   border: 1.5px dashed var(--warm-gray); border-radius: 6px;
-  padding: 5px 12px; cursor: pointer; transition: all .2s;
-  justify-content: center;
+  padding: 3px 10px; cursor: pointer; transition: all .2s;
+  justify-content: center; width: 100%;
 }
 .btn-add-stop:hover { border-color: var(--peacock); color: var(--peacock); background: rgba(0,122,138,.03); }
 
@@ -375,6 +446,40 @@ body {
 .ep-pick-btn:hover { background: var(--soft-lime); border-color: var(--peacock); }
 .ep-pick-btn.picking { background: var(--lime); border-color: transparent; }
 
+/* ── Drag reorder ── */
+.drag-handle { font-size: 14px; color: var(--secondary); cursor: grab; padding: 0 5px; user-select: none; }
+.drag-handle:active { cursor: grabbing; }
+.stop-row.dragging { opacity: 0.3; }
+.stop-row.drag-over .stop-card { border-color: var(--peacock) !important; background: var(--soft-lime) !important; outline: 2px dashed var(--peacock); }
+/* ── Move to Day ── */
+.ep-gtfs-hint { font-family: var(--font-body); font-size: 10px; margin-top: 3px; min-height: 14px; }
+.ep-gtfs-ok   { color: #2a7a2a; }
+.ep-gtfs-warn { color: #c04444; }
+.ep-dur-row { display: flex; align-items: center; gap: 6px; }
+.ep-dur-input { width: 56px !important; text-align: center; }
+.ep-dur-sep { font-family: var(--font-body); font-size: 12px; font-weight: 600; color: var(--secondary); white-space: nowrap; }
+.ep-move-wrap { margin: 0 0 4px; }
+.ep-move-btn {
+  width: 100%; padding: 10px 12px; border-radius: 8px;
+  border: 1.5px dashed var(--warm-gray); background: transparent;
+  font-family: var(--font-body); font-size: 12px; font-weight: 600;
+  color: var(--secondary); cursor: pointer; text-align: left; transition: all .15s;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.ep-move-btn:hover { border-color: var(--peacock); color: var(--peacock); }
+.ep-move-menu {
+  display: none; margin-top: 4px; border: 1px solid var(--warm-gray);
+  border-radius: 8px; overflow: hidden;
+}
+.ep-move-menu.open { display: block; }
+.ep-move-item {
+  display: block; width: 100%; padding: 11px 14px; text-align: left; border: none;
+  border-bottom: 1px solid var(--light-gray); background: transparent;
+  font-family: var(--font-body); font-size: 12px; font-weight: 600;
+  color: var(--primary); cursor: pointer; transition: background .12s;
+}
+.ep-move-item:last-child { border-bottom: none; }
+.ep-move-item:hover { background: var(--soft-lime); color: var(--peacock); }
 .ep-footer {
   padding: 12px 16px;
   padding-bottom: max(12px, env(safe-area-inset-bottom, 12px));
@@ -543,7 +648,7 @@ body {
 .sheet-drag-area { display: none; }
 
 /* ── Mobile bottom sheet ── */
-@media (max-width: 768px) {
+@media (max-width: 768px), (hover: none) and (pointer: coarse) {
   #map { width: 100%; height: 100dvh; flex: none; }
 
   .sidebar {
@@ -609,8 +714,26 @@ body {
     color: var(--peacock); padding-left: 0;
   }
 
-  .controls { padding-bottom: max(16px, env(safe-area-inset-bottom, 16px)); }
+  .controls { padding-bottom: max(16px, env(safe-area-inset-bottom, 16px)); padding-top: 8px; }
+  .ctrl-seek-row { flex-direction: row; align-items: center; gap: 10px; }
+  .ctrl-seek { flex: 1; }
+  .ctrl-seek-meta { flex-direction: column; align-items: flex-end; gap: 2px; flex-shrink: 0; }
+  .ctrl-seek-label { display: none; }
+  /* Edit mode: hide replay controls and mini-play */
+  .sidebar.edit-on .controls { display: none; }
+  .sidebar.edit-on .sheet-mini-play { display: none; }
   .leaflet-control-zoom { margin-top: 16px !important; margin-left: 16px !important; }
+  .stop-card { max-width: 640px; }
+}
+
+/* ── Wide touch devices (tablets / foldables) ── */
+@media (hover: none) and (pointer: coarse) and (min-width: 641px) {
+  .sidebar {
+    left: 50%;
+    right: auto;
+    width: min(640px, 100vw);
+    margin-left: calc(-1 * min(320px, 50vw));
+  }
 }
 
 /* ── Palette chips ── */
@@ -649,7 +772,7 @@ body {
 .profile-modal.open { opacity: 1; pointer-events: all; }
 .profile-inner {
   background: var(--cream); border-radius: 16px 16px 0 0;
-  width: 100%; max-width: 480px; max-height: 90dvh;
+  width: 100%; max-width: 480px; height: 90dvh; max-height: 90dvh;
   display: flex; flex-direction: column;
   transform: translateY(40px);
   transition: transform var(--dur) var(--ease);
@@ -670,7 +793,7 @@ body {
   background: transparent; border: 1.5px solid var(--warm-gray);
   border-radius: 6px; padding: 4px 10px; cursor: pointer;
 }
-.profile-body { flex: 1; min-height: 0; overflow-y: auto; padding: 0 20px; padding-bottom: max(60px, env(safe-area-inset-bottom, 60px)); -webkit-overflow-scrolling: touch; }
+.profile-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 0 20px; padding-bottom: max(60px, env(safe-area-inset-bottom, 60px)); -webkit-overflow-scrolling: touch; }
 .pf-hero { padding: 24px 0 20px; border-bottom: 1px solid var(--warm-gray); }
 .pf-eyebrow {
   font-family: var(--font-body); font-size: 9px; font-weight: 700;
@@ -734,23 +857,135 @@ body {
 .pf-stat-unit { font-family: var(--font-body); font-size: 10px; font-weight: 600; color: var(--secondary); text-transform: uppercase; letter-spacing: .06em; display: block; margin-top: 2px; }
 .pf-stat-div { width: 1px; background: var(--warm-gray); margin: 4px 0; }
 
-/* ── Export sheet ── */
+/* ── AI Draft modal ── */
+.ai-draft-modal {
+  position: fixed; inset: 0; z-index: 2800;
+  background: rgba(34,34,34,.55); backdrop-filter: blur(4px);
+  display: flex; align-items: flex-end; justify-content: center;
+  opacity: 0; pointer-events: none;
+  transition: opacity var(--dur) var(--ease);
+}
+.ai-draft-modal.open { opacity: 1; pointer-events: all; }
+.ai-draft-inner {
+  background: var(--cream); border-radius: 16px 16px 0 0;
+  width: 100%; max-width: 480px; height: 92dvh; max-height: 92dvh;
+  display: flex; flex-direction: column; overflow: hidden;
+  transform: translateY(40px);
+  transition: transform var(--dur) var(--ease);
+}
+.ai-draft-modal.open .ai-draft-inner { transform: translateY(0); }
+.ai-draft-body {
+  flex: 1 1 auto; min-height: 0; overflow-y: auto;
+  padding: 16px; padding-bottom: max(60px, env(safe-area-inset-bottom, 60px));
+  -webkit-overflow-scrolling: touch;
+}
+.ai-key-row { margin-bottom: 14px; }
+.ai-key-hint { font-family: var(--font-body); font-size: 10px; color: var(--secondary); margin-top: 4px; }
+.ai-textarea {
+  width: 100%; box-sizing: border-box;
+  min-height: 120px; resize: vertical;
+  font-family: var(--font-body); font-size: 13px; color: var(--primary);
+  background: var(--white); border: 1.5px solid var(--warm-gray); border-radius: 8px;
+  padding: 10px 12px; line-height: 1.55; outline: none;
+  transition: border-color .15s;
+}
+.ai-textarea:focus { border-color: var(--peacock); }
+.ai-gen-btn { width: 100%; margin-top: 10px; }
+.ai-preview-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin: 18px 0 10px; padding-top: 16px;
+  border-top: 1px solid var(--warm-gray);
+}
+.ai-preview-count {
+  font-family: var(--font-body); font-size: 10px; font-weight: 700;
+  color: var(--peacock); background: rgba(0,122,138,.1);
+  padding: 2px 8px; border-radius: 10px;
+}
+.ai-confirm-btn { width: 100%; margin-top: 14px; }
+/* Draft card */
+.draft-card {
+  background: var(--white); border: 1.5px solid var(--warm-gray);
+  border-radius: 10px; padding: 12px; margin-bottom: 8px;
+  transition: border-color .15s;
+}
+.draft-card:focus-within { border-color: var(--peacock); }
+.draft-card-hd { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.draft-conf {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+}
+.draft-time-inp {
+  font-family: var(--font-body); font-size: 13px; font-weight: 700; color: var(--primary);
+  background: transparent; border: none; outline: none;
+  width: 52px; padding: 0;
+}
+.draft-transport-sel {
+  font-family: var(--font-body); font-size: 10px; font-weight: 700;
+  color: var(--peacock); background: rgba(0,122,138,.1);
+  border: 1px solid rgba(0,122,138,.25); border-radius: 10px;
+  padding: 2px 6px; cursor: pointer; outline: none; flex-shrink: 0;
+}
+.draft-dayend-lbl {
+  font-family: var(--font-body); font-size: 10px; color: var(--secondary);
+  display: flex; align-items: center; gap: 3px; margin-left: auto; cursor: pointer;
+}
+.draft-name-inp {
+  font-family: var(--font-head); font-size: 15px; font-weight: 700; color: var(--primary);
+  background: transparent; border: none; border-bottom: 1.5px solid var(--warm-gray);
+  outline: none; width: 100%; padding: 2px 0 4px; margin-bottom: 8px;
+  transition: border-color .15s;
+}
+.draft-name-inp:focus { border-bottom-color: var(--peacock); }
+.draft-cats { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 6px; }
+.draft-cat-btn {
+  font-family: var(--font-body); font-size: 10px; font-weight: 600;
+  background: var(--light-gray); color: var(--secondary);
+  border: 1.5px solid transparent; border-radius: 20px;
+  padding: 3px 8px; cursor: pointer; transition: background .15s, color .15s, border-color .15s;
+}
+.draft-cat-btn.sel {
+  background: rgba(0,122,138,.1); color: var(--peacock);
+  border-color: rgba(0,122,138,.3);
+}
+.draft-op-hint {
+  font-family: var(--font-body); font-size: 10px; color: var(--secondary); margin-top: 3px;
+}
+.ai-err {
+  background: rgba(192,68,68,.08); color: rgba(192,68,68,.9);
+  border: 1px solid rgba(192,68,68,.25); border-radius: 8px;
+  font-family: var(--font-body); font-size: 12px; padding: 10px 12px; margin-top: 10px;
+}
+.ai-day-sel-row { display: flex; align-items: center; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+.ai-day-sel-lbl { font-family: var(--font-body); font-size: 11px; font-weight: 600; color: var(--primary); }
+.ai-day-sel {
+  font-family: var(--font-body); font-size: 12px; color: var(--primary);
+  background: var(--white); border: 1.5px solid var(--warm-gray); border-radius: 8px;
+  padding: 5px 10px; outline: none; cursor: pointer;
+}
+/* ── Export modal ── */
 .export-sheet {
   display: none; position: fixed; inset: 0; z-index: 3100;
-  background: rgba(0,0,0,.55); align-items: flex-end; justify-content: center;
+  background: rgba(0,0,0,.55); align-items: center; justify-content: center;
+  padding: 20px;
 }
 .export-sheet.open { display: flex; }
 .export-sheet-inner {
-  background: var(--white); width: 100%; max-width: 480px;
-  border-radius: 16px 16px 0 0;
-  padding: 20px 16px max(20px, env(safe-area-inset-bottom, 20px));
+  background: var(--white); width: 100%; max-width: 360px;
+  border-radius: 16px;
+  padding: 20px 16px 16px;
   display: flex; flex-direction: column; gap: 8px;
+}
+.export-sheet-header {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;
 }
 .export-sheet-title {
   font-family: var(--font-body); font-size: 11px; font-weight: 700;
   letter-spacing: .1em; text-transform: uppercase; color: var(--secondary);
-  margin-bottom: 4px;
 }
+.export-sheet-close {
+  font-size: 16px; background: transparent; border: none; color: var(--secondary);
+  cursor: pointer; padding: 2px 6px; border-radius: 4px;
+}
+.export-sheet-close:hover { background: var(--light-gray); }
 .export-sheet-btn {
   width: 100%; padding: 13px 16px; border-radius: var(--radius);
   border: 1.5px solid var(--warm-gray); background: var(--white);
@@ -764,21 +999,15 @@ body {
 /* ── Poster modal ── */
 .poster-modal {
   display: none; position: fixed; inset: 0; z-index: 3000;
-  background: rgba(0,0,0,.78); align-items: flex-end; justify-content: center;
-  padding: 0;
+  background: rgba(0,0,0,.78); align-items: center; justify-content: center;
+  padding: 20px;
 }
 .poster-modal.open { display: flex; }
-@media (min-width: 480px) {
-  .poster-modal { align-items: center; padding: 20px; }
-}
 .poster-wrap {
   background: var(--white); width: 100%; max-width: 440px;
-  border-radius: 16px 16px 0 0; padding: 16px 16px max(16px, env(safe-area-inset-bottom, 16px));
+  border-radius: 16px; padding: 16px;
   display: flex; flex-direction: column; gap: 12px;
   max-height: 92dvh;
-}
-@media (min-width: 480px) {
-  .poster-wrap { border-radius: 12px; padding: 16px; }
 }
 .poster-modal-header {
   display: flex; align-items: center; gap: 8px; flex-shrink: 0;
@@ -865,12 +1094,18 @@ body {
 
   <div class="day-tabs" id="dayTabs"></div>
 
+  <div class="edit-tab-bar" id="editTabBar">
+    <button class="edit-tab active" id="etabStops" onclick="switchEditTab('stops')">Stops</button>
+    <button class="edit-tab" id="etabDays" onclick="switchEditTab('days')">Days</button>
+  </div>
+
   <div class="timeline" id="timeline"></div>
+  <div class="day-edit-panel" id="dayEditPanel" style="display:none"></div>
   <div class="cost-bar" id="costBar"></div>
 
   <div class="controls">
     <div class="ctrl-seek-row">
-      <input type="range" class="ctrl-seek" id="seekBar" min="0" max="4" value="0" step="1"
+      <input type="range" class="ctrl-seek" id="seekBar" min="0" max="1000" value="0" step="0.1"
         oninput="onSeekInput(this.value)" onchange="onSeekChange(this.value)">
       <div class="ctrl-seek-meta">
         <span class="ctrl-seek-label" id="seekStopLabel">— Stops</span>
@@ -902,7 +1137,7 @@ body {
         <div class="ep-row">
           <div class="ep-field" style="flex:0 0 90px">
             <label class="ep-lbl">時刻</label>
-            <input class="ep-input" id="ef-time" type="text" placeholder="09:21">
+            <input class="ep-input" id="ef-time" type="text" inputmode="numeric" placeholder="09:21" oninput="toHankaku(this)">
           </div>
           <div class="ep-field" style="flex:1">
             <label class="ep-lbl">場所名 <span style="color:#c04444">*</span></label>
@@ -940,7 +1175,7 @@ body {
         <div class="ep-field">
           <div class="type-groups" id="typeGroups">
             <div class="type-group-row">
-              <button class="type-chip" data-type="plane" onclick="epSetType('plane')">✈ Plane</button>
+              <button class="type-chip" data-type="plane" onclick="epSetType('plane')">✈️ Plane</button>
               <button class="type-chip" data-type="ferry" onclick="epSetType('ferry')">🚢 Ferry</button>
             </div>
             <div class="type-group-label">— Train —</div>
@@ -969,11 +1204,16 @@ body {
         <div class="ep-row">
           <div class="ep-field">
             <label class="ep-lbl">料金</label>
-            <input class="ep-input" id="ef-fare" type="text" placeholder="¥2,880">
+            <input class="ep-input" id="ef-fare" type="text" inputmode="numeric" placeholder="¥2,880" oninput="toHankaku(this)" onblur="formatFareInput(this)">
           </div>
           <div class="ep-field">
             <label class="ep-lbl">所要時間</label>
-            <input class="ep-input" id="ef-duration" type="text" placeholder="2h30m">
+            <div class="ep-dur-row">
+              <input class="ep-input ep-dur-input" id="ef-dur-h" type="text" inputmode="numeric" placeholder="0" oninput="toHankaku(this)">
+              <span class="ep-dur-sep">時間</span>
+              <input class="ep-input ep-dur-input" id="ef-dur-m" type="text" inputmode="numeric" placeholder="0" oninput="toHankaku(this)">
+              <span class="ep-dur-sep">分</span>
+            </div>
           </div>
         </div>
         <div class="ep-field">
@@ -1009,8 +1249,8 @@ body {
         <div class="ep-field">
           <label class="ep-lbl">緯度 / 経度 <span style="color:#c04444">*</span></label>
           <div class="ep-coord-row">
-            <input class="ep-input" id="ef-lat" type="number" step="0.00001" placeholder="26.196">
-            <input class="ep-input" id="ef-lng" type="number" step="0.00001" placeholder="127.646">
+            <input class="ep-input" id="ef-lat" type="text" inputmode="decimal" placeholder="26.196" oninput="toHankaku(this)">
+            <input class="ep-input" id="ef-lng" type="text" inputmode="decimal" placeholder="127.646" oninput="toHankaku(this)">
             <button class="ep-pick-btn" id="epPickBtn" onclick="startMapPick()" title="地図をタップして座標を設定">📍</button>
           </div>
           <div class="ep-err" id="ef-coord-err">座標を入力または地図でタップしてください</div>
@@ -1051,17 +1291,9 @@ body {
       </div>
 
       <div class="ep-section">
-        <span class="ep-section-label">Day 設定</span>
-        <div id="settingsDaysList"></div>
-        <div class="settings-action-row">
-          <button class="btn-add-stop" onclick="addDay()" style="flex:1">+ Day を追加</button>
-          <button class="btn-add-stop" onclick="removeLastDay()" style="flex:1;border-color:rgba(192,68,68,.35);color:#c04444">− 最後のDayを削除</button>
-        </div>
-      </div>
-
-      <div class="ep-section">
         <span class="ep-section-label">データ</span>
         <div style="display:flex;flex-direction:column;gap:8px">
+          <button class="ep-btn-save" onclick="openAIDraftModal();closeSettings()" style="width:100%;background:var(--peacock)">🤖 AI 旅程生成</button>
           <button class="ep-btn-save" onclick="exportJSON()" style="width:100%">↓ JSON Export</button>
           <button class="ep-btn-outline" onclick="triggerImport()">↑ JSON Import</button>
           <button class="ep-btn-outline" onclick="triggerGtfsImport()">🚃 GTFS JSON Import</button>
@@ -1078,6 +1310,45 @@ body {
   </div>
 
 </div><!-- .sidebar -->
+
+<!-- ── AI Draft modal ── -->
+<div class="ai-draft-modal" id="aiDraftModal" onclick="if(event.target===this)closeAIDraftModal()">
+  <div class="ai-draft-inner">
+    <div class="profile-ph">
+      <span class="profile-ph-title">🤖 AI 旅程生成</span>
+      <button class="profile-ph-close" onclick="closeAIDraftModal()">閉じる</button>
+    </div>
+    <div class="ai-draft-body">
+
+      <div class="ai-key-row">
+        <label class="ep-lbl">Anthropic API Key</label>
+        <input class="ep-input" id="aiApiKey" type="password" placeholder="sk-ant-…" autocomplete="off" spellcheck="false">
+        <div class="ai-key-hint">🔒 このデバイスのみ保存 — 旅データには含まれません</div>
+      </div>
+
+      <div>
+        <label class="ep-lbl">旅程テキスト</label>
+        <textarea class="ai-textarea" id="aiTextarea" placeholder="例：&#10;7月1日 09:00 羽田空港から飛行機で出発&#10;11:30 那覇空港着、ゆいレールで国際通りへ&#10;13:00 タコス屋でランチ&#10;15:00 美ら海水族館（観光）&#10;18:00 名護のホテルに宿泊"></textarea>
+        <div id="aiErrMsg"></div>
+        <button class="ep-btn-save ai-gen-btn" id="aiGenBtn" onclick="generateDraftStops()">✨ 旅程を生成</button>
+      </div>
+
+      <div id="aiDraftPreview" style="display:none">
+        <div class="ai-preview-header">
+          <span class="ep-section-label" style="margin:0">🤖 AI生成（確認してください）</span>
+          <span class="ai-preview-count" id="aiPreviewCount"></span>
+        </div>
+        <div id="aiDraftCards"></div>
+        <div class="ai-day-sel-row">
+          <span class="ai-day-sel-lbl">追加先</span>
+          <select class="ai-day-sel" id="aiTargetDay"></select>
+        </div>
+        <button class="ep-btn-save ai-confirm-btn" id="aiConfirmBtn" onclick="confirmDraftStops()">旅程に追加 →</button>
+      </div>
+
+    </div>
+  </div>
+</div>
 
 <!-- ── Poster modal ── -->
 <div class="poster-modal" id="posterModal" onclick="if(event.target===this)closePosterModal()">
@@ -1109,10 +1380,14 @@ body {
 </div>
 
 <!-- ── Profile Modal ── -->
-<!-- ── Export sheet ── -->
+<!-- ── Export modal ── -->
 <div class="export-sheet" id="exportSheet" onclick="if(event.target===this)closeExportSheet()">
   <div class="export-sheet-inner">
-    <div class="export-sheet-title">Export Route</div>
+    <div class="export-sheet-header">
+      <span class="export-sheet-title">Export</span>
+      <button class="export-sheet-close" onclick="closeExportSheet()">&#10005;</button>
+    </div>
+    <button class="export-sheet-btn" onclick="openPosterModal();closeExportSheet()">🖼 Download Poster (PNG)</button>
     <button class="export-sheet-btn" onclick="downloadJSON()">&#8595; Download JSON</button>
     <button class="export-sheet-btn export-sheet-btn-share" onclick="shareJSON()">&#8599; Share</button>
   </div>
@@ -1186,11 +1461,15 @@ var DAYS = {
     label: '美ら海 & パイン',
     cost: '別払い ¥4,880',
     stops: [
-      { name: '那覇空港',              time: '09:21',        memo: 'コインロッカーに荷物を預けてから乗車', lat: 26.196, lng: 127.646, transport: 'bus_express', categories: [],               isDayEnd: false, label: '117番 高速バス',      fare: '¥2,880',  duration: '2h30m' },
-      { name: '美ら海水族館',           time: '11:51',        memo: 'ジンベイザメ！約2.5時間滞在',         lat: 26.694, lng: 127.878, transport: 'shuttle',    categories: ['sightseeing'],   isDayEnd: false, label: 'OAS/APL',             fare: '¥1,250',  duration: '47m'   },
-      { name: '名護市役所前',           time: '15:38',        memo: '70番バスに乗り換え',                  lat: 26.592, lng: 127.978, transport: 'bus_local',  categories: [],               isDayEnd: false, label: '70番（OTOPa）',       fare: 'パス対象', duration: '31m'   },
-      { name: 'ナゴパイナップルパーク',  time: '16:09',        memo: 'カート体験！約2時間滞在（早割済）',    lat: 26.584, lng: 127.964, transport: 'shuttle',    categories: ['sightseeing'],   isDayEnd: false, label: '70番 → OASシャトル', fare: '¥2,000',  duration: '2h22m' },
-      { name: '那覇バスターミナル',      time: '20:38',        memo: '国際通りでタコス！',                   lat: 26.215, lng: 127.681, transport: 'bus_express',categories: [],               isDayEnd: true,  label: '',                    fare: '',         duration: ''      }
+      { name: '那覇空港',              time: '09:21',        memo: 'コインロッカーに荷物を預けてから乗車', lat: 26.196, lng: 127.646, transport: 'bus_express', categories: [],               isDayEnd: false, label: '117番 高速バス',      fare: '¥2,880',  durHours: 2, durMins: 30 },
+      { name: '赤嶺駅',               time: '09:30',        memo: 'GTFS test — ゆいレール駅座標ポリライン確認', lat: 26.19878, lng: 127.65338, transport: 'train_local', categories: [],             isDayEnd: false, label: 'ゆいレール',           fare: '',         durHours: 0, durMins:  3, gtfs: { shapeId: 'yuirail:shapes_383_1' } },
+      { name: '儀保駅',               time: '09:46',        memo: 'GTFS shape テスト終点',                   lat: 26.23650, lng: 127.69320, transport: 'shuttle',    categories: [],             isDayEnd: false, label: 'OAS',                  fare: '',         durHours: 0, durMins:  0 },
+      { name: '県庁北口',             time: '10:10',        memo: 'OAS test — oas:shapes_424_1',             lat: 26.2157,  lng: 127.6785, transport: 'bus_express', categories: [],             isDayEnd: false, label: 'OAS/RSL リゾートライナーA', fare: '',    durHours: 0, durMins:  0, gtfs: { shapeId: 'oas:shapes_424_1' } },
+      { name: '美ら海水族館',           time: '11:51',        memo: 'ジンベイザメ！約2.5時間滞在',         lat: 26.694, lng: 127.878, transport: 'shuttle',    categories: ['sightseeing'],   isDayEnd: false, label: 'OAS/APL',             fare: '¥1,250',  durHours: 0, durMins: 47 },
+      { name: '名護市役所前',           time: '15:38',        memo: '70番バスに乗り換え',                  lat: 26.592, lng: 127.978, transport: 'bus_local',  categories: [],               isDayEnd: false, label: '70番（OTOPa）',       fare: 'パス対象', durHours: 0, durMins: 31 },
+      { name: 'ナゴパイナップルパーク',  time: '16:09',        memo: 'カート体験！約2時間滞在（早割済）',    lat: 26.584, lng: 127.964, transport: 'shuttle',    categories: ['sightseeing'],   isDayEnd: false, label: '70番 → OASシャトル', fare: '¥2,000',  durHours: 2, durMins: 22 },
+      { name: '名護バスターミナル',      time: '18:00',        memo: 'やんばる急行 test — yanbaru:11',         lat: 26.593,  lng: 127.979, transport: 'bus_express', categories: [],             isDayEnd: false, label: 'やんばる急行バス',    fare: '',         durHours: 0, durMins:  0, gtfs: { shapeId: 'yanbaru:11' } },
+      { name: '那覇バスターミナル',      time: '20:38',        memo: '国際通りでタコス！',                   lat: 26.215, lng: 127.681, transport: 'bus_express',categories: [],               isDayEnd: true,  label: '',                    fare: '',         durHours: 0, durMins:  0 }
     ]
   },
   2: {
@@ -1198,11 +1477,11 @@ var DAYS = {
     label: 'タコス & ライブ',
     cost: 'パス活用 + ¥2,270',
     stops: [
-      { name: '那覇バスターミナル',      time: '午前',         memo: 'Tギャラリアでジュエリーを見る',       lat: 26.215, lng: 127.681, transport: 'bus_local',  categories: [],               isDayEnd: false, label: '30番バス（OTOPa）',   fare: 'パス対象', duration: '約40m' },
-      { name: '比屋根 / キングタコス',   time: '昼前',         memo: 'テイクアウト注文して即バス停へ！',     lat: 26.329, lng: 127.799, transport: 'bus_local',  categories: ['food'],         isDayEnd: false, label: '31番バス（OTOPa）',   fare: 'パス対象', duration: '約10m' },
-      { name: '胡屋 / チャーリータコス', time: '昼',           memo: '本店でタコス！食後はアリーナへ',       lat: 26.334, lng: 127.803, transport: 'bike',       categories: ['food'],         isDayEnd: false, label: 'Hello Cycling',       fare: '~¥500',   duration: '約20m' },
-      { name: '沖縄サントリーアリーナ',  time: '15:00',        memo: 'SixTONES オーラス！！',               lat: 26.331, lng: 127.793, transport: 'bus_express',categories: ['event'],        isDayEnd: false, label: '111番 高速バス',      fare: '¥1,200~', duration: '約50m' },
-      { name: '那覇バスターミナル',      time: '21:00頃',      memo: '終演後 那覇に帰還',                   lat: 26.215, lng: 127.681, transport: 'bus_express',categories: [],               isDayEnd: true,  label: '',                    fare: '',         duration: ''      }
+      { name: '那覇バスターミナル',      time: '午前',         memo: 'Tギャラリアでジュエリーを見る',       lat: 26.215, lng: 127.681, transport: 'bus_local',  categories: [],               isDayEnd: false, label: '30番バス（OTOPa）',   fare: 'パス対象', durHours: 0, durMins: 40 },
+      { name: '比屋根 / キングタコス',   time: '昼前',         memo: 'テイクアウト注文して即バス停へ！',     lat: 26.329, lng: 127.799, transport: 'bus_local',  categories: ['food'],         isDayEnd: false, label: '31番バス（OTOPa）',   fare: 'パス対象', durHours: 0, durMins: 10 },
+      { name: '胡屋 / チャーリータコス', time: '昼',           memo: '本店でタコス！食後はアリーナへ',       lat: 26.334, lng: 127.803, transport: 'bike',       categories: ['food'],         isDayEnd: false, label: 'Hello Cycling',       fare: '~¥500',   durHours: 0, durMins: 20 },
+      { name: '沖縄サントリーアリーナ',  time: '15:00',        memo: 'SixTONES オーラス！！',               lat: 26.331, lng: 127.793, transport: 'bus_express',categories: ['event'],        isDayEnd: false, label: '111番 高速バス',      fare: '¥1,200~', durHours: 0, durMins: 50 },
+      { name: '那覇バスターミナル',      time: '21:00頃',      memo: '終演後 那覇に帰還',                   lat: 26.215, lng: 127.681, transport: 'bus_express',categories: [],               isDayEnd: true,  label: '',                    fare: '',         durHours: 0, durMins:  0 }
     ]
   },
   3: {
@@ -1210,10 +1489,10 @@ var DAYS = {
     label: '那覇のんびり',
     cost: 'パス活用でOK',
     stops: [
-      { name: 'グランドキャビンホテル那覇小禄', time: 'チェックアウト', memo: '朝食を食べてチェックアウト', lat: 26.201, lng: 127.663, transport: 'bus_local',  categories: ['stay'],         isDayEnd: false, label: 'バス（OTOPa）',       fare: 'パス対象', duration: '約15m' },
-      { name: '壺屋やちむん通り',        time: '午前',         memo: 'お皿を選ぶ！ゆっくり歩く',            lat: 26.218, lng: 127.690, transport: 'bus_local',  categories: ['shopping'],     isDayEnd: false, label: 'バス（OTOPa）',       fare: 'パス対象', duration: '約30m' },
-      { name: '豊崎美らSUNビーチ',       time: '昼すぎ',       memo: '日光浴！空港近くで帰り動線OK',         lat: 26.168, lng: 127.666, transport: 'bus_local',  categories: ['sightseeing'],  isDayEnd: false, label: 'バス（OTOPa）',       fare: 'パス対象', duration: '約20m' },
-      { name: '那覇空港 スナックコーナー風月', time: '18:00頃', memo: '旅の締め！SNA26 20:30発で帰京',    lat: 26.196, lng: 127.646, transport: 'bus_local',  categories: [],               isDayEnd: true,  label: '',                    fare: '',         duration: ''      }
+      { name: 'グランドキャビンホテル那覇小禄', time: 'チェックアウト', memo: '朝食を食べてチェックアウト', lat: 26.201, lng: 127.663, transport: 'bus_local',  categories: ['stay'],         isDayEnd: false, label: 'バス（OTOPa）',       fare: 'パス対象', durHours: 0, durMins: 15 },
+      { name: '壺屋やちむん通り',        time: '午前',         memo: 'お皿を選ぶ！ゆっくり歩く',            lat: 26.218, lng: 127.690, transport: 'bus_local',  categories: ['shopping'],     isDayEnd: false, label: 'バス（OTOPa）',       fare: 'パス対象', durHours: 0, durMins: 30 },
+      { name: '豊崎美らSUNビーチ',       time: '昼すぎ',       memo: '日光浴！空港近くで帰り動線OK',         lat: 26.168, lng: 127.666, transport: 'bus_local',  categories: ['sightseeing'],  isDayEnd: false, label: 'バス（OTOPa）',       fare: 'パス対象', durHours: 0, durMins: 20 },
+      { name: '那覇空港 スナックコーナー風月', time: '18:00頃', memo: '旅の締め！SNA26 20:30発で帰京',    lat: 26.196, lng: 127.646, transport: 'bus_local',  categories: [],               isDayEnd: true,  label: '',                    fare: '',         durHours: 0, durMins:  0 }
     ]
   }
 };
@@ -1254,6 +1533,7 @@ function loadFromStorage() {
     if (data.days) {
       DAYS = {};
       Object.keys(data.days).forEach(function(k) { DAYS[parseInt(k)] = data.days[k]; });
+      _migrateDays(DAYS);
     }
     return true;
   } catch(e) { return false; }
@@ -1302,7 +1582,7 @@ function closeExportSheet() {
   document.getElementById('exportSheet').classList.remove('open');
 }
 function _buildExportBlob() {
-  return new Blob([JSON.stringify({ schemaVersion: ROUTE_SCHEMA_VERSION, trip: TRIP, days: DAYS }, null, 2)], { type: 'application/json' });
+  return new Blob([JSON.stringify({ schemaVersion: '5.16', trip: TRIP, days: DAYS }, null, 2)], { type: 'application/json' });
 }
 function downloadJSON() {
   var blob = _buildExportBlob();
@@ -1338,13 +1618,34 @@ function handleImport(input) {
   reader.onload = function(e) {
     try {
       var data = JSON.parse(e.target.result);
-      if (!data.days || typeof data.days !== 'object') { alert('有効なルートマップJSONではありません'); return; }
+
+      /* ── Validation (fail early, never touch localStorage) ── */
+      if (!data.days || typeof data.days !== 'object') {
+        alert('読み込みエラー: daysフィールドがありません。有効なルートマップJSONを選択してください。'); return;
+      }
+      var errs = [];
+      Object.keys(data.days).forEach(function(k) {
+        var day = data.days[k];
+        if (!day.stops || !Array.isArray(day.stops)) { errs.push('Day ' + k + ': stops が配列ではありません'); return; }
+        day.stops.forEach(function(s, i) {
+          if (!s.name)             errs.push('Day ' + k + ' Stop ' + (i+1) + ': name が未設定');
+          if (s.lat == null || s.lng == null) errs.push('Day ' + k + ' Stop ' + (i+1) + ': 座標(lat/lng)が未設定');
+        });
+      });
+      if (errs.length) {
+        alert('読み込みエラー:\n' + errs.slice(0, 6).join('\n') + (errs.length > 6 ? '\n…他 ' + (errs.length - 6) + ' 件' : '')); return;
+      }
+      var sv = parseFloat(data.schemaVersion || '0');
+      if (sv > 0 && sv < 5.0 && !confirm('古いバージョン (schemaVersion ' + data.schemaVersion + ') のデータです。続けますか？')) return;
+
+      /* ── Import (only reached if validation passed) ── */
       if (data.trip) {
         TRIP.title    = data.trip.title    || TRIP.title;
         TRIP.subtitle = data.trip.subtitle !== undefined ? data.trip.subtitle : TRIP.subtitle;
       }
       DAYS = {};
       Object.keys(data.days).forEach(function(k) { DAYS[parseInt(k)] = data.days[k]; });
+      _migrateDays(DAYS);
       var firstDay = parseInt(Object.keys(DAYS).sort(function(a,b){return a-b;})[0]) || 1;
       saveToStorage();
       renderHeader();
@@ -1369,6 +1670,7 @@ function handleGtfsImport(e) {
       var data = JSON.parse(ev.target.result);
       if (loadGtfsDbObject(data)) {
         stopAnim(); playing = false; setPlayBtn(false); currentStop = -1;
+        te.normalizedTime=0;te.baseTime=0;te.lastStopIdx=-1;te.lastSegIdx=-1;
         removeCurrentPin();
         initRouteLines();
         renderMapMarkers();
@@ -1383,11 +1685,12 @@ function handleGtfsImport(e) {
         if (!entry.name || !entry.stops || !entry.types) return;
         var key = entry.name.replace(/[\s　]/g, '_').toLowerCase();
         if (!entry.shape) entry.shape = entry.stops.map(function(s){ return [s.lat, s.lng]; });
-        GTFS_DB[key] = entry;
+        GTFS_PROX_DB[key] = entry;
         added++;
       });
       if (!added) { alert('有効な GTFS エントリが見つかりませんでした'); return; }
       stopAnim(); playing = false; setPlayBtn(false); currentStop = -1;
+      te.normalizedTime=0;te.baseTime=0;te.lastStopIdx=-1;te.lastSegIdx=-1;
       removeCurrentPin();
       initRouteLines();
       renderMapMarkers();
@@ -1442,138 +1745,8 @@ var TCFG = {
 };
 function tcfg(type) { return TCFG[type] || TCFG.bus_local; }
 
-
-/* ─── DraftStop schema / conversion ─── */
-function validTransportTypes() { return DRAFT_TRANSPORT_TYPES.slice(); }
-function isValidTransportType(type) { return DRAFT_TRANSPORT_TYPES.indexOf(type) >= 0; }
-function normalizeDraftStop(draft) {
-  draft = draft || {};
-  return {
-    name: String(draft.name || '').trim(),
-    time: draft.time === null || draft.time === undefined || draft.time === '' ? null : String(draft.time).trim(),
-    transport: String(draft.transport || 'bus_local').trim(),
-    operatorHint: draft.operatorHint === null || draft.operatorHint === undefined ? null : String(draft.operatorHint).trim(),
-    categories: Array.isArray(draft.categories) ? draft.categories.filter(function(c){ return typeof c === 'string' && c.trim(); }) : [],
-    activity: String(draft.activity || '').trim(),
-    isDayEnd: !!draft.isDayEnd,
-    lat: draft.lat === null || draft.lat === undefined || draft.lat === '' ? null : Number(draft.lat),
-    lng: draft.lng === null || draft.lng === undefined || draft.lng === '' ? null : Number(draft.lng),
-    confidence: draft.confidence === undefined ? 0 : Number(draft.confidence),
-    inferred: !!draft.inferred,
-    gtfs: draft.gtfs && draft.gtfs.shapeId ? { shapeId: String(draft.gtfs.shapeId).trim() } : undefined
-  };
-}
-function validateDraftStop(draft) {
-  var d = normalizeDraftStop(draft), warnings = [], errors = [];
-  if (!d.name) errors.push('name is required');
-  if (d.time !== null && !/^([01]\d|2[0-3]):[0-5]\d$/.test(d.time)) errors.push('time must be HH:MM or null');
-  if (!isValidTransportType(d.transport)) errors.push('unknown transport type: ' + d.transport);
-  if (!Array.isArray(d.categories)) errors.push('categories must be an array');
-  if (d.lat === null || d.lng === null) warnings.push('lat/lng is null; geocoding is required');
-  else if (!isFinite(d.lat) || !isFinite(d.lng)) errors.push('lat/lng must be numbers or null');
-  if (!isFinite(d.confidence) || d.confidence < 0 || d.confidence > 1) errors.push('confidence must be 0.0-1.0');
-  return { valid: errors.length === 0, warnings: warnings, errors: errors };
-}
-function getConfidenceLabel(confidence) {
-  var c = Number(confidence);
-  if (c >= 0.9) return { icon: '✓', text: 'High' };
-  if (c >= 0.7) return { icon: '⚠', text: 'Medium' };
-  return { icon: '✗', text: 'Low' };
-}
-function renderDraftConfidence(confidence) {
-  var c = getConfidenceLabel(confidence);
-  return c.icon + ' ' + c.text;
-}
-function normalizeSearchToken(s) {
-  return String(s || '').toLowerCase().replace(/[\s　_-]+/g, '');
-}
-function operatorHintAliases(hint) {
-  var raw = normalizeSearchToken(hint);
-  var aliases = [raw];
-  if (/yui|ゆい|monorail|rail/.test(raw)) aliases.push('yuirail', 'ゆいレール', '沖縄都市モノレール');
-  if (/oas|airportshuttle|エアポート|リゾートライナー/.test(raw)) aliases.push('oas', 'エアポートライナー', 'リゾートライナー');
-  if (/yanbaru|やんばる/.test(raw)) aliases.push('yanbaru', 'やんばる急行');
-  if (/toyo|東陽/.test(raw)) aliases.push('toyo', '東陽');
-  if (/ryukyu|okinawabus|沖縄バス/.test(raw)) aliases.push('ryukyu', '沖縄バス');
-  if (/tkobus|東京バス/.test(raw)) aliases.push('tkobus', '東京バス');
-  return aliases.map(normalizeSearchToken).filter(Boolean);
-}
-function suggestShapeIdsForOperator(operatorHint, transportType) {
-  var shapes = getGtfsShapes ? getGtfsShapes() : ((GTFS_DB && GTFS_DB.shapes) || {});
-  var aliases = operatorHintAliases(operatorHint);
-  var out = [];
-  Object.keys(shapes || {}).forEach(function(shapeId) {
-    var shape = shapes[shapeId] || {};
-    if (transportType && shape.transportType && shape.transportType !== transportType) return;
-    var provider = shapeProviderName ? shapeProviderName(shapeId) : String(shapeId).split(':')[0];
-    var hay = normalizeSearchToken([shapeId, provider, shape.routeId, shape.routeName, shape.transportType].join(' '));
-    var score = 0;
-    aliases.forEach(function(a) { if (a && hay.indexOf(a) >= 0) score += a.length; });
-    if (score > 0) out.push({ shapeId: shapeId, routeName: shape.routeName || '', routeId: shape.routeId || '', transportType: shape.transportType || '', score: score });
-  });
-  return out.sort(function(a,b){ return b.score - a.score || a.shapeId.localeCompare(b.shapeId); }).slice(0, 10);
-}
-function geocodeDraftStop(draft) {
-  var d = normalizeDraftStop(draft);
-  if (d.lat !== null && d.lng !== null && isFinite(d.lat) && isFinite(d.lng)) return Promise.resolve({ lat: d.lat, lng: d.lng, source: 'draft' });
-  if (typeof fetch !== 'function' || !d.name) return Promise.resolve({ lat: null, lng: null, source: 'none' });
-  var q = [d.name, d.operatorHint, '沖縄'].filter(Boolean).join(' ');
-  var url = 'https://nominatim.openstreetmap.org/search?q=' + encodeURIComponent(q) + '&format=json&limit=1&accept-language=ja,en&addressdetails=0';
-  return fetch(url, { headers: { 'Accept-Language': 'ja,en' } })
-    .then(function(r) { return r.json(); })
-    .then(function(rows) {
-      var item = rows && rows[0];
-      return item ? { lat: parseFloat(item.lat), lng: parseFloat(item.lon), source: 'nominatim' } : { lat: null, lng: null, source: 'none' };
-    })
-    .catch(function() { return { lat: null, lng: null, source: 'none' }; });
-}
-function draftToStop(draft) {
-  var d = normalizeDraftStop(draft);
-  var validation = validateDraftStop(d);
-  if (!validation.valid) return Promise.reject(new Error(validation.errors.join('; ')));
-  return geocodeDraftStop(d).then(function(coords) {
-    var candidates = suggestShapeIdsForOperator(d.operatorHint || '', d.transport);
-    var stop = {
-      name: d.name,
-      time: d.time || '—',
-      memo: d.activity,
-      lat: coords.lat,
-      lng: coords.lng,
-      transport: d.transport,
-      categories: d.categories.slice(),
-      isDayEnd: d.isDayEnd,
-      label: d.operatorHint || '',
-      fare: '',
-      duration: '',
-      confidence: d.confidence,
-      inferred: d.inferred,
-      shapeIdCandidates: candidates,
-      draftWarnings: validation.warnings.slice(),
-      draftErrors: validation.errors.slice(),
-      geocodeSource: coords.source
-    };
-    if (d.gtfs && d.gtfs.shapeId) {
-      stop.shapeId = d.gtfs.shapeId;
-      stop.gtfs = { shapeId: d.gtfs.shapeId };
-    }
-    return stop;
-  });
-}
-if (typeof window !== 'undefined') {
-  window.validateDraftStop = validateDraftStop;
-  window.draftToStop = draftToStop;
-  window.getConfidenceLabel = getConfidenceLabel;
-  window.renderDraftConfidence = renderDraftConfidence;
-  window.suggestShapeIdsForOperator = suggestShapeIdsForOperator;
-}
-
-/* ─── GTFS ─── */
-var GTFS_DB = {
-  shapes: {},
-  shapeToRoute: {},
-  routeToShapes: {},
-  loading: true,
-  loaded: false,
+/* ─── GTFS proximity-match DB (pre-bundled station coords) ─── */
+var GTFS_PROX_DB = {
   yui_rail: {
     name: 'ゆいレール',
     types: ['train_limited', 'train_local'],
@@ -1602,13 +1775,16 @@ var GTFS_DB = {
   }
 };
 (function() {
-  Object.keys(GTFS_DB).forEach(function(k) {
-    var db = GTFS_DB[k];
+  Object.keys(GTFS_PROX_DB).forEach(function(k) {
+    var db = GTFS_PROX_DB[k];
     if (!db || !db.stops) return;
     if (!db.shape) db.shape = db.stops.map(function(s){ return [s.lat, s.lng]; });
   });
 })();
 if (typeof window !== 'undefined') window.GTFS_DB = GTFS_DB;
+
+/* ─── GTFS shape DB (loaded from gtfs_db.json) ─── */
+var GTFS_DB = {};
 
 function loadGtfsDbObject(data) {
   if (!data || !data.shapes || typeof data.shapes !== 'object') return false;
@@ -1754,10 +1930,11 @@ function findGtfsShape(fromLat, fromLng, toLat, toLng, type, shapeId) {
   var explicit = findShapeById(shapeId, fromLat, fromLng, toLat, toLng);
   if (explicit) return explicit;
 
+
   var THRESHOLD = 0.5;
-  var keys = Object.keys(GTFS_DB);
+  var keys = Object.keys(GTFS_PROX_DB);
   for (var ki = 0; ki < keys.length; ki++) {
-    var db = GTFS_DB[keys[ki]];
+    var db = GTFS_PROX_DB[keys[ki]];
     if (!db || !db.types || !db.stops || !db.shape) continue;
     if (db.types.indexOf(type) < 0) continue;
     var fromIdx = -1, toIdx = -1, fromDist = Infinity, toDist = Infinity;
@@ -1829,8 +2006,50 @@ var playing     = false;
 var mapMarkers  = [], segLines = [], segProgressLines = [], segShapes = [], currentPin = null;
 var routeSegments = [], cumulativeDist = [0], totalDist = 0, segmentGeometries = [];
 
-/* ─── Animation state ─── */
-var anim = { active: false, raf: null, pauseTimer: null, fromIdx: 0, toIdx: 1, fromPt: [0,0], toPt: [0,0], ctrlPt: null, startTime: 0, duration: 1400, pauseMs: 950, easing: 'easeInOut' };
+/* ─── Time engine ─── */
+var segmentTable = [];
+var te = {
+  normalizedTime:   0,    // 0.0–1.0 across full journey
+  baseTime:         0,    // normalizedTime at last speed-change or seek
+  baseRealTime:     0,    // performance.now() at last speed-change or seek
+  raf:              null,
+  totalDuration:    1,    // ms at 1× speed
+  lastSegIdx:       -1,   // for camera retrigger
+  lastStopIdx:      -1,   // for arrival detection
+  currentPos:       null, // [lat, lng] — latest computed position
+  currentTransport: null, // transport type at currentPos
+  currentSegIdx:    -1,   // segment index at currentPos
+  currentSeg:       null  // full segmentTable entry at currentPos
+};
+var _renderTimer = null;
+
+/* ─── Camera State Machine ─── */
+var CAMERA_CONFIG = {
+  smoothFrames:           4,     // direction vector averaging window (Cursor)
+  hysteresisKm:          0.08,   // min displacement to re-center in TRAVEL (Cursor)
+  minDepartureIntervalMs: 50,    // rapid segment switch protection (Codex)
+  DEPARTURE: { durationMs: 700, offsetMeters: 200 },
+  ARRIVAL:   { triggerRatio: 0.80, longSegKm: 50, triggerRemKm: 5, offsetMeters: 100 },
+  zoom: {                        // per-rhythm zoom levels for each phase (Cursor)
+    stroll:  { depart: 16, travel: 16, arrive: 17 },
+    trail:   { depart: 15, travel: 14, arrive: 16 },
+    rail:    { depart: 14, travel: 13, arrive: 15 },
+    road:    { depart: 13, travel: 12, arrive: 14 },
+    shuttle: { depart: 13, travel: 12, arrive: 14 },
+    air:     { depart:  8, travel:  7, arrive: 10 },
+    sea:     { depart:  9, travel:  8, arrive: 11 }
+  },
+  fly: { depart: 0.7, travel: 0.4, arrive: 0.9 }
+};
+var cam = {
+  state:           'IDLE',  // IDLE | DEPARTURE | TRAVEL | ARRIVAL
+  segIdx:          -1,
+  lastSegChangeMs:  0,
+  dirHistory:      [],      // [{dlat, dlng}, ...] smoothed heading history (Cursor)
+  arrivalLock:     false,
+  isSeeking:       false,
+  lastFollowPos:   null     // for hysteresis check
+};
 
 /* ─── Camera state ─── */
 var CAMERA_CONFIG = {
@@ -1860,7 +2079,7 @@ var playbackSpeed = 1;
 
 /* ─── Context-aware search config ─── */
 var SEARCH_CTX = {
-  plane:         { placeholder: '空港名を検索…',                suffix: '空港',   hint: '✈ 空港を優先'       },
+  plane:         { placeholder: '空港名を検索…',                suffix: '空港',   hint: '✈️ 空港を優先'       },
   ferry:         { placeholder: '港・フェリーターミナルを検索…', suffix: '港',    hint: '🚢 港を優先'        },
   shinkansen:    { placeholder: '新幹線の駅名を検索…',          suffix: '駅',    hint: '🚄 駅を優先'        },
   train_limited: { placeholder: '駅名を検索…',                  suffix: '駅',    hint: '🚃 駅を優先'        },
@@ -1957,8 +2176,36 @@ function fallbackGeometryPoints(from, to, type) {
 function buildSegmentGeometry(from, to) {
   var shapeId = explicitSegmentShapeId(from, to);
   var shapePts = shapeId ? findShapeById(shapeId, from.lat, from.lng, to.lat, to.lng) : null;
-  if (shapePts) return { type: 'shape', shapeId: shapeId, points: shapePts, fallback: false };
-  return { type: fallbackUsesArc(from.transport) ? 'arc' : 'line', shapeId: shapeId || '', points: fallbackGeometryPoints(from, to, from.transport), fallback: true };
+  if (shapePts) return { type: 'shape', shapeId: shapeId, points: shapePts, fallback: false, provenance: 'gtfs' };
+  // Proximity DB fallback (GTFS_PROX_DB station matching)
+  var proxPts = findProxDbShape(from.lat, from.lng, to.lat, to.lng, from.transport);
+  if (proxPts) return { type: 'shape', shapeId: '', points: proxPts, fallback: false, provenance: 'prox-db' };
+  var usesArc = fallbackUsesArc(from.transport);
+  return { type: usesArc ? 'arc' : 'line', shapeId: shapeId || '', points: fallbackGeometryPoints(from, to, from.transport), fallback: true, provenance: usesArc ? 'inferred' : 'fallback' };
+}
+function findProxDbShape(fromLat, fromLng, toLat, toLng, type) {
+  var THRESHOLD = 0.5;
+  var keys = Object.keys(GTFS_PROX_DB);
+  for (var ki = 0; ki < keys.length; ki++) {
+    var db = GTFS_PROX_DB[keys[ki]];
+    if (!db || !db.types || !db.stops || !db.shape) continue;
+    if (db.types.indexOf(type) < 0) continue;
+    var fromIdx = -1, toIdx = -1, fromDist = Infinity, toDist = Infinity;
+    for (var si = 0; si < db.stops.length; si++) {
+      var s = db.stops[si];
+      var d1 = haversineKm(fromLat, fromLng, s.lat, s.lng);
+      var d2 = haversineKm(toLat,   toLng,   s.lat, s.lng);
+      if (d1 < fromDist) { fromDist = d1; fromIdx = si; }
+      if (d2 < toDist)   { toDist   = d2; toIdx   = si; }
+    }
+    if (fromIdx < 0 || toIdx < 0 || fromIdx === toIdx) continue;
+    if (fromDist > THRESHOLD || toDist > THRESHOLD) continue;
+    var pts = fromIdx < toIdx
+      ? db.shape.slice(fromIdx, toIdx + 1)
+      : db.shape.slice(toIdx, fromIdx + 1).reverse();
+    if (pts.length >= 2) return pts;
+  }
+  return null;
 }
 function buildRouteMetrics(day) {
   var d = DAYS[day || currentDay];
@@ -1966,6 +2213,10 @@ function buildRouteMetrics(day) {
   var segments = [], cum = [0], geoms = [], sum = 0;
   for (var i = 0; i < stops.length - 1; i++) {
     var from = stops[i], to = stops[i+1];
+    /* skip segments where either endpoint has no coordinates yet (AI draft) */
+    if (from.lat == null || from.lng == null || to.lat == null || to.lng == null) {
+      segments.push(null); cum.push(sum); geoms.push(null); continue;
+    }
     var dist = haversineKm(from.lat, from.lng, to.lat, to.lng);
     sum += dist;
     segments.push({ from: from, to: to, dist: dist });
@@ -1979,27 +2230,18 @@ function buildRouteMetrics(day) {
   segShapes = geoms.map(function(g) { return g && g.type === 'shape' ? g.points : null; });
   return { segments: segments, totalDist: sum, cumulativeDist: cum, geometries: geoms };
 }
-function segmentIndexAtDistance(dist) {
-  if (!routeSegments.length) return -1;
-  if (dist <= 0) return 0;
-  for (var i = 0; i < routeSegments.length; i++) {
-    if (dist <= cumulativeDist[i+1]) return i;
+/* O(log n) binary search over cumulativeDist — Codex */
+function findSegmentByT(t) {
+  var n = cumulativeDist.length - 1;
+  if (n <= 0) return 0;
+  var target = totalDist * clamp01(t);
+  var lo = 0, hi = n - 1;
+  while (lo < hi) {
+    var mid = (lo + hi) >> 1;
+    if (cumulativeDist[mid + 1] < target) lo = mid + 1;
+    else hi = mid;
   }
-  return routeSegments.length - 1;
-}
-function getPositionAtTime(normalizedTime) {
-  var t = clamp01(normalizedTime);
-  var stops = DAYS[currentDay] && DAYS[currentDay].stops ? DAYS[currentDay].stops : [];
-  if (!stops.length) return null;
-  if (!routeSegments.length) return { lat: stops[0].lat, lng: stops[0].lng };
-  var targetDist = totalDist * t;
-  var idx = segmentIndexAtDistance(targetDist);
-  if (idx < 0) return { lat: stops[0].lat, lng: stops[0].lng };
-  var segStart = cumulativeDist[idx], segDist = routeSegments[idx].dist;
-  var localT = segDist > 0 ? (targetDist - segStart) / segDist : 0;
-  var pts = fullSegPts(idx, idx + 1);
-  var pos = polylineInterp(pts, clamp01(localT));
-  return { lat: pos[0], lng: pos[1] };
+  return lo;
 }
 function fullSegPts(fi, ti) {
   var geom = segmentGeometries[fi];
@@ -2013,22 +2255,38 @@ function partialSegPts(fi, te) {
 
 /* ─── Route lines ─── */
 function initRouteLines() {
-  segLines.forEach(function(l){map.removeLayer(l);}); segProgressLines.forEach(function(l){map.removeLayer(l);});
+  segLines.forEach(function(l){if(l)map.removeLayer(l);}); segProgressLines.forEach(function(l){if(l)map.removeLayer(l);});
   segLines=[]; segProgressLines=[];
   buildRouteMetrics(currentDay);
   var stops=DAYS[currentDay].stops;
   for(var i=0;i<stops.length-1;i++){
     var from=stops[i];
+    /* skip null-coord segments (AI draft stops awaiting location) */
+    if (!segmentGeometries[i] || from.lat == null || from.lng == null ||
+        stops[i+1].lat == null || stops[i+1].lng == null) {
+      segLines.push(null); segProgressLines.push(L.polyline([],{color:LIME,weight:4,opacity:.9,lineCap:'round'}).addTo(map));
+      continue;
+    }
     var c=tcfg(from.transport), pts=fullSegPts(i,i+1);
     var dash = segmentGeometries[i] && segmentGeometries[i].type === 'shape' ? null : (c.dashArray||'6 5');
     segLines.push(L.polyline(pts,{color:'#C4C0B6',weight:Math.max(1.5,c.lineWeight),opacity:.8,dashArray:dash,lineCap:'round'}).addTo(map));
     segProgressLines.push(L.polyline([],{color:LIME,weight:c.progWeight||4,opacity:.9,lineCap:'round',lineJoin:'round'}).addTo(map));
   }
+  buildSegmentTable();
 }
 function updateAllProgress() {
-  var stops=DAYS[currentDay].stops;
-  for(var i=0;i<stops.length-1;i++){
-    segProgressLines[i].setLatLngs(i<currentStop?fullSegPts(i,i+1):[]);
+  var nT = te.normalizedTime;
+  for (var i = 0; i < segProgressLines.length; i++) {
+    var seg = segmentTable[i];
+    if (!seg) { segProgressLines[i].setLatLngs([]); continue; }
+    if (nT <= seg.startT) {
+      segProgressLines[i].setLatLngs([]);
+    } else if (nT >= seg.endT) {
+      segProgressLines[i].setLatLngs(fullSegPts(i, i+1));
+    } else {
+      var _lt = (nT - seg.startT) / (seg.endT - seg.startT);
+      segProgressLines[i].setLatLngs(partialSegPts(i, ease(_lt, seg.easing)));
+    }
   }
 }
 
@@ -2074,12 +2332,14 @@ function showCategoryArrivalPulse(lat, lng) {
 
 /* ─── Markers ─── */
 function renderMapMarkers() {
-  mapMarkers.forEach(function(m){map.removeLayer(m);}); mapMarkers=[];
+  mapMarkers.forEach(function(m){if(m)map.removeLayer(m);}); mapMarkers=[];
   var d=DAYS[currentDay];
   for(var i=0;i<d.stops.length;i++){
     (function(idx){
       var s=d.stops[idx];
-      var state=idx<currentStop?'passed':(idx===currentStop&&!anim.active?'active':'default');
+      var _inT=playing&&segmentTable[idx]&&te.normalizedTime>=segmentTable[idx].startT&&te.normalizedTime<segmentTable[idx].endT;
+      var state=idx<currentStop?'passed':(idx===currentStop&&!_inT?'active':'default');
+      if (s.lat == null || s.lng == null) { mapMarkers.push(null); return; }
       var m=L.marker([s.lat,s.lng],{icon:stopIcon(state,s),zIndexOffset:state==='active'?500:0}).addTo(map);
       m.bindPopup(popupHtml(s));
       m.on('click',function(){jumpTo(idx);});
@@ -2114,7 +2374,8 @@ function renderTimeline() {
   for(var i=0;i<d.stops.length;i++){
     var s=d.stops[i];
     var terminal=!!s.isDayEnd;
-    var isActive=i===currentStop&&!anim.active, isPassed=i<currentStop;
+    var _inT=playing&&segmentTable[i]&&te.normalizedTime>=segmentTable[i].startT&&te.normalizedTime<segmentTable[i].endT;
+    var isActive=i===currentStop&&!_inT, isPassed=i<currentStop;
     var rowCls=isActive?' active':isPassed?' passed':'';
     var segCls=isPassed?' passed':'';
     if(s.transport==='bike') segCls+=' t-bike';
@@ -2124,16 +2385,20 @@ function renderTimeline() {
     var tLabel=s.label||'';
     var transportDisplay=s.transport.replace(/_/g,' ').toUpperCase();
     var tHtml=terminal?'':'<div class="transport-row"><span class="badge b-transport">'+transportDisplay+'</span>'+(tLabel?'<span class="label-tag">'+escHtml(tLabel)+'</span>':'')+
-              (s.fare?'<span class="price-tag">'+escHtml(s.fare)+'</span>':'')+(s.duration?'<span class="dur-tag">'+escHtml(s.duration)+'</span>':'')+'</div>';
+              (s.fare?'<span class="price-tag">'+escHtml(s.fare)+'</span>':'')+(formatDur(s)?'<span class="dur-tag">'+formatDur(s)+'</span>':'')+'</div>';
     var rhythmHtml=c.rhythmLabel&&!terminal?'<div class="rhythm-pill"><span class="dot"></span>'+c.rhythmLabel+'</div>':'';
     var cats=Array.isArray(s.categories)?s.categories:[];
     var catHtml=cats.map(function(k){var cfg=CATEGORIES[k];return cfg?'<span class="cat-badge">'+cfg.icon+' '+cfg.label+'</span>':''}).join('');
-    var editBtns='<div class="card-edit-btns">'+
-      '<button class="card-act card-act-edit" onclick="event.stopPropagation();openEP('+i+','+i+')" title="Edit">&#9998;</button>'+
-      '<button class="card-act card-act-del"  onclick="event.stopPropagation();confirmDelete('+i+')" title="Delete">&#215;</button>'+
+    var dragAttr = editMode ? ' draggable="true" ondragstart="onDragStart(event,'+i+')" ondragover="onDragOver(event,'+i+')" ondrop="onDrop(event,'+i+')" ondragend="onDragEnd(event)"' : '';
+    var dragHandle = editMode ? '<span class="drag-handle" draggable="false" ondragstart="event.stopPropagation()">⠿</span>' : '';
+    var editBtns='<div class="card-menu">'+dragHandle+
+      '<div class="card-menu-wrap">'+
+        '<button class="card-menu-btn" onclick="event.stopPropagation();openCardMenu(event,'+i+')">⋮</button>'+
+        '<div class="card-menu-dropdown" id="cm-'+i+'"></div>'+
+      '</div>'+
       '</div>';
 
-    html+='<div class="stop-row'+rowCls+'" onclick="'+(!editMode?'jumpTo('+i+')':'')+'" id="sr'+i+'">'+
+    html+='<div class="stop-row'+rowCls+'"'+dragAttr+' onclick="'+(!editMode?'jumpTo('+i+')':'')+'" id="sr'+i+'">'+
           '<div class="stop-spine"><div class="stop-dot"></div>'+(i<d.stops.length-1?'<div class="stop-seg'+segCls+'"></div>':'')+
           '</div><div style="flex:1"><div class="stop-card">'+
           '<div class="stop-time">'+s.time+'</div>'+
@@ -2147,86 +2412,383 @@ function renderTimeline() {
   }
 
   tl.innerHTML=html;
-  document.getElementById('costBar').innerHTML='<span class="cost-label">交通費メモ</span><span class="cost-num">'+escHtml(d.cost||'')+'</span>';
+  var _totalFare=0;
+  d.stops.forEach(function(s){if(s.fare){var n=parseInt(s.fare.replace(/[¥,\s]/g,''),10);if(!isNaN(n))_totalFare+=n;}});
+  var _totalHtml=_totalFare>0?'<span class="cost-total">合計 ¥'+_totalFare.toLocaleString('ja-JP')+'</span>':'';
+  document.getElementById('costBar').innerHTML='<span class="cost-label">メモ</span><span class="cost-num">'+escHtml(d.cost||'')+'</span>'+_totalHtml;
   updateSeekBar();
 }
 
 /* ─── Jump ─── */
 function jumpTo(i) {
-  stopAnim(); playing=false; setPlayBtn(false); currentStop=i;
-  removeCurrentPin(); renderMapMarkers(); renderTimeline(); updateAllProgress();
-  updatePeekInfo();
-  var s=DAYS[currentDay].stops[i];
-  snapCameraState(s.lat, s.lng, 13);
-  map.setView([s.lat,s.lng],13,{animate:false});
+  var stops = DAYS[currentDay].stops;
+  var nT = i <= 0 ? 0 : i >= stops.length-1 ? 1 : (segmentTable[i-1] ? segmentTable[i-1].endT : 0);
+  stopAnim(); playing=false; setPlayBtn(false);
+  _seekTo(nT);
+  var s = stops[i];
+  map.flyTo([s.lat,s.lng],13,{duration:.7});
   if(mapMarkers[i]) mapMarkers[i].openPopup();
   scrollToCard(i);
   if(isMobile() && sheetState==='peek') setSheet('half');
 }
 function scrollToCard(i) { var el=document.getElementById('sr'+i); if(el) el.scrollIntoView({behavior:'smooth',block:'nearest'}); }
 
+/* ─── Time engine: segment table ─── */
+function buildSegmentTable() {
+  segmentTable = [];
+  var stops = DAYS[currentDay].stops;
+  if (stops.length < 2) { te.totalDuration = 1; return; }
+  var segs = [];
+  for (var i = 0; i < stops.length - 1; i++) {
+    var from = stops[i], to = stops[i+1];
+    /* skip null-coord stops (AI draft stops) */
+    if (from.lat == null || from.lng == null || to.lat == null || to.lng == null) continue;
+    var c = tcfg(from.transport);
+    var f = [from.lat, from.lng], t_ = [to.lat, to.lng];
+    var dl = t_[0]-f[0], dn = t_[1]-f[1], dist = Math.sqrt(dl*dl+dn*dn);
+    var travelMs = Math.max(700, Math.min(2800, dist * 4400)) / c.speedMult;
+    var cats = Array.isArray(to.categories) ? to.categories : [];
+    var pauseMs = cats.reduce(function(mx,k){ var cfg=CATEGORIES[k]; return cfg?Math.max(mx,cfg.pauseMs):mx; }, c.pauseMs);
+    if (i === stops.length - 2) pauseMs = 0;
+    var geom = segmentGeometries[i];
+    var provenance = geom ? geom.provenance : null;
+    var confidence = provenance || (segShapes[i] ? 'gtfs' : (c.curve ? 'inferred' : 'fallback'));
+    var curveBias = (confidence === 'inferred' && c.curve) ? c.curve : null;
+    segs.push({ i:i, travelMs:travelMs, pauseMs:pauseMs, confidence:confidence, curveBias:curveBias, fromPt:f, toPt:t_, transport:from.transport, easing:c.easing });
+  }
+  var initialPauseMs = tcfg(stops[0].transport).pauseMs;
+  var total = initialPauseMs;
+  for (var i = 0; i < segs.length; i++) total += segs[i].travelMs + segs[i].pauseMs;
+  te.totalDuration = Math.max(1, total);
+  var elapsed = initialPauseMs;
+  for (var i = 0; i < segs.length; i++) {
+    var s = segs[i];
+    var startT = elapsed / te.totalDuration;
+    elapsed += s.travelMs;
+    var endT = elapsed / te.totalDuration;
+    elapsed += s.pauseMs;
+    segmentTable.push({ index:s.i, startT:startT, endT:endT, pauseEndT:elapsed/te.totalDuration,
+      transport:s.transport, confidence:s.confidence, curveBias:s.curveBias,
+      fromPt:s.fromPt, toPt:s.toPt, easing:s.easing });
+  }
+}
+
+/* Binary search: find segment entry covering nT */
+function _segAtTime(nT) {
+  if (!segmentTable.length) return null;
+  var lo = 0, hi = segmentTable.length - 1;
+  while (lo <= hi) {
+    var mid = (lo + hi) >> 1;
+    var s = segmentTable[mid];
+    if (nT < s.startT) hi = mid - 1;
+    else if (nT > s.pauseEndT) lo = mid + 1;
+    else return s;
+  }
+  return nT <= segmentTable[0].startT ? segmentTable[0] : segmentTable[segmentTable.length-1];
+}
+
+/* Geometry resolver: gtfs → bezier → lerp */
+function getPositionAtTime(nT) {
+  if (!segmentTable.length) return null;
+  var seg = _segAtTime(nT);
+  if (!seg) return null;
+  if (nT <= seg.startT) return seg.fromPt;
+  if (nT >= seg.endT)   return seg.toPt;
+  var lt = (nT - seg.startT) / (seg.endT - seg.startT);
+  var te_ = ease(lt, seg.easing);
+  if (seg.confidence === 'gtfs') {
+    var pts = segShapes[seg.index];
+    return pts ? polylineInterp(pts, te_) : seg.fromPt;
+  }
+  if (seg.confidence === 'inferred') {
+    var ctrl_ = ctrlPt(seg.fromPt, seg.toPt, seg.curveBias);
+    return bezierPt(seg.fromPt, ctrl_, seg.toPt, te_);
+  }
+  return [seg.fromPt[0]+(seg.toPt[0]-seg.fromPt[0])*te_, seg.fromPt[1]+(seg.toPt[1]-seg.fromPt[1])*te_];
+}
+
+/* Seek to normalised position (works playing or paused) */
+function _seekTo(nT) {
+  nT = Math.max(0, Math.min(1, nT));
+  te.normalizedTime = nT;
+  te.baseTime = nT;
+  te.baseRealTime = performance.now();
+  var seg = _segAtTime(nT);
+  var newStop = !seg || nT <= 0 ? 0 : nT >= seg.endT ? seg.index+1 : seg.index;
+  currentStop = newStop;
+  te.lastStopIdx = newStop;
+  te.lastSegIdx  = -1;
+  var pos = getPositionAtTime(nT);
+  var transport = seg ? seg.transport : ((DAYS[currentDay].stops[0]||{}).transport);
+  /* Sync te.current* so _cameraOnSeek() reads fresh values (Codex seek sync) */
+  te.currentPos       = pos;
+  te.currentTransport = transport;
+  te.currentSeg       = seg;
+  te.currentSegIdx    = seg ? seg.index : -1;
+  if (pos) moveCurrentPin(pos[0], pos[1], transport); else removeCurrentPin();
+  updateAllProgress(); renderMapMarkers(); renderTimeline(); updatePeekInfo(); updateSeekBar();
+  /* Signal camera state machine to re-evaluate at new position (Codex) */
+  cam.isSeeking = true;
+  _cameraOnSeek();
+  if (playing) {
+    if (te.raf) { cancelAnimationFrame(te.raf); te.raf = null; }
+    te.raf = requestAnimationFrame(_calcLoop);
+  }
+}
+
+/* ─── Calc loop: position & state — runs every RAF frame ─── */
+function _calcLoop(ts) {
+  if (!playing) return;
+  te.normalizedTime = Math.min(1, te.baseTime + (ts - te.baseRealTime) * playbackSpeed / te.totalDuration);
+  var nT = te.normalizedTime;
+  var seg = _segAtTime(nT);
+  var segIdx = seg ? seg.index : -1;
+
+  /* Current stop index */
+  var newStopIdx = (!seg || nT < seg.startT) ? 0 : nT >= seg.endT ? seg.index+1 : seg.index;
+
+  /* Stop arrival event */
+  if (newStopIdx > te.lastStopIdx) {
+    te.lastStopIdx = newStopIdx;
+    currentStop = newStopIdx;
+    renderMapMarkers(); renderTimeline(); scrollToCard(currentStop);
+    if (mapMarkers[currentStop]) mapMarkers[currentStop].openPopup();
+    var _arr = DAYS[currentDay].stops[currentStop];
+    map.panTo([_arr.lat, _arr.lng], {animate:true, duration:0.4});
+    if (Array.isArray(_arr.categories) && _arr.categories.length) showCategoryArrivalPulse(_arr.lat, _arr.lng);
+    updatePeekInfo();
+  } else {
+    currentStop = newStopIdx;
+  }
+
+  /* Compute & cache position for render tick */
+  te.currentPos       = getPositionAtTime(nT);
+  te.currentTransport = seg ? seg.transport : ((DAYS[currentDay].stops[0]||{}).transport);
+  te.currentSegIdx    = segIdx;
+  te.currentSeg       = seg;
+
+  if (nT >= 1) { finishPlay(); return; }
+  te.raf = requestAnimationFrame(_calcLoop);
+}
+
+/* ─── Render tick: Leaflet DOM updates — throttled to 50ms ─── */
+function _renderTick() {
+  if (!playing) return;
+  var pos = te.currentPos, transport = te.currentTransport;
+  var seg = te.currentSeg, segIdx = te.currentSegIdx;
+  var nT  = te.normalizedTime;
+
+  if (pos) moveCurrentPin(pos[0], pos[1], transport);
+
+  /* Progress line for active travelling segment */
+  if (seg && segIdx >= 0 && nT >= segmentTable[segIdx].startT && nT < segmentTable[segIdx].endT) {
+    var _lt = (nT - segmentTable[segIdx].startT) / (segmentTable[segIdx].endT - segmentTable[segIdx].startT);
+    segProgressLines[segIdx].setLatLngs(partialSegPts(segIdx, ease(_lt, seg.easing)));
+  }
+
+  updateSeekBar();
+  _cameraUpdate();
+}
+
 /* ─── Playback ─── */
 function startPlay() {
-  var stops=DAYS[currentDay].stops;
-  if(currentStop<0) {
-    currentStop=0; renderMapMarkers(); renderTimeline(); updateAllProgress();
-    var s0=stops[0]; moveCurrentPin(s0.lat,s0.lng,s0.transport);
-    updateCameraState('DEPARTURE', [s0.lat,s0.lng], null);
-    if(mapMarkers[0]) mapMarkers[0].openPopup();
+  var stops = DAYS[currentDay].stops;
+  if (!segmentTable.length || stops.length < 2) return;
+  if (te.normalizedTime >= 1) {
+    te.normalizedTime = 0; te.baseTime = 0; currentStop = -1;
+    te.lastStopIdx = -1; te.lastSegIdx = -1;
+    removeCurrentPin(); renderMapMarkers(); renderTimeline(); updateAllProgress();
+  }
+  if (te.normalizedTime <= 0 || currentStop < 0) {
+    te.normalizedTime = 0; te.baseTime = 0;
+    currentStop = 0; te.lastStopIdx = 0; te.lastSegIdx = -1;
+    renderMapMarkers(); renderTimeline(); updateAllProgress();
+    var s0 = stops[0];
+    moveCurrentPin(s0.lat, s0.lng, s0.transport);
+    map.flyTo([s0.lat, s0.lng], 13, {duration: 0.5});
+    if (mapMarkers[0]) mapMarkers[0].openPopup();
     scrollToCard(0);
-    anim.pauseTimer=setTimeout(function(){if(playing)animNext();},tcfg(s0.transport).pauseMs/playbackSpeed);
+  } else {
+    te.lastSegIdx = -1;
+  }
+  te.baseTime = te.normalizedTime;
+  te.baseRealTime = performance.now();
+  cam.segIdx = -1; cam.arrivalLock = false; cam.isSeeking = false;
+  cam.dirHistory = []; cam.lastFollowPos = null;
+  if (_renderTimer) { clearInterval(_renderTimer); _renderTimer = null; }
+  _renderTimer = setInterval(_renderTick, 50);
+  te.raf = requestAnimationFrame(_calcLoop);
+}
+/* ─── Camera State Machine helpers ─── */
+function _camZoom(rhythm, phase) {
+  var r = CAMERA_CONFIG.zoom[rhythm] || CAMERA_CONFIG.zoom.road;
+  return r[phase] || 13;
+}
+function _segLenKm(seg) {
+  return haversineKm(seg.fromPt[0], seg.fromPt[1], seg.toPt[0], seg.toPt[1]);
+}
+function _camDeparture(seg, rhythm) {
+  var segLenM = _segLenKm(seg) * 1000;
+  var offset  = Math.min(CAMERA_CONFIG.DEPARTURE.offsetMeters, segLenM * 0.3); // short segment (Codex)
+  if (rhythm === 'air' || rhythm === 'sea') {
+    var shp    = segShapes[seg.index] || null;
+    var bounds = L.latLngBounds([seg.fromPt, seg.toPt]);
+    if (shp) shp.forEach(function(p) { bounds.extend(p); });
+    var pad = rhythm === 'air' ? 0.45 : 0.35;
+    var mz  = rhythm === 'air' ? 8    : 9;
+    map.fitBounds(bounds.pad(pad), { maxZoom: mz, animate: true, duration: 1.2 });
     return;
   }
-  if(currentStop>=stops.length-1){finishPlay();return;}
-  animNext();
+  var zoom  = _camZoom(rhythm, 'depart');
+  var dLat  = seg.toPt[0] - seg.fromPt[0], dLng = seg.toPt[1] - seg.fromPt[1];
+  var norm  = Math.sqrt(dLat*dLat + dLng*dLng) || 1;
+  var offDeg = offset / 111320;
+  var center = [seg.fromPt[0] + (dLat/norm)*offDeg, seg.fromPt[1] + (dLng/norm)*offDeg];
+  map.flyTo(center, zoom, { animate: true, duration: CAMERA_CONFIG.fly.depart });
 }
-function animNext() {
-  var stops=DAYS[currentDay].stops, from=stops[currentStop], to=stops[currentStop+1], c=tcfg(from.transport);
-  var f=[from.lat,from.lng],t=[to.lat,to.lng];
-  anim.active=true; anim.fromIdx=currentStop; anim.toIdx=currentStop+1;
-  anim.fromPt=f; anim.toPt=t; anim.lastCameraPos = f;
-  var geom = segmentGeometries[currentStop] || buildSegmentGeometry(from, to);
-  anim.shapePts = geom.points || null;
-  anim.ctrlPt = null;
-  anim.easing=c.easing; anim.pauseMs=c.pauseMs;
-  var dist = routeSegments[currentStop] ? routeSegments[currentStop].dist : haversineKm(from.lat, from.lng, to.lat, to.lng);
-  anim.duration=Math.max(700,Math.min(2800,dist*900))/c.speedMult/playbackSpeed;
-  anim.startTime=performance.now();
-  updateCameraState('DEPARTURE', f, directionFromPoints(f, t));
-  anim.raf=requestAnimationFrame(animTick);
+function _camArrival(seg, rhythm) {
+  var segLenM = _segLenKm(seg) * 1000;
+  Math.min(CAMERA_CONFIG.ARRIVAL.offsetMeters, segLenM * 0.3); // short segment guard (Codex)
+  map.flyTo(seg.toPt, _camZoom(rhythm, 'arrive'), { animate: true, duration: CAMERA_CONFIG.fly.arrive });
 }
-function animTick(ts) {
-  if(!anim.active) return;
-  var t=Math.min(1,(ts-anim.startTime)/anim.duration), te=ease(t,anim.easing);
-  var pos=anim.shapePts?polylineInterp(anim.shapePts,te):anim.ctrlPt?bezierPt(anim.fromPt,anim.ctrlPt,anim.toPt,te):[anim.fromPt[0]+(anim.toPt[0]-anim.fromPt[0])*te,anim.fromPt[1]+(anim.toPt[1]-anim.fromPt[1])*te];
-  moveCurrentPin(pos[0],pos[1],DAYS[currentDay].stops[anim.fromIdx].transport);
-  updateCameraState(cameraModeForProgress(te), [pos[0], pos[1]], directionFromPoints(anim.lastCameraPos || anim.fromPt, [pos[0], pos[1]]));
-  anim.lastCameraPos = [pos[0], pos[1]];
-  segProgressLines[anim.fromIdx].setLatLngs(partialSegPts(anim.fromIdx,te));
-  if(t<1){anim.raf=requestAnimationFrame(animTick);return;}
-  anim.active=false; currentStop=anim.toIdx;
-  segProgressLines[anim.fromIdx].setLatLngs(fullSegPts(anim.fromIdx,anim.toIdx));
-  renderMapMarkers(); renderTimeline(); scrollToCard(currentStop);
-  updatePeekInfo();
-  var arr=DAYS[currentDay].stops[currentStop];
-  updateCameraState('ARRIVAL', [arr.lat,arr.lng], directionFromPoints(anim.lastCameraPos || anim.fromPt, [arr.lat, arr.lng]));
-  if(mapMarkers[currentStop]) mapMarkers[currentStop].openPopup();
-  if(currentStop>=DAYS[currentDay].stops.length-1){finishPlay();return;}
-  var _arr=DAYS[currentDay].stops[currentStop];
-  var _cats=Array.isArray(_arr.categories)?_arr.categories:[];
-  var _pauseMs=_cats.reduce(function(mx,k){var cfg=CATEGORIES[k];return cfg?Math.max(mx,cfg.pauseMs):mx;},anim.pauseMs);
-  if(_cats.length) showCategoryArrivalPulse(_arr.lat,_arr.lng);
-  anim.pauseTimer=setTimeout(function(){if(playing)animNext();},_pauseMs/playbackSpeed);
+function _camTravelFollow(pos, rhythm) {
+  if (!pos) return;
+  /* Hysteresis: skip if pin hasn't moved enough (Cursor) */
+  if (cam.lastFollowPos &&
+      haversineKm(pos[0], pos[1], cam.lastFollowPos[0], cam.lastFollowPos[1]) < CAMERA_CONFIG.hysteresisKm) return;
+  cam.lastFollowPos = pos;
+  map.flyTo(pos, _camZoom(rhythm, 'travel'), { animate: true, duration: CAMERA_CONFIG.fly.travel });
+}
+/* Seek sync: re-evaluate camera state at new seek position (Codex) */
+function _cameraOnSeek() {
+  var seg = te.currentSeg;
+  var pos = te.currentPos;
+  cam.arrivalLock   = false;
+  cam.lastFollowPos = null;
+  cam.dirHistory    = [];
+  cam.isSeeking     = false;
+  if (!seg || !pos) { cam.state = 'IDLE'; return; }
+  cam.segIdx = te.currentSegIdx >= 0 ? te.currentSegIdx : seg.index;
+  var nT = te.normalizedTime;
+  var lt = seg.endT > seg.startT ? (nT - seg.startT) / (seg.endT - seg.startT) : 0;
+  var rhythm = tcfg(seg.transport).rhythmLabel;
+  if (lt < 0.15) {
+    cam.state = 'DEPARTURE'; _camDeparture(seg, rhythm);
+  } else if (lt > 0.85) {
+    cam.state = 'ARRIVAL'; cam.arrivalLock = true; _camArrival(seg, rhythm);
+  } else {
+    cam.state = 'TRAVEL';
+    map.flyTo(pos, _camZoom(rhythm, 'travel'), { animate: true, duration: 0.5 });
+  }
+}
+/* Main camera update — called from _renderTick every 50ms */
+function _cameraUpdate() {
+  if (!playing) { cam.state = 'IDLE'; return; }
+  /* Seek sync guard (Codex) */
+  if (cam.isSeeking) { _cameraOnSeek(); return; }
+  var nT     = te.normalizedTime;
+  var seg    = te.currentSeg;
+  var pos    = te.currentPos;
+  if (!seg || !pos) return;
+  var segIdx   = te.currentSegIdx;
+  var rhythm   = tcfg(seg.transport).rhythmLabel;
+  var segLenKm = _segLenKm(seg);
+  /* Segment change detection */
+  if (segIdx !== cam.segIdx && segIdx >= 0) {
+    var now   = performance.now();
+    /* Rapid segment switching: skip DEPARTURE re-init if < 50ms (Codex) */
+    var rapid = cam.segIdx >= 0 && (now - cam.lastSegChangeMs) < CAMERA_CONFIG.minDepartureIntervalMs;
+    cam.segIdx          = segIdx;
+    cam.lastSegChangeMs = now;
+    cam.arrivalLock     = false;
+    cam.lastFollowPos   = null;
+    cam.dirHistory      = [];
+    if (!rapid) {
+      cam.state = 'DEPARTURE';
+      _camDeparture(seg, rhythm);
+      return;
+    }
+    cam.state = 'TRAVEL'; // rapid switch: jump straight to TRAVEL
+  }
+  /* DEPARTURE → TRAVEL transition */
+  if (cam.state === 'DEPARTURE') {
+    var elapsed = (nT - seg.startT) * te.totalDuration;
+    if (elapsed < CAMERA_CONFIG.DEPARTURE.durationMs) return;
+    cam.state = 'TRAVEL';
+  }
+  /* ARRIVAL trigger */
+  if (!cam.arrivalLock && cam.state === 'TRAVEL') {
+    var lt = seg.endT > seg.startT ? (nT - seg.startT) / (seg.endT - seg.startT) : 0;
+    var shouldArrive = false;
+    if ((rhythm === 'air' || rhythm === 'sea') && segLenKm > CAMERA_CONFIG.ARRIVAL.longSegKm) {
+      /* Long ferry/flight: remaining-distance trigger (Codex) */
+      var remKm = haversineKm(pos[0], pos[1], seg.toPt[0], seg.toPt[1]);
+      if (remKm < CAMERA_CONFIG.ARRIVAL.triggerRemKm) shouldArrive = true;
+    } else {
+      if (lt > CAMERA_CONFIG.ARRIVAL.triggerRatio) shouldArrive = true;
+    }
+    if (shouldArrive) {
+      cam.arrivalLock = true; cam.state = 'ARRIVAL';
+      _camArrival(seg, rhythm); return;
+    }
+  }
+  /* TRAVEL: smooth direction following with hysteresis */
+  if (cam.state === 'TRAVEL') {
+    /* Direction vector smoothing — 4-frame average (Cursor) */
+    var ahead = getPositionAtTime(Math.min(1, nT + 0.005));
+    if (ahead && (ahead[0] !== pos[0] || ahead[1] !== pos[1])) {
+      cam.dirHistory.push([ahead[0]-pos[0], ahead[1]-pos[1]]);
+      if (cam.dirHistory.length > CAMERA_CONFIG.smoothFrames) cam.dirHistory.shift();
+    }
+    _camTravelFollow(pos, rhythm);
+  }
 }
 function stopAnim() {
-  anim.active=false;
-  if(anim.raf){cancelAnimationFrame(anim.raf);anim.raf=null;}
-  if(anim.pauseTimer){clearTimeout(anim.pauseTimer);anim.pauseTimer=null;}
+  if (te.raf) { cancelAnimationFrame(te.raf); te.raf = null; }
+  if (_renderTimer) { clearInterval(_renderTimer); _renderTimer = null; }
+  cam.state = 'IDLE';
 }
-function finishPlay() { stopAnim();playing=false;removeCurrentPin();renderMapMarkers();setPlayBtn(false);updatePeekInfo(); }
+function finishPlay() {
+  if (te.raf) { cancelAnimationFrame(te.raf); te.raf = null; }
+  if (_renderTimer) { clearInterval(_renderTimer); _renderTimer = null; }
+  cam.state = 'IDLE';
+  playing = false; te.normalizedTime = 1;
+  currentStop = DAYS[currentDay].stops.length - 1;
+  removeCurrentPin(); renderMapMarkers(); renderTimeline();
+  setPlayBtn(false); updatePeekInfo(); updateSeekBar();
+}
+
+/* ─── Camera-safe state interface ─── */
+function getCurrentState() {
+  var pos = te.currentPos;
+  if (!pos) {
+    var stopPt = DAYS[currentDay].stops[Math.max(0, currentStop)];
+    pos = stopPt ? [stopPt.lat, stopPt.lng] : null;
+  }
+  var heading = null;
+  var seg = te.currentSeg;
+  if (seg && pos) {
+    var nT = te.normalizedTime;
+    var lt = seg.endT > seg.startT ? (nT - seg.startT) / (seg.endT - seg.startT) : 0;
+    var ahead = getPositionAtTime(Math.min(1, nT + 0.002));
+    if (ahead && (ahead[0] !== pos[0] || ahead[1] !== pos[1])) {
+      heading = Math.atan2(ahead[1] - pos[1], ahead[0] - pos[0]) * 180 / Math.PI;
+    }
+  }
+  var confidence = seg ? seg.confidence : 'fallback';
+  return {
+    lat:           pos ? pos[0] : null,
+    lng:           pos ? pos[1] : null,
+    heading:       heading,
+    normalizedTime: te.normalizedTime,
+    confidence:    confidence
+  };
+}
 
 /* ─── Playback controls ─── */
 function setPlaybackSpeed(s) {
+  te.baseTime = te.normalizedTime;
+  te.baseRealTime = performance.now();
   playbackSpeed = s;
   document.querySelectorAll('.speed-chip').forEach(function(c) {
     c.classList.toggle('sel', parseFloat(c.dataset.speed) === s);
@@ -2243,34 +2805,45 @@ function stepNext() {
   jumpTo(currentStop + 1);
 }
 function onSeekInput(val) {
-  var idx = parseInt(val);
-  var stops = DAYS[currentDay].stops;
+  var nT = parseFloat(val) / 1000;
   var bar = document.getElementById('seekBar');
   var lbl = document.getElementById('seekStopLabel');
-  if (bar) { var pct = stops.length > 1 ? idx / (stops.length - 1) * 100 : 0; bar.style.setProperty('--seek-pct', pct + '%'); }
-  if (lbl && idx >= 0 && idx < stops.length) lbl.textContent = (idx + 1) + ' / ' + stops.length + '  ' + stops[idx].name;
+  if (bar) bar.style.setProperty('--seek-pct', (nT * 100) + '%');
+  if (segmentTable.length) {
+    var pos = getPositionAtTime(nT);
+    var seg = _segAtTime(nT);
+    if (pos) moveCurrentPin(pos[0], pos[1], seg ? seg.transport : (DAYS[currentDay].stops[0]||{}).transport);
+    if (lbl && seg) {
+      var stops = DAYS[currentDay].stops;
+      var badge = seg.confidence === 'gtfs' ? ' ·GTFS' : seg.confidence === 'inferred' ? ' ·~' : '';
+      lbl.textContent = stops[seg.index].name + ' → ' + stops[seg.index+1].name + badge;
+    }
+  }
 }
 function onSeekChange(val) {
-  var idx = parseInt(val);
-  if (isNaN(idx) || idx < 0) return;
-  jumpTo(idx);
+  var nT = parseFloat(val) / 1000;
+  if (isNaN(nT)) return;
+  _seekTo(nT);
 }
 function updateSeekBar() {
   var bar = document.getElementById('seekBar');
   var lbl = document.getElementById('seekStopLabel');
-  var stops = DAYS[currentDay].stops;
   if (!bar) return;
-  bar.max = stops.length - 1;
-  var val = Math.max(0, currentStop);
-  bar.value = val;
-  var pct = stops.length > 1 ? val / (stops.length - 1) * 100 : 0;
-  bar.style.setProperty('--seek-pct', (currentStop >= 0 ? pct : 0) + '%');
-  if (lbl) {
-    if (currentStop >= 0 && currentStop < stops.length)
-      lbl.textContent = (currentStop + 1) + ' / ' + stops.length + '  ' + stops[currentStop].name;
-    else
-      lbl.textContent = stops.length + ' Stops';
+  var nT = te.normalizedTime;
+  bar.value = nT * 1000;
+  bar.style.setProperty('--seek-pct', (nT * 100) + '%');
+  if (!lbl) return;
+  var stops = DAYS[currentDay].stops;
+  if (playing && segmentTable.length) {
+    var seg = _segAtTime(nT);
+    if (seg && nT >= seg.startT && nT < seg.endT) {
+      var badge = seg.confidence === 'gtfs' ? ' ·GTFS' : seg.confidence === 'inferred' ? ' ·~' : '';
+      lbl.textContent = stops[seg.index].name + ' → ' + stops[seg.index+1].name + badge;
+      return;
+    }
   }
+  if (currentStop >= 0 && currentStop < stops.length) lbl.textContent = stops[currentStop].name;
+  else lbl.textContent = stops.length + ' Stops';
 }
 
 /* ─── Controls ─── */
@@ -2286,24 +2859,28 @@ function togglePlay() {
   }
 }
 function resetAnim() {
-  stopAnim();playing=false;currentStop=-1;removeCurrentPin();setPlayBtn(false);
+  stopAnim();playing=false;
+  te.normalizedTime=0;te.baseTime=0;te.lastSegIdx=-1;te.lastStopIdx=-1;
+  currentStop=-1;removeCurrentPin();setPlayBtn(false);
   renderTimeline();initRouteLines();renderMapMarkers();
-  updatePeekInfo();
-  snapCameraState(DAYS[currentDay].center[0], DAYS[currentDay].center[1], DAYS[currentDay].zoom);
-  map.setView(DAYS[currentDay].center,DAYS[currentDay].zoom,{animate:false});
+  updatePeekInfo();updateSeekBar();
+  map.setView(DAYS[currentDay].center,DAYS[currentDay].zoom,{animate:true});
 }
 function switchDay(day) {
-  stopAnim();playing=false;currentStop=-1;removeCurrentPin();setPlayBtn(false);
+  stopAnim();playing=false;
+  te.normalizedTime=0;te.baseTime=0;te.lastSegIdx=-1;te.lastStopIdx=-1;
+  currentStop=-1;removeCurrentPin();setPlayBtn(false);
   currentDay=day;
   renderDayTabs();
   renderTimeline();initRouteLines();renderMapMarkers();
-  updatePeekInfo();
-  snapCameraState(DAYS[day].center[0], DAYS[day].center[1], DAYS[day].zoom);
-  map.setView(DAYS[day].center,DAYS[day].zoom,{animate:false});
+  updatePeekInfo();updateSeekBar();
+  map.setView(DAYS[day].center,DAYS[day].zoom,{animate:true});
+  if (editMode) switchEditTab(_editTab);
 }
 
 /* ─── Mobile / desktop ─── */
-function isMobile() { return window.innerWidth <= 768; }
+var _isTouchDevice = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+function isMobile() { return window.innerWidth <= 768 || _isTouchDevice; }
 
 /* ── Bottom sheet state ── */
 var sheetState  = 'peek';
@@ -2412,9 +2989,19 @@ function closeSidebar() {
 function toggleEditMode() {
   editMode = !editMode;
   var btn = document.getElementById('editToggleBtn');
-  btn.textContent = editMode ? 'Done' : 'Edit';
+  btn.textContent = editMode ? '✓ Done' : '✏ Edit Trip';
   btn.classList.toggle('on', editMode);
-  if (!editMode) closeEP();
+  var sidebar = document.getElementById('sidebar');
+  if (sidebar) sidebar.classList.toggle('edit-on', editMode);
+  var tabBar = document.getElementById('editTabBar');
+  if (tabBar) tabBar.style.display = editMode ? 'flex' : 'none';
+  if (editMode) {
+    if (isMobile()) setSheet('full');
+  } else {
+    closeEP();
+    _switchToStopsTab();
+    if (isMobile()) setSheet('peek');
+  }
   renderTimeline();
 }
 
@@ -2428,8 +3015,10 @@ function openEP(idx, insertAfter) {
   document.getElementById('ef-memo').value     = s ? (s.memo || '') : '';
   document.getElementById('ef-label').value    = s ? (s.label || '') : '';
   document.getElementById('ef-fare').value     = s ? (s.fare || '') : '';
-  document.getElementById('ef-duration').value = s ? (s.duration || '') : '';
+  document.getElementById('ef-dur-h').value = s && s.durHours ? String(s.durHours) : '';
+  document.getElementById('ef-dur-m').value = s && s.durMins  ? String(s.durMins)  : '';
   document.getElementById('ef-shape-id').value = s ? explicitSegmentShapeId(s, null) : '';
+  renderShapeStatus();
   document.getElementById('ef-lat').value      = s ? s.lat      : '';
   document.getElementById('ef-lng').value      = s ? s.lng      : '';
   document.getElementById('ef-is-day-end').checked = s ? !!s.isDayEnd : false;
@@ -2658,9 +3247,11 @@ function epSave() {
     categories: epCategories.slice(),
     isDayEnd:   document.getElementById('ef-is-day-end').checked,
     fare:       document.getElementById('ef-fare').value.trim(),
-    duration:   document.getElementById('ef-duration').value.trim(),
+    durHours:   parseInt(document.getElementById('ef-dur-h').value, 10) || 0,
+    durMins:    parseInt(document.getElementById('ef-dur-m').value, 10) || 0,
     lat:        lat,
-    lng:        lng
+    lng:        lng,
+    gtfs:       shapeId ? { shapeId: shapeId } : undefined
   };
   if (shapeId) newStop.shapeId = shapeId;
 
@@ -2676,6 +3267,7 @@ function epSave() {
   }
 
   stopAnim(); playing = false; currentStop = -1;
+  te.normalizedTime=0;te.baseTime=0;te.lastStopIdx=-1;te.lastSegIdx=-1;
   removeCurrentPin(); setPlayBtn(false);
 
   saveToStorage();
@@ -2700,11 +3292,261 @@ function epDelete() {
 }
 function doDelete(idx) {
   stopAnim(); playing = false; currentStop = -1;
+  te.normalizedTime=0;te.baseTime=0;te.lastStopIdx=-1;te.lastSegIdx=-1;
   removeCurrentPin(); setPlayBtn(false);
   removePickPreviewPin();
   DAYS[currentDay].stops.splice(idx, 1);
   saveToStorage();
   renderTimeline(); initRouteLines(); renderMapMarkers();
+}
+
+/* ── Drag reorder ── */
+var _dragIdx = -1;
+function onDragStart(e, idx) {
+  _dragIdx = idx;
+  e.dataTransfer.effectAllowed = 'move';
+  setTimeout(function(){ var el=document.getElementById('sr'+idx); if(el)el.classList.add('dragging'); }, 0);
+}
+function onDragOver(e, idx) {
+  e.preventDefault();
+  document.querySelectorAll('.stop-row').forEach(function(el){ el.classList.remove('drag-over'); });
+  if (idx !== _dragIdx) { var el=document.getElementById('sr'+idx); if(el)el.classList.add('drag-over'); }
+}
+function onDrop(e, idx) {
+  e.preventDefault();
+  if (_dragIdx < 0 || _dragIdx === idx) { _dragIdx=-1; return; }
+  var stops = DAYS[currentDay].stops;
+  var moved = stops.splice(_dragIdx, 1)[0];
+  stops.splice(idx, 0, moved);
+  _dragIdx = -1;
+  saveToStorage();
+  stopAnim(); playing=false; currentStop=-1;
+  te.normalizedTime=0;te.baseTime=0;te.lastStopIdx=-1;te.lastSegIdx=-1;
+  removeCurrentPin(); setPlayBtn(false);
+  initRouteLines(); renderMapMarkers(); renderTimeline();
+}
+function onDragEnd(e) {
+  _dragIdx = -1;
+  document.querySelectorAll('.stop-row').forEach(function(el){ el.classList.remove('dragging','drag-over'); });
+}
+
+/* ── Move to Day ── */
+function toggleMoveDayMenu() {
+  var menu = document.getElementById('epMoveMenu');
+  if (!menu) return;
+  if (menu.classList.contains('open')) { menu.classList.remove('open'); return; }
+  var days = Object.keys(DAYS).map(Number).sort();
+  menu.innerHTML = days.filter(function(d){ return d !== currentDay; }).map(function(d){
+    return '<button class="ep-move-item" onclick="moveStopToDay('+d+')">DAY '+d+(DAYS[d].label?' · '+escHtml(DAYS[d].label):'')+' <span style="color:var(--secondary);font-size:10px">('+DAYS[d].stops.length+' stops)</span></button>';
+  }).join('');
+  menu.classList.add('open');
+}
+function moveStopToDay(targetDay) {
+  if (epIdx < 0) return;
+  var stop = DAYS[currentDay].stops.splice(epIdx, 1)[0];
+  DAYS[targetDay].stops.push(stop);
+  saveToStorage();
+  closeEP();
+  stopAnim(); playing=false; currentStop=-1; removeCurrentPin(); setPlayBtn(false);
+  currentDay = targetDay;
+  renderDayTabs();
+  switchDay(targetDay);
+}
+
+/* ── Card ⋮ menu ── */
+function openCardMenu(e, idx) {
+  e.stopPropagation();
+  var el = document.getElementById('cm-' + idx);
+  if (!el) return;
+  // close other open menus first
+  document.querySelectorAll('.card-menu-dropdown.open').forEach(function(d){ if(d!==el) d.classList.remove('open'); });
+  if (el.classList.contains('open')) { el.classList.remove('open'); return; }
+  var hasMulDays = Object.keys(DAYS).length > 1;
+  var moveHtml = '';
+  if (hasMulDays) {
+    var days = Object.keys(DAYS).map(Number).sort();
+    var opts = days.filter(function(d){ return d !== currentDay; }).map(function(d){
+      return '<button class="card-menu-item card-menu-sub-item" onclick="moveStopToDay2('+idx+','+d+')">Day '+d+(DAYS[d].label?' · '+escHtml(DAYS[d].label):'')+' <span style="margin-left:4px;font-size:10px;color:var(--secondary)">('+DAYS[d].stops.length+')</span></button>';
+    }).join('');
+    moveHtml = '<button class="card-menu-item" onclick="toggleCardMoveSection(\'cms-'+idx+'\')">📅 Move to Day <span style="margin-left:auto">▾</span></button>'+
+      '<div id="cms-'+idx+'" class="card-menu-sub" style="display:none">'+opts+'</div>';
+  }
+  el.innerHTML =
+    '<button class="card-menu-item" onclick="closeCardMenu();openEP('+idx+','+idx+')">✏️ Edit</button>' +
+    moveHtml +
+    '<button class="card-menu-item danger" onclick="closeCardMenu();confirmDelete('+idx+')">🗑 Delete</button>';
+  el.classList.add('open');
+}
+function toggleCardMoveSection(id) {
+  var el = document.getElementById(id);
+  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+function closeCardMenu() {
+  document.querySelectorAll('.card-menu-dropdown.open').forEach(function(el){ el.classList.remove('open'); });
+}
+function moveStopToDay2(stopIdx, targetDay) {
+  var stop = DAYS[currentDay].stops.splice(stopIdx, 1)[0];
+  DAYS[targetDay].stops.push(stop);
+  saveToStorage();
+  closeCardMenu();
+  stopAnim(); playing=false; currentStop=-1; removeCurrentPin(); setPlayBtn(false);
+  currentDay = targetDay;
+  renderDayTabs();
+  switchDay(targetDay);
+}
+
+/* ── Edit mode tabs ── */
+var _editTab = 'stops';
+function switchEditTab(tab) {
+  _editTab = tab;
+  var tl  = document.getElementById('timeline');
+  var dep = document.getElementById('dayEditPanel');
+  var es  = document.getElementById('etabStops');
+  var ed  = document.getElementById('etabDays');
+  if (tab === 'days') {
+    if (tl)  tl.style.display  = 'none';
+    if (dep) { dep.style.display = ''; renderDayEditPanel(); }
+    if (es) es.classList.remove('active');
+    if (ed) ed.classList.add('active');
+  } else {
+    if (tl)  tl.style.display  = '';
+    if (dep) dep.style.display = 'none';
+    if (es) es.classList.add('active');
+    if (ed) ed.classList.remove('active');
+  }
+}
+function _switchToStopsTab() {
+  _editTab = 'stops';
+  var tl  = document.getElementById('timeline');
+  var dep = document.getElementById('dayEditPanel');
+  var es  = document.getElementById('etabStops');
+  var ed  = document.getElementById('etabDays');
+  if (tl)  tl.style.display  = '';
+  if (dep) dep.style.display = 'none';
+  if (es) es.classList.add('active');
+  if (ed) ed.classList.remove('active');
+}
+
+/* ── Day edit panel (Edit mode → Days tab) ── */
+function _dayFareTotalStr(stops) {
+  var total = (stops || []).reduce(function(sum, s) {
+    if (!s.fare) return sum;
+    var n = parseInt(String(s.fare).replace(/[¥,\s]/g, ''), 10);
+    return sum + (isNaN(n) ? 0 : n);
+  }, 0);
+  return total > 0 ? '¥' + total.toLocaleString('ja-JP') : '';
+}
+function renderDayEditPanel() {
+  var html = '';
+  Object.keys(DAYS).map(Number).sort(function(a,b){return a-b;}).forEach(function(d) {
+    var day  = DAYS[d];
+    var stops = day.stops || [];
+    var isActive = d === currentDay;
+    var fareStr  = _dayFareTotalStr(stops);
+    html += '<div class="de-day-card' + (isActive ? ' de-day-active' : '') + '">' +
+      '<div class="de-day-hd">' +
+        '<span class="de-day-num">Day ' + d + '</span>' +
+        '<span class="de-day-stat">' + stops.length + ' stops</span>' +
+        (fareStr ? '<span class="de-day-stat">' + fareStr + '</span>' : '') +
+        (!isActive ? '<button class="de-day-switch" onclick="switchDay(' + d + ');switchEditTab(\'stops\')">切替 →</button>' : '') +
+      '</div>' +
+      '<div class="ep-field">' +
+        '<label class="ep-lbl">ラベル</label>' +
+        '<input class="ep-input" id="de-day-' + d + '-label" type="text" value="' + escHtml(day.label || '') + '" placeholder="Day ' + d + '" oninput="saveDayEdit()">' +
+      '</div>' +
+      '<div class="ep-field" style="margin-top:6px">' +
+        '<label class="ep-lbl">メモ</label>' +
+        '<input class="ep-input" id="de-day-' + d + '-cost" type="text" value="' + escHtml(day.cost || '') + '" placeholder="交通費・メモ" oninput="saveDayEdit()">' +
+      '</div>' +
+    '</div>';
+  });
+  html += '<div class="settings-action-row">' +
+    '<button class="btn-add-stop" onclick="addDayFromEdit()" style="flex:1;border-style:dashed">＋ Day を追加</button>' +
+    '<button class="btn-add-stop" onclick="removeLastDayFromEdit()" style="flex:1;border-color:rgba(192,68,68,.35);color:#c04444;border-style:dashed">− 最後のDay</button>' +
+  '</div>';
+  var panel = document.getElementById('dayEditPanel');
+  if (panel) panel.innerHTML = html;
+}
+function saveDayEdit() {
+  Object.keys(DAYS).forEach(function(d) {
+    var lbl = document.getElementById('de-day-' + d + '-label');
+    var cst = document.getElementById('de-day-' + d + '-cost');
+    if (lbl) DAYS[d].label = lbl.value;
+    if (cst) DAYS[d].cost  = cst.value;
+  });
+  saveToStorage();
+  renderDayTabs();
+  renderTimeline();
+}
+function addDayFromEdit() {
+  var keys = Object.keys(DAYS).map(Number).sort(function(a,b){return a-b;});
+  var newNum = keys[keys.length - 1] + 1;
+  var lastDay = DAYS[keys[keys.length - 1]];
+  DAYS[newNum] = { center: lastDay?[lastDay.center[0],lastDay.center[1]]:[26.3,127.7], zoom: lastDay?lastDay.zoom:11, label:'Day '+newNum, cost:'', stops:[] };
+  saveToStorage(); renderDayEditPanel(); renderDayTabs();
+}
+function removeLastDayFromEdit() {
+  var keys = Object.keys(DAYS).map(Number).sort(function(a,b){return a-b;});
+  if (keys.length <= 1) { alert('最低1日は必要です'); return; }
+  var lastKey = keys[keys.length - 1];
+  if (!confirm('Day ' + lastKey + ' を削除しますか？\n（このDayのストップもすべて削除されます）')) return;
+  delete DAYS[lastKey];
+  if (currentDay === lastKey) currentDay = keys[keys.length - 2];
+  saveToStorage(); renderDayEditPanel(); renderDayTabs(); switchDay(currentDay);
+}
+
+/* ── Duration helpers ── */
+function formatDur(s) {
+  var h = s.durHours ? parseInt(s.durHours, 10) : 0;
+  var m = s.durMins  ? parseInt(s.durMins,  10) : 0;
+  if (h && m) return h + 'h ' + m + 'm';
+  if (h)      return h + 'h';
+  if (m)      return m + 'm';
+  return '';
+}
+function _parseDurationStr(str) {
+  if (!str || !str.trim()) return null;
+  var hm = str.match(/(\d+)\s*[hH時]/);
+  var mm = str.match(/(\d+)\s*[mM分]/);
+  if (hm || mm) return { h: hm ? parseInt(hm[1], 10) : 0, m: mm ? parseInt(mm[1], 10) : 0 };
+  return null;
+}
+function _migrateDays(days) {
+  Object.keys(days).forEach(function(k) {
+    var day = days[k];
+    if (!day.stops) return;
+    day.stops.forEach(function(s) {
+      if (s.duration !== undefined) {
+        var parsed = _parseDurationStr(s.duration);
+        if (parsed) {
+          s.durHours = parsed.h;
+          s.durMins  = parsed.m;
+        } else if (s.duration.trim()) {
+          s.memo = s.memo ? s.memo + '（' + s.duration + '）' : s.duration;
+        }
+        delete s.duration;
+      }
+    });
+  });
+}
+
+/* ── GTFS Shape ID hint ── */
+
+/* ── 全角→半角 normalize ── */
+function toHankaku(input) {
+  input.value = input.value
+    .replace(/[０-９]/g, function(c){ return String.fromCharCode(c.charCodeAt(0) - 0xFEE0); })
+    .replace(/：/g, ':')
+    .replace(/．/g, '.')
+    .replace(/－/g, '-');
+}
+
+/* ── Fare auto-format ── */
+function formatFareInput(input) {
+  var raw = input.value.replace(/[¥,\s]/g, '');
+  if (/^\d+$/.test(raw)) {
+    input.value = '¥' + parseInt(raw, 10).toLocaleString('ja-JP');
+  }
 }
 
 var pickPreviewPin = null;
@@ -2811,7 +3653,7 @@ function startMapPick() {
   document.getElementById('mapPickTip').classList.add('on');
   document.getElementById('map').classList.add('pick-mode');
   document.getElementById('epPickBtn').classList.add('picking');
-  if (window.innerWidth <= 768) closeSidebar();
+  if (isMobile()) closeSidebar();
 }
 function cancelMapPick() {
   mapPickActive = false;
@@ -2830,7 +3672,7 @@ map.on('click', function(e) {
   removePickPreviewPin();
   pickPreviewPin = L.marker([e.latlng.lat, e.latlng.lng], { icon: stopIcon('default', null), zIndexOffset: 900 })
     .addTo(map).bindPopup('📍 ' + e.latlng.lat.toFixed(4) + ', ' + e.latlng.lng.toFixed(4)).openPopup();
-  if (window.innerWidth <= 768) openSidebar();
+  if (isMobile()) openSidebar();
 });
 
 /* ═══════════════════════════════════════════
@@ -2862,6 +3704,494 @@ function closeSettings() {
   document.getElementById('settingsPanel').classList.remove('open');
 }
 
+/* ─────────────────────────────────────────────────────────────
+   AI 旅程生成 (P1.5)
+   ─────────────────────────────────────────────────────────────*/
+var AI_SYSTEM_PROMPT = [
+  'You are a travel itinerary parser.',
+  'Extract stops from the user\'s input.',
+  '',
+  'Return valid JSON only.',
+  'No markdown. No explanations.',
+  '',
+  'Output format:',
+  '{',
+  '  "stops": [',
+  '    {',
+  '      "name": "羽田空港",',
+  '      "time": "06:00",',
+  '      "transport": "plane",',
+  '      "categories": [],',
+  '      "activity": "",',
+  '      "operatorHint": "",',
+  '      "isDayEnd": false,',
+  '      "confidence": 0.95,',
+  '      "inferred": false',
+  '    }',
+  '  ]',
+  '}',
+  '',
+  'Transport inference priority:',
+  '1. Explicit mention (「飛行機で」「ゆいレール」)',
+  '2. Known operator mapping (「ゆいレール」→ train_local)',
+  '3. Distance heuristic',
+  '4. Default → walk',
+  '',
+  'Valid transport values:',
+  'plane, ferry, shinkansen, train_limited, train_local,',
+  'bus_express, bus_local, shuttle, car, bike, walk',
+  '',
+  'Category inference (multiple allowed):',
+  '「食べる」「ランチ」「タコス」→ food',
+  '「カフェ」「コーヒー」→ cafe',
+  '「泊まる」「ホテル」「宿」→ stay (also set isDayEnd: true)',
+  '「ライブ」「コンサート」「観戦」→ event',
+  '「観光」「水族館」「公園」→ sightseeing',
+  '「神社」「仏閣」「城」「遺跡」→ heritage',
+  '「買い物」「ショッピング」→ shopping',
+  '「温泉」「サウナ」「銭湯」→ onsen',
+  '',
+  'isDayEnd: true when 「泊まる」「宿泊」「ホテル」「宿」or last stop of the day.',
+  '',
+  'Do NOT output shapeId.',
+  'Output operatorHint instead.',
+  '(例: 「ゆいレール」→ operatorHint: "Yui Rail")'
+].join('\n');
+
+var _draftStops  = [];   // working copy for preview
+var _aiAbortCtrl = null;
+var _aiRetryCount = 0;   // retry counter (max 1)
+
+/* ── 1. 安全なJSONパース（Codex 3段階）── */
+function _extractJsonText(raw) {
+  var fencedJson = raw.match(/```json\s*([\s\S]*?)```/i);
+  if (fencedJson) return fencedJson[1].trim();
+  var fenced = raw.match(/```\s*([\s\S]*?)```/);
+  if (fenced) return fenced[1].trim();
+  var firstObj = raw.indexOf('{'), lastObj = raw.lastIndexOf('}');
+  if (firstObj !== -1 && lastObj > firstObj) return raw.slice(firstObj, lastObj + 1).trim();
+  var firstArr = raw.indexOf('['), lastArr = raw.lastIndexOf(']');
+  if (firstArr !== -1 && lastArr > firstArr) return raw.slice(firstArr, lastArr + 1).trim();
+  return raw.trim();
+}
+function _parseJsonSafely(raw) {
+  var jsonText = _extractJsonText(raw);
+  try { return { ok: true, data: JSON.parse(jsonText) }; }
+  catch(e) { return { ok: false, data: null, error: 'AIの出力を読み取れませんでした' }; }
+}
+
+/* ── 2. per-stop validation（Codex）── */
+function _validateDraftStop(raw, index) {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw))
+    return { status: 'invalid', index: index, reason: 'not_an_object', raw: raw };
+  var name = typeof raw.name === 'string' ? raw.name.trim() : '';
+  var memo = typeof raw.memo === 'string' ? raw.memo.trim()
+           : typeof raw.activity === 'string' ? raw.activity.trim() : '';
+  if (!name && !memo)
+    return { status: 'invalid', index: index, reason: 'missing_name', raw: raw };
+  var warnings = [];
+  var lat = Number(raw.lat), lng = Number(raw.lng);
+  var hasCoords = isFinite(lat) && isFinite(lng) &&
+    lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
+  if (!hasCoords) warnings.push('coords_missing');
+  var time = String(raw.time || '').trim();
+  if (!time) warnings.push('time_missing');
+  var confidence = isFinite(Number(raw.confidence))
+    ? Math.max(0, Math.min(1, Number(raw.confidence))) : 0.5;
+  if (confidence <= 0.5) warnings.push('low_confidence');
+  var transport = Object.prototype.hasOwnProperty.call(TCFG, raw.transport) ? raw.transport : 'walk';
+  return {
+    status: warnings.length ? 'needsReview' : 'valid',
+    index: index,
+    draft: {
+      name:               name || '（名前未定）',
+      time:               time,
+      memo:               memo,
+      lat:                hasCoords ? lat : null,
+      lng:                hasCoords ? lng : null,
+      transport:          transport,
+      categories:         Array.isArray(raw.categories)
+                            ? raw.categories.filter(function(c){ return !!CATEGORIES[c]; }) : [],
+      isDayEnd:           !!raw.isDayEnd,
+      operatorHint:       raw.operatorHint || '',
+      confidence:         confidence,
+      needsReview:        warnings.length > 0,
+      validationWarnings: warnings,
+      source:             'ai'
+    }
+  };
+}
+
+/* ── 3. mode 判定（Codex）── */
+function _processDraftStops(parsed) {
+  var items = Array.isArray(parsed) ? parsed : (parsed.stops || []);
+  var results = items.map(function(raw, i) { return _validateDraftStop(raw, i); });
+  var drafts  = results.filter(function(r){ return r.status !== 'invalid'; }).map(function(r){ return r.draft; });
+  var invalids = results.filter(function(r){ return r.status === 'invalid'; });
+  var mode;
+  if (drafts.length === 0) mode = 'fallback';
+  else if (invalids.length === 0 && drafts.every(function(d){ return !d.needsReview; })) mode = 'success';
+  else if (invalids.length > 0) mode = 'partial_success';
+  else mode = 'needs_review';
+  return {
+    mode: mode, drafts: drafts, invalidItems: invalids,
+    summary: {
+      total:       items.length,
+      valid:       drafts.filter(function(d){ return !d.needsReview; }).length,
+      needsReview: drafts.filter(function(d){ return d.needsReview; }).length,
+      invalid:     invalids.length
+    }
+  };
+}
+
+/* ── 4. API失敗時 fallback（Codex）── */
+function _createManualFallbackDraft(originalInput) {
+  return {
+    name:               '',
+    time:               '',
+    memo:               originalInput || '',
+    lat:                null, lng: null,
+    transport:          'walk',
+    categories:         [],
+    isDayEnd:           false,
+    operatorHint:       '',
+    confidence:         0,
+    needsReview:        true,
+    validationWarnings: ['manual_fallback'],
+    source:             'manual_fallback'
+  };
+}
+
+/* ── 5. confidence 表示ヘルパー（Codex）── */
+function _getConfidenceLabel(confidence) {
+  if (confidence >= 0.8) return { color: '#28b56a', icon: '🟢', text: 'High' };
+  if (confidence >= 0.5) return { color: '#f5a623', icon: '🟡', text: 'Medium' };
+  return { color: '#e05454', icon: '🔴', text: 'Low' };
+}
+
+var TRANSPORT_EMOJI = {
+  plane:'✈️', ferry:'🚢', shinkansen:'🚄', train_limited:'🚃', train_local:'🚃',
+  bus_express:'🚍', bus_local:'🚌', shuttle:'🚐', car:'🚗', bike:'🚴', walk:'🚶'
+};
+var TRANSPORT_LABEL = {
+  plane:'PLANE', ferry:'FERRY', shinkansen:'SHINKANSEN', train_limited:'LTD EXP',
+  train_local:'LOCAL', bus_express:'HWY BUS', bus_local:'BUS', shuttle:'SHUTTLE',
+  car:'CAR', bike:'BIKE', walk:'WALK'
+};
+
+function openAIDraftModal() {
+  var stored = localStorage.getItem('limey_api_key') || '';
+  document.getElementById('aiApiKey').value = stored;
+  document.getElementById('aiDraftPreview').style.display = 'none';
+  document.getElementById('aiErrMsg').innerHTML = '';
+  _draftStops = [];
+  /* populate Day selector */
+  var sel = document.getElementById('aiTargetDay');
+  sel.innerHTML = '';
+  Object.keys(DAYS).map(Number).sort(function(a,b){return a-b;}).forEach(function(d) {
+    var opt = document.createElement('option');
+    opt.value = d;
+    opt.textContent = 'Day ' + d + (DAYS[d].label ? ' · ' + DAYS[d].label : '');
+    if (d === currentDay) opt.selected = true;
+    sel.appendChild(opt);
+  });
+  document.getElementById('aiDraftModal').classList.add('open');
+}
+function closeAIDraftModal() {
+  if (_aiAbortCtrl) { _aiAbortCtrl.abort(); _aiAbortCtrl = null; }
+  document.getElementById('aiDraftModal').classList.remove('open');
+}
+
+/* Low-level Claude API call — returns raw text or throws */
+async function _callClaude(key, text) {
+  _aiAbortCtrl = new AbortController();
+  var resp = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type':                   'application/json',
+      'x-api-key':                      key,
+      'anthropic-version':              '2023-06-01',
+      'anthropic-dangerous-allow-cors': 'true'
+    },
+    body: JSON.stringify({
+      model:    'claude-haiku-4-5',
+      max_tokens: 2048,
+      system:   AI_SYSTEM_PROMPT,
+      messages: [{ role: 'user', content: text }]
+    }),
+    signal: _aiAbortCtrl.signal
+  });
+  if (!resp.ok) {
+    var errData = await resp.json().catch(function(){ return {}; });
+    throw new Error((errData.error && errData.error.message) || ('HTTP ' + resp.status));
+  }
+  var data = await resp.json();
+  return (data.content && data.content[0] && data.content[0].text) || '';
+}
+
+async function generateDraftStops() {
+  var key  = document.getElementById('aiApiKey').value.trim();
+  if (!key) { _aiShowErr('Anthropic API Key を入力してください。'); return; }
+  localStorage.setItem('limey_api_key', key);
+
+  var text = document.getElementById('aiTextarea').value.trim();
+  if (!text) { _aiShowErr('旅程テキストを入力してください。'); return; }
+
+  document.getElementById('aiErrMsg').innerHTML = '';
+  var btn = document.getElementById('aiGenBtn');
+  btn.textContent = '生成中…'; btn.disabled = true;
+  document.getElementById('aiDraftPreview').style.display = 'none';
+  _aiRetryCount = 0;
+
+  try {
+    var rawTxt = null;
+    var parseResult = null;
+
+    /* ─ attempt 1 ─ */
+    try {
+      rawTxt      = await _callClaude(key, text);
+      parseResult = _parseJsonSafely(rawTxt);
+    } catch(e1) {
+      if (e1.name === 'AbortError') { return; }
+      /* API error → retry once */
+      rawTxt = null; parseResult = null;
+    }
+
+    /* ─ attempt 2 (retry on API error or bad parse) ─ */
+    if (!parseResult || !parseResult.ok) {
+      _aiRetryCount = 1;
+      btn.textContent = '再試行中…';
+      try {
+        rawTxt      = await _callClaude(key, text);
+        parseResult = _parseJsonSafely(rawTxt);
+      } catch(e2) {
+        if (e2.name === 'AbortError') { return; }
+        parseResult = { ok: false, data: null };
+      }
+    }
+
+    /* ─ fallback: 2回とも失敗 ─ */
+    if (!parseResult || !parseResult.ok) {
+      _draftStops = [_createManualFallbackDraft(text)];
+      renderDraftPreviews({
+        mode: 'fallback', summary: { total: 1, valid: 0, needsReview: 1, invalid: 0 }
+      });
+      document.getElementById('aiDraftPreview').style.display = 'block';
+      document.getElementById('aiPreviewCount').textContent = '手動入力';
+      _aiShowErr(
+        'うまく読み取れなかったため、手動入力に切り替えました。' +
+        '入力内容はメモに残しています。'
+      );
+      return;
+    }
+
+    /* ─ process & validate ─ */
+    var proc = _processDraftStops(parseResult.data);
+    _draftStops = proc.drafts;
+
+    if (proc.mode === 'fallback') {
+      /* All stops invalid — one manual fallback card */
+      _draftStops = [_createManualFallbackDraft(text)];
+      renderDraftPreviews({ mode: 'fallback', summary: { total: 1, valid: 0, needsReview: 1, invalid: 0 } });
+      document.getElementById('aiDraftPreview').style.display = 'block';
+      document.getElementById('aiPreviewCount').textContent = '手動入力';
+      _aiShowErr('Stopが抽出できませんでした。テキストを詳しく書いてみてください。');
+      return;
+    }
+
+    renderDraftPreviews(proc);
+    document.getElementById('aiDraftPreview').style.display = 'block';
+    document.getElementById('aiPreviewCount').textContent = _draftStops.length + ' stops';
+
+    /* ─ partial_success banner ─ */
+    if (proc.mode === 'partial_success') {
+      _aiShowErr(
+        proc.summary.needsReview + '件のStop候補を作成しました。' +
+        proc.summary.invalid + '件は読み取れませんでした。' +
+        '確認が必要な項目が含まれます。'
+      );
+    } else if (proc.mode === 'needs_review') {
+      _aiShowErr(proc.summary.needsReview + '件の確認が必要な項目があります。');
+    }
+
+  } finally {
+    btn.textContent = '✨ 旅程を生成'; btn.disabled = false;
+    _aiAbortCtrl = null; _aiRetryCount = 0;
+  }
+}
+
+function _aiShowErr(msg, type) {
+  /* type: 'error'(default) | 'warn' */
+  var style = (type === 'warn')
+    ? 'background:rgba(245,166,35,.1);color:rgba(160,100,0,.9);border:1px solid rgba(245,166,35,.35);'
+    : '';
+  document.getElementById('aiErrMsg').innerHTML =
+    '<div class="ai-err" style="' + style + '">' + escHtml(msg) + '</div>';
+}
+
+function renderDraftPreviews(proc) {
+  var html = '';
+
+  /* ─ valid / needsReview cards ─ */
+  _draftStops.forEach(function(s, i) {
+    var conf  = _getConfidenceLabel(s.confidence);
+    var transportOpts = Object.keys(TCFG).map(function(k) {
+      return '<option value="' + k + '"' + (k === s.transport ? ' selected' : '') + '>' +
+        (TRANSPORT_EMOJI[k] || '') + ' ' + (TRANSPORT_LABEL[k] || k.toUpperCase()) + '</option>';
+    }).join('');
+    var catBtns = Object.keys(CATEGORIES).map(function(k) {
+      var sel = s.categories.indexOf(k) >= 0 ? ' sel' : '';
+      return '<button class="draft-cat-btn' + sel + '" data-cat="' + k +
+        '" onclick="_draftToggleCat(' + i + ',this)">' +
+        CATEGORIES[k].icon + ' ' + CATEGORIES[k].label + '</button>';
+    }).join('');
+    var opHint  = s.operatorHint ? '<div class="draft-op-hint">🚉 ' + escHtml(s.operatorHint) + '</div>' : '';
+    var memoHint = s.memo        ? '<div class="draft-op-hint">📝 ' + escHtml(s.memo)         + '</div>' : '';
+
+    /* warning row for needsReview stops */
+    var warnRow = '';
+    if (s.needsReview && s.validationWarnings && s.validationWarnings.length) {
+      var warnMap = {
+        coords_missing:   '📍 位置情報なし — 後でEdit',
+        time_missing:     '⏰ 時刻未設定',
+        low_confidence:   '⚠️ 確認推奨（信頼度低）',
+        manual_fallback:  '✍️ 手動入力 — 内容を確認してください'
+      };
+      var warnTxts = s.validationWarnings.map(function(w){ return warnMap[w] || w; }).join(' · ');
+      warnRow = '<div style="font-family:var(--font-body);font-size:10px;color:#b07000;' +
+        'background:rgba(245,166,35,.1);border-radius:5px;padding:4px 8px;margin-bottom:6px;">' +
+        warnTxts + '</div>';
+    }
+
+    var borderStyle = s.needsReview
+      ? 'border-color:rgba(245,166,35,.55);'
+      : (s.source === 'manual_fallback' ? 'border-color:rgba(192,68,68,.4);' : '');
+
+    html +=
+      '<div class="draft-card" id="dcard-' + i + '" style="' + borderStyle + '">' +
+        '<div class="draft-card-hd">' +
+          '<span class="draft-conf" style="background:' + conf.color + '"' +
+            ' title="' + conf.icon + ' ' + conf.text + ' — AI信頼度: ' + Math.round(s.confidence*100) + '%"></span>' +
+          '<input class="draft-time-inp" type="text" value="' + escHtml(s.time) +
+            '" maxlength="5" placeholder="--:--" oninput="_draftSetTime(' + i + ',this.value)">' +
+          '<select class="draft-transport-sel" onchange="_draftSetTransport(' + i + ',this.value)">' +
+            transportOpts + '</select>' +
+          '<label class="draft-dayend-lbl"><input type="checkbox"' +
+            (s.isDayEnd ? ' checked' : '') + ' onchange="_draftSetDayEnd(' + i + ',this.checked)"> 終点</label>' +
+        '</div>' +
+        warnRow +
+        '<input class="draft-name-inp" type="text" value="' + escHtml(s.name) +
+          '" placeholder="スポット名" oninput="_draftSetName(' + i + ',this.value)">' +
+        '<div class="draft-cats">' + catBtns + '</div>' +
+        opHint + memoHint +
+      '</div>';
+  });
+
+  /* ─ invalid items (Codex) ─ */
+  if (proc && proc.invalidItems && proc.invalidItems.length) {
+    proc.invalidItems.forEach(function(inv) {
+      var rawName = inv.raw && typeof inv.raw.name === 'string' ? inv.raw.name : '';
+      var reasonMap = { not_an_object: '形式エラー', missing_name: '名前なし' };
+      var reason = reasonMap[inv.reason] || inv.reason;
+      html +=
+        '<div class="draft-card" style="border-color:rgba(192,68,68,.35);opacity:.85;">' +
+          '<div style="font-family:var(--font-body);font-size:11px;font-weight:600;' +
+            'color:rgba(192,68,68,.8);margin-bottom:6px;">❌ 読み取れませんでした（' + escHtml(reason) + '）' +
+            (rawName ? ' — ' + escHtml(rawName) : '') + '</div>' +
+          '<button class="ep-btn-outline" style="width:100%;font-size:11px;padding:7px 0;"' +
+            ' onclick="_addManualFallbackCard()">＋ 手動で追加</button>' +
+        '</div>';
+    });
+  }
+
+  document.getElementById('aiDraftCards').innerHTML = html;
+}
+
+/* Add a blank manual-fallback card to the working list */
+function _addManualFallbackCard() {
+  _draftStops.push(_createManualFallbackDraft(''));
+  /* re-render without proc (no invalid items panel) */
+  renderDraftPreviews(null);
+  document.getElementById('aiPreviewCount').textContent = _draftStops.length + ' stops';
+  /* scroll to new card */
+  var cards = document.getElementById('aiDraftCards').children;
+  if (cards.length) cards[cards.length - 1].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+/* Inline editing callbacks */
+function _draftSetName(i, v)       { _draftStops[i].name = v; }
+function _draftSetTime(i, v)       { _draftStops[i].time = v; }
+function _draftSetTransport(i, v)  { _draftStops[i].transport = v; }
+function _draftSetDayEnd(i, v)     { _draftStops[i].isDayEnd = v; }
+function _draftToggleCat(i, btn) {
+  var k = btn.dataset.cat;
+  var idx = _draftStops[i].categories.indexOf(k);
+  if (idx >= 0) { _draftStops[i].categories.splice(idx, 1); btn.classList.remove('sel'); }
+  else          { _draftStops[i].categories.push(k);        btn.classList.add('sel'); }
+}
+
+function confirmDraftStops() {
+  if (!_draftStops.length) return;
+  var targetDay = parseInt(document.getElementById('aiTargetDay').value, 10) || currentDay;
+  var day = DAYS[targetDay];
+  if (!day) return;
+
+  _draftStops.forEach(function(s) {
+    /* Build stop compatible with existing data structure (schemaVersion 5.16) */
+    day.stops.push({
+      name:      s.name,
+      time:      s.time,
+      transport: s.transport,
+      categories: s.categories.slice(),
+      isDayEnd:  s.isDayEnd,
+      label:     s.operatorHint || '',
+      memo:      s.memo         || '',
+      fare:      '',
+      durHours:  0,
+      durMins:   0,
+      lat:       null,  /* user sets location via Edit panel */
+      lng:       null
+    });
+  });
+
+  /* Persist only after user confirms */
+  saveToStorage();
+
+  /* Refresh UI */
+  stopAnim(); playing = false; setPlayBtn(false);
+  te.normalizedTime = 0; te.baseTime = 0; te.lastStopIdx = -1; te.lastSegIdx = -1;
+  removeCurrentPin();
+  if (targetDay !== currentDay) {
+    currentDay = targetDay;
+    renderDayTabs();
+  }
+  initRouteLines();
+  renderMapMarkers();
+  renderTimeline();
+  updateAllProgress();
+  closeAIDraftModal();
+
+  /* Brief toast feedback */
+  _aiToast('✅ ' + _draftStops.length + ' stops を Day ' + targetDay + ' に追加しました');
+}
+
+function _aiToast(msg) {
+  var el = document.createElement('div');
+  el.style.cssText = [
+    'position:fixed', 'bottom:calc(env(safe-area-inset-bottom,0px) + 90px)', 'left:50%',
+    'transform:translateX(-50%)', 'z-index:9999',
+    'background:var(--primary)', 'color:var(--white)',
+    'font-family:var(--font-body)', 'font-size:12px', 'font-weight:600',
+    'padding:8px 16px', 'border-radius:20px',
+    'box-shadow:0 4px 16px rgba(0,0,0,.25)',
+    'pointer-events:none', 'white-space:nowrap',
+    'opacity:1', 'transition:opacity .4s'
+  ].join(';');
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(function() { el.style.opacity = '0'; setTimeout(function() { el.remove(); }, 450); }, 2400);
+}
+
 function renderSettingsDaysList() {
   var html = '';
   Object.keys(DAYS).map(Number).sort(function(a,b){return a-b;}).forEach(function(d) {
@@ -2880,18 +4210,12 @@ function renderSettingsDaysList() {
       '</div>' +
     '</div>';
   });
-  document.getElementById('settingsDaysList').innerHTML = html;
+  var _sdl = document.getElementById('settingsDaysList'); if (_sdl) _sdl.innerHTML = html;
 }
 
 function saveSettings() {
   TRIP.title    = document.getElementById('sf-title').value.trim()    || 'ROUTE MAP';
   TRIP.subtitle = document.getElementById('sf-subtitle').value.trim();
-  Object.keys(DAYS).forEach(function(d) {
-    var lbl = document.getElementById('sf-day-' + d + '-label');
-    var cst = document.getElementById('sf-day-' + d + '-cost');
-    if (lbl) DAYS[d].label = lbl.value;
-    if (cst) DAYS[d].cost  = cst.value;
-  });
   saveToStorage();
   renderHeader();
   renderDayTabs();
@@ -3241,7 +4565,7 @@ function haversineKm(lat1, lng1, lat2, lng2) {
 
 function computeJourneyStats() {
   var TYPE_ICONS = {
-    plane: '✈', ferry: '🚢', shinkansen: '🚄',
+    plane: '✈️', ferry: '🚢', shinkansen: '🚄',
     train_limited: '🚃', train_local: '🚃',
     bus_express: '🚍', bus_local: '🚌', shuttle: '🚐',
     car: '🚗', bike: '🚴', walk: '🚶'
@@ -3450,6 +4774,10 @@ requestAnimationFrame(function() {
     if (isMobile()) setSheet('peek', false);
   });
 });
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.card-menu-wrap')) closeCardMenu();
+});
+
 </script>
 </body>
 </html>
