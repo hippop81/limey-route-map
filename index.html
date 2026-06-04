@@ -163,6 +163,10 @@ body {
 .label-tag { font-family: var(--font-body); font-size: 10px; color: var(--secondary); }
 .price-tag { font-family: var(--font-body); font-size: 10px; font-weight: 700; color: var(--primary); }
 .dur-tag   { font-family: var(--font-body); font-size: 9px; color: var(--warm-gray); margin-left: auto; }
+.segment-duration { font-family: var(--font-body); font-size: 9px; color: var(--warm-gray); margin-left: auto; opacity: 0.8; }
+.segment-duration[data-load="green"]  { color: #4CAF50; }
+.segment-duration[data-load="yellow"] { color: #FF9800; }
+.segment-duration[data-load="red"]    { color: #F44336; }
 .rhythm-pill { display: inline-flex; align-items: center; gap: 3px; font-family: var(--font-body); font-size: 8px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--warm-gray); margin-top: 5px; }
 .rhythm-pill .dot { width: 4px; height: 4px; border-radius: 50%; background: var(--warm-gray); }
 
@@ -1745,6 +1749,38 @@ var TCFG = {
 };
 function tcfg(type) { return TCFG[type] || TCFG.bus_local; }
 
+/* ─── P2-B: Segment duration estimation ─── */
+var TRANSPORT_DISTANCE_RULES = {
+  walk:          { warnAbove: 5,    suspiciousAbove: 10 },
+  bike:          { warnAbove: 20,   suspiciousAbove: 50 },
+  bus_local:     { warnBelow: 0.3,  warnAbove: 80  },
+  bus_express:   { warnBelow: 2,    warnAbove: 180 },
+  shuttle:       { warnBelow: 0.5,  warnAbove: 150 },
+  train_local:   { warnBelow: 0.5,  warnAbove: 120 },
+  train_limited: { warnBelow: 2,    warnAbove: 200 },
+  shinkansen:    { warnBelow: 5,    warnAbove: 600 },
+  ferry:         { warnBelow: 1,    warnAbove: 300 },
+  plane:         { warnBelow: 50,   suspiciousBelow: 10 }
+};
+var DISTANCE_FACTOR = {
+  walk:          [1.25, 1.45],
+  bike:          [1.15, 1.35],
+  bus_local:     [1.25, 1.80],
+  bus_express:   [1.20, 1.60],
+  shuttle:       [1.20, 1.60],
+  train_local:   [1.05, 1.20],
+  train_limited: [1.05, 1.15],
+  shinkansen:    [1.00, 1.10],
+  ferry:         [1.05, 1.20]
+};
+/* Average speeds in meters/minute for Haversine-based estimation */
+var TRANSPORT_SPEED_MPM = {
+  walk: 80, bike: 200,
+  bus_local: 300, bus_express: 800, shuttle: 450, car: 800,
+  train_local: 600, train_limited: 1200, shinkansen: 4500,
+  ferry: 500
+};
+
 /* ─── GTFS proximity-match DB (pre-bundled station coords) ─── */
 var GTFS_PROX_DB = {
   yui_rail: {
@@ -2383,8 +2419,17 @@ function renderTimeline() {
 
     var tLabel=s.label||'';
     var transportDisplay=s.transport.replace(/_/g,' ').toUpperCase();
+    /* P2-B: segment duration (actual time diff > estimate > formatDur fallback) */
+    var _toStop = (i < d.stops.length - 1) ? d.stops[i + 1] : null;
+    var _durInfo = (!terminal && _toStop) ? estimateTransportDuration(s, _toStop) : null;
+    var _durHtml = '';
+    if (_durInfo && _durInfo.label) {
+      _durHtml = '<span class="segment-duration" data-load="' + (_durInfo.loadLevel || '') + '">' + escHtml(_durInfo.label) + '</span>';
+    } else if (formatDur(s)) {
+      _durHtml = '<span class="dur-tag">' + formatDur(s) + '</span>';
+    }
     var tHtml=terminal?'':'<div class="transport-row"><span class="badge b-transport">'+transportDisplay+'</span>'+(tLabel?'<span class="label-tag">'+escHtml(tLabel)+'</span>':'')+
-              (s.fare?'<span class="price-tag">'+escHtml(s.fare)+'</span>':'')+(formatDur(s)?'<span class="dur-tag">'+formatDur(s)+'</span>':'')+'</div>';
+              (s.fare?'<span class="price-tag">'+escHtml(s.fare)+'</span>':'')+_durHtml+'</div>';
     var rhythmHtml=c.rhythmLabel&&!terminal?'<div class="rhythm-pill"><span class="dot"></span>'+c.rhythmLabel+'</div>':'';
     var cats=Array.isArray(s.categories)?s.categories:[];
     var catHtml=cats.map(function(k){var cfg=CATEGORIES[k];return cfg?'<span class="cat-badge">'+cfg.icon+' '+cfg.label+'</span>':''}).join('');
@@ -3549,6 +3594,66 @@ function formatDur(s) {
   if (h)      return h + 'h';
   if (m)      return m + 'm';
   return '';
+}
+
+/* ── P2-B duration estimation helpers ── */
+function _parseTimeToMins(t) {
+  var m = String(t || '').match(/^(\d{1,2}):(\d{2})$/);
+  return m ? parseInt(m[1], 10) * 60 + parseInt(m[2], 10) : null;
+}
+function getTimeDiffMinutes(t1, t2) {
+  var m1 = _parseTimeToMins(t1), m2 = _parseTimeToMins(t2);
+  if (m1 === null || m2 === null) return null;
+  var d = m2 - m1; return d >= 0 ? d : d + 1440; // handle overnight
+}
+function formatMinutes(mins) {
+  var h = Math.floor(mins / 60), m = mins % 60;
+  if (h && m) return h + '時間' + m + '分';
+  if (h)      return h + '時間';
+  return mins + '分';
+}
+function _validateDistance(transport, distKm) {
+  var rule = TRANSPORT_DISTANCE_RULES[transport]; if (!rule) return 'ok';
+  if (rule.suspiciousAbove && distKm > rule.suspiciousAbove) return 'suspicious';
+  if (rule.suspiciousBelow && distKm < rule.suspiciousBelow) return 'suspicious';
+  if (rule.warnAbove        && distKm > rule.warnAbove)       return 'warning';
+  if (rule.warnBelow        && distKm < rule.warnBelow)       return 'warning';
+  return 'ok';
+}
+function _getLoadLevel(mins) {
+  return mins <= 10 ? 'green' : mins <= 30 ? 'yellow' : 'red';
+}
+function estimateTransportDuration(from, to) {
+  var transport = (from && from.transport) || 'walk';
+  /* 1. Actual time diff — highest priority */
+  var td = getTimeDiffMinutes(from && from.time, to && to.time);
+  if (td !== null && td > 0 && td < 1440) {
+    return { kind: 'actual', label: formatMinutes(td), confidence: 'high', loadLevel: _getLoadLevel(td) };
+  }
+  /* 2. Plane — skip distance estimation */
+  if (transport === 'plane') return { kind: 'missing', label: null, confidence: 'none' };
+  /* 3. Need valid coords */
+  if (!from || from.lat == null || from.lng == null ||
+      !to   || to.lat  == null || to.lng  == null) {
+    return { kind: 'missing', label: null, confidence: 'none' };
+  }
+  /* 4. Haversine distance estimate */
+  var distKm  = haversineKm(from.lat, from.lng, to.lat, to.lng);
+  var speed   = TRANSPORT_SPEED_MPM[transport] || 300;
+  var factor  = DISTANCE_FACTOR[transport]     || [1.2, 1.5];
+  var warnLvl = _validateDistance(transport, distKm);
+  if (warnLvl === 'suspicious') {
+    return { kind: 'suspicious', label: '移動手段を確認', confidence: 'none', loadLevel: 'red' };
+  }
+  var minMins = Math.max(1, Math.round(distKm * 1000 * factor[0] / speed));
+  var maxMins = Math.max(1, Math.round(distKm * 1000 * factor[1] / speed));
+  var rangeLabel = minMins === maxMins ? '約' + minMins + '分' : '約' + minMins + '〜' + maxMins + '分';
+  return {
+    kind:       warnLvl === 'warning' ? 'warning' : 'estimate',
+    label:      warnLvl === 'warning' ? rangeLabel + ' · 要確認' : rangeLabel,
+    confidence: warnLvl === 'warning' ? 'low' : 'medium',
+    loadLevel:  _getLoadLevel(minMins)
+  };
 }
 function _parseDurationStr(str) {
   if (!str || !str.trim()) return null;
