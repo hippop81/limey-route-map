@@ -118,7 +118,7 @@ body {
 
 /* ── Timeline ── */
 .timeline {
-  flex: 1; overflow-y: auto; padding: 14px 16px;
+  flex: 1; overflow-y: auto; overflow-x: hidden; padding: 14px 16px;
   scrollbar-width: thin; scrollbar-color: var(--warm-gray) var(--cream);
 }
 .timeline::-webkit-scrollbar { width: 3px; }
@@ -1412,7 +1412,7 @@ body {
 
 <script>
 /* ─── Schema versions ─── */
-var ROUTE_SCHEMA_VERSION = '5.16';
+var ROUTE_SCHEMA_VERSION = '5.17';
 var DRAFT_STOP_SCHEMA_VERSION = '5.16';
 var DRAFT_TRANSPORT_TYPES = ['walk', 'train_local', 'train_limited', 'shinkansen', 'bus_local', 'bus_express', 'shuttle', 'ferry', 'plane', 'other'];
 var DRAFT_STOP_JSON_SCHEMA = {
@@ -1582,7 +1582,7 @@ function closeExportSheet() {
   document.getElementById('exportSheet').classList.remove('open');
 }
 function _buildExportBlob() {
-  return new Blob([JSON.stringify({ schemaVersion: '5.16', trip: TRIP, days: DAYS }, null, 2)], { type: 'application/json' });
+  return new Blob([JSON.stringify({ schemaVersion: ROUTE_SCHEMA_VERSION, trip: TRIP, days: DAYS }, null, 2)], { type: 'application/json' });
 }
 function downloadJSON() {
   var blob = _buildExportBlob();
@@ -2878,6 +2878,26 @@ function switchDay(day) {
   if (editMode) switchEditTab(_editTab);
 }
 
+/* Swipe-triggered day switch with slide animation */
+function _swipeSwitchDay(day, toLeft) {
+  var tl = document.getElementById('timeline');
+  var inX = toLeft ? '100%' : '-100%';
+  switchDay(day);                         // re-render timeline at translateX(0)
+  tl.style.transition = 'none';
+  tl.style.transform  = 'translateX(' + inX + ')';
+  requestAnimationFrame(function() {
+    requestAnimationFrame(function() {    // double-rAF ensures browser has painted
+      tl.style.transition = 'transform 0.18s ease-out';
+      tl.style.transform  = 'translateX(0)';
+      tl.addEventListener('transitionend', function _done() {
+        tl.style.transition = '';
+        tl.style.transform  = '';
+        tl.removeEventListener('transitionend', _done);
+      });
+    });
+  });
+}
+
 /* ─── Mobile / desktop ─── */
 var _isTouchDevice = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
 function isMobile() { return window.innerWidth <= 768 || _isTouchDevice; }
@@ -2971,6 +2991,32 @@ var isDraggingSheet = false, touchStartY = null, touchOffsetStart = 0;
       sb.style.transition = '';
     }
   });
+})();
+
+/* ── Timeline day-swipe (left/right only, timeline area only) ── */
+(function() {
+  var tl = document.getElementById('timeline');
+  if (!tl) return;
+  var _sx = null, _sy = null;
+
+  tl.addEventListener('touchstart', function(e) {
+    if (isDraggingSheet) return;
+    _sx = e.touches[0].clientX;
+    _sy = e.touches[0].clientY;
+  }, { passive: true });
+
+  tl.addEventListener('touchend', function(e) {
+    if (_sx === null || isDraggingSheet) { _sx = null; _sy = null; return; }
+    var dx = e.changedTouches[0].clientX - _sx;
+    var dy = e.changedTouches[0].clientY - _sy;
+    _sx = null; _sy = null;
+    /* must be clearly horizontal and exceed threshold */
+    if (Math.abs(dx) < 30 || Math.abs(dx) <= Math.abs(dy)) return;
+    var days = Object.keys(DAYS).map(Number).sort(function(a, b) { return a - b; });
+    var idx  = days.indexOf(currentDay);
+    var ni   = idx + (dx < 0 ? 1 : -1);  // left swipe → next, right swipe → prev
+    if (ni >= 0 && ni < days.length) _swipeSwitchDay(days[ni], dx < 0);
+  }, { passive: true });
 })();
 
 function openSidebar() {
