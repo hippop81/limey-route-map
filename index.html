@@ -146,6 +146,28 @@ body {
 .stop-seg.t-walk { border-left: 1px dotted var(--warm-gray); background: transparent; }
 .stop-seg.t-walk.passed { border-left-color: var(--lime); background: transparent; }
 
+.segment-duration-row {
+  display: flex; align-items: stretch; gap: 10px;
+  margin: 0 0 0 0; min-height: 22px;
+  pointer-events: none;
+}
+.segment-duration-spine {
+  min-width: 16px; display: flex; justify-content: center;
+}
+.segment-duration-spine::before {
+  content: ''; width: 1px; background: var(--warm-gray); display: block;
+}
+.segment-duration-label {
+  display: inline-flex; align-items: center; gap: 5px;
+  align-self: center; margin: 2px 0 4px;
+  font-family: var(--font-body); font-size: 10px; font-weight: 600;
+  color: var(--peacock); background: rgba(0,122,138,.06);
+  border: 1px solid rgba(0,122,138,.16); border-radius: 20px;
+  padding: 2px 8px; line-height: 1.35;
+}
+.segment-duration-label.estimated { color: var(--secondary); background: rgba(197,232,74,.18); border-color: rgba(197,232,74,.34); }
+.timeline.edit-mode .segment-duration-row { display: none; }
+
 .stop-card {
   flex: 1; padding: 9px 11px;
   border: 1px solid var(--light-gray); border-radius: var(--radius);
@@ -1412,7 +1434,7 @@ body {
 
 <script>
 /* ─── Schema versions ─── */
-var ROUTE_SCHEMA_VERSION = '5.16';
+var ROUTE_SCHEMA_VERSION = '5.17';
 var DRAFT_STOP_SCHEMA_VERSION = '5.16';
 var DRAFT_TRANSPORT_TYPES = ['walk', 'train_local', 'train_limited', 'shinkansen', 'bus_local', 'bus_express', 'shuttle', 'ferry', 'plane', 'other'];
 var DRAFT_STOP_JSON_SCHEMA = {
@@ -1582,7 +1604,7 @@ function closeExportSheet() {
   document.getElementById('exportSheet').classList.remove('open');
 }
 function _buildExportBlob() {
-  return new Blob([JSON.stringify({ schemaVersion: '5.16', trip: TRIP, days: DAYS }, null, 2)], { type: 'application/json' });
+  return new Blob([JSON.stringify({ schemaVersion: ROUTE_SCHEMA_VERSION, trip: TRIP, days: DAYS }, null, 2)], { type: 'application/json' });
 }
 function downloadJSON() {
   var blob = _buildExportBlob();
@@ -2363,6 +2385,57 @@ function moveCurrentPin(lat,lng,type) {
   else currentPin.setLatLng([lat,lng]);
 }
 
+
+function segmentTransportIcon(type) {
+  var icons = { plane: '✈️', ferry: '🚢', shinkansen: '🚄', train_limited: '🚃', train_local: '🚃', bus_express: '🚍', bus_local: '🚌', shuttle: '🚐', bike: '🚴', walk: '🚶', car: '🚗' };
+  return icons[type] || '↓';
+}
+function parseClockMinutes(value) {
+  var m = String(value || '').match(/^([01]\d|2[0-3]):([0-5]\d)$/);
+  return m ? parseInt(m[1], 10) * 60 + parseInt(m[2], 10) : null;
+}
+function formatMinutesJa(minutes, includeApprox) {
+  minutes = Math.max(1, Math.round(minutes));
+  var prefix = includeApprox ? '約' : '';
+  if (minutes >= 60) {
+    var h = Math.floor(minutes / 60), m = minutes % 60;
+    return prefix + h + '時間' + (m ? m + '分' : '');
+  }
+  return prefix + minutes + '分';
+}
+function segmentSpeedKmh(type) {
+  var speeds = { walk: 4.5, bike: 12, train_local: 28, train_limited: 45, shinkansen: 180, bus_local: 22, bus_express: 45, shuttle: 28, ferry: 30, car: 35 };
+  return speeds[type] || 25;
+}
+function segmentDurationLoad(minutes) {
+  if (minutes <= 10) return 'green';
+  if (minutes <= 30) return 'yellow';
+  return 'red';
+}
+function segmentDurationInfo(from, to) {
+  if (!from || !to || from.isDayEnd) return null;
+  var type = from.transport || 'bus_local';
+  if (type === 'plane') {
+    var a = parseClockMinutes(from.time), b = parseClockMinutes(to.time);
+    if (a === null || b === null) return null;
+    if (b < a) b += 24 * 60;
+    var mins = b - a;
+    if (mins <= 0) return null;
+    return { icon: segmentTransportIcon(type), text: formatMinutesJa(mins, false), estimated: false, minutes: mins, load: segmentDurationLoad(mins) };
+  }
+  if (from.lat == null || from.lng == null || to.lat == null || to.lng == null) return null;
+  var dist = haversineKm(from.lat, from.lng, to.lat, to.lng);
+  var speed = segmentSpeedKmh(type);
+  if (!isFinite(dist) || !speed) return null;
+  var minutes = dist / speed * 60;
+  return { icon: segmentTransportIcon(type), text: formatMinutesJa(minutes, true), estimated: true, minutes: minutes, load: segmentDurationLoad(minutes) };
+}
+function segmentDurationHtml(from, to) {
+  var info = segmentDurationInfo(from, to);
+  if (!info) return '';
+  return '<div class="segment-duration-row"><div class="segment-duration-spine"></div><div style="flex:1"><span class="segment-duration-label'+(info.estimated?' estimated':'')+'" data-load="'+info.load+'">↓ '+info.icon+' '+escHtml(info.text)+(info.estimated?'（推定）':'')+'</span></div></div>';
+}
+
 /* ─── Timeline ─── */
 function renderTimeline() {
   var d=DAYS[currentDay], tl=document.getElementById('timeline');
@@ -2408,6 +2481,7 @@ function renderTimeline() {
           tHtml+rhythmHtml+editBtns+
           '</div></div></div>';
 
+    if (!editMode && i < d.stops.length - 1) html += segmentDurationHtml(s, d.stops[i+1]);
     html+='<div class="add-row"><button class="btn-add-stop" onclick="event.stopPropagation();openEP(-1,'+i+')">+ Add stop after</button></div>';
   }
 
