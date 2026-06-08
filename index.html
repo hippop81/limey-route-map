@@ -1480,47 +1480,7 @@ var PALETTES = [
 ];
 
 /* ─── Data ─── */
-var DAYS = {
-  1: {
-    center: [26.44, 127.82], zoom: 10,
-    label: '美ら海 & パイン',
-    cost: '別払い ¥4,880',
-    stops: [
-      { name: '那覇空港',              time: '09:21',        memo: 'コインロッカーに荷物を預けてから乗車', lat: 26.196, lng: 127.646, transport: 'bus_express', categories: [],               isDayEnd: false, label: '117番 高速バス',      fare: '¥2,880',  durHours: 2, durMins: 30 },
-      { name: '赤嶺駅',               time: '09:30',        memo: 'GTFS test — ゆいレール駅座標ポリライン確認', lat: 26.19878, lng: 127.65338, transport: 'train_local', categories: [],             isDayEnd: false, label: 'ゆいレール',           fare: '',         durHours: 0, durMins:  3, gtfs: { shapeId: 'yuirail:shapes_383_1' } },
-      { name: '儀保駅',               time: '09:46',        memo: 'GTFS shape テスト終点',                   lat: 26.23650, lng: 127.69320, transport: 'shuttle',    categories: [],             isDayEnd: false, label: 'OAS',                  fare: '',         durHours: 0, durMins:  0 },
-      { name: '県庁北口',             time: '10:10',        memo: 'OAS test — oas:shapes_424_1',             lat: 26.2157,  lng: 127.6785, transport: 'bus_express', categories: [],             isDayEnd: false, label: 'OAS/RSL リゾートライナーA', fare: '',    durHours: 0, durMins:  0, gtfs: { shapeId: 'oas:shapes_424_1' } },
-      { name: '美ら海水族館',           time: '11:51',        memo: 'ジンベイザメ！約2.5時間滞在',         lat: 26.694, lng: 127.878, transport: 'shuttle',    categories: ['sightseeing'],   isDayEnd: false, label: 'OAS/APL',             fare: '¥1,250',  durHours: 0, durMins: 47 },
-      { name: '名護市役所前',           time: '15:38',        memo: '70番バスに乗り換え',                  lat: 26.592, lng: 127.978, transport: 'bus_local',  categories: [],               isDayEnd: false, label: '70番（OTOPa）',       fare: 'パス対象', durHours: 0, durMins: 31 },
-      { name: 'ナゴパイナップルパーク',  time: '16:09',        memo: 'カート体験！約2時間滞在（早割済）',    lat: 26.584, lng: 127.964, transport: 'shuttle',    categories: ['sightseeing'],   isDayEnd: false, label: '70番 → OASシャトル', fare: '¥2,000',  durHours: 2, durMins: 22 },
-      { name: '名護バスターミナル',      time: '18:00',        memo: 'やんばる急行 test — yanbaru:11',         lat: 26.593,  lng: 127.979, transport: 'bus_express', categories: [],             isDayEnd: false, label: 'やんばる急行バス',    fare: '',         durHours: 0, durMins:  0, gtfs: { shapeId: 'yanbaru:11' } },
-      { name: '那覇バスターミナル',      time: '20:38',        memo: '国際通りでタコス！',                   lat: 26.215, lng: 127.681, transport: 'bus_express',categories: [],               isDayEnd: true,  label: '',                    fare: '',         durHours: 0, durMins:  0 }
-    ]
-  },
-  2: {
-    center: [26.285, 127.742], zoom: 11,
-    label: 'タコス & ライブ',
-    cost: 'パス活用 + ¥2,270',
-    stops: [
-      { name: '那覇バスターミナル',      time: '午前',         memo: 'Tギャラリアでジュエリーを見る',       lat: 26.215, lng: 127.681, transport: 'bus_local',  categories: [],               isDayEnd: false, label: '30番バス（OTOPa）',   fare: 'パス対象', durHours: 0, durMins: 40 },
-      { name: '比屋根 / キングタコス',   time: '昼前',         memo: 'テイクアウト注文して即バス停へ！',     lat: 26.329, lng: 127.799, transport: 'bus_local',  categories: ['food'],         isDayEnd: false, label: '31番バス（OTOPa）',   fare: 'パス対象', durHours: 0, durMins: 10 },
-      { name: '胡屋 / チャーリータコス', time: '昼',           memo: '本店でタコス！食後はアリーナへ',       lat: 26.334, lng: 127.803, transport: 'bike',       categories: ['food'],         isDayEnd: false, label: 'Hello Cycling',       fare: '~¥500',   durHours: 0, durMins: 20 },
-      { name: '沖縄サントリーアリーナ',  time: '15:00',        memo: 'SixTONES オーラス！！',               lat: 26.331, lng: 127.793, transport: 'bus_express',categories: ['event'],        isDayEnd: false, label: '111番 高速バス',      fare: '¥1,200~', durHours: 0, durMins: 50 },
-      { name: '那覇バスターミナル',      time: '21:00頃',      memo: '終演後 那覇に帰還',                   lat: 26.215, lng: 127.681, transport: 'bus_express',categories: [],               isDayEnd: true,  label: '',                    fare: '',         durHours: 0, durMins:  0 }
-    ]
-  },
-  3: {
-    center: [26.210, 127.678], zoom: 12,
-    label: '那覇のんびり',
-    cost: 'パス活用でOK',
-    stops: [
-      { name: 'グランドキャビンホテル那覇小禄', time: 'チェックアウト', memo: '朝食を食べてチェックアウト', lat: 26.201, lng: 127.663, transport: 'bus_local',  categories: ['stay'],         isDayEnd: false, label: 'バス（OTOPa）',       fare: 'パス対象', durHours: 0, durMins: 15 },
-      { name: '壺屋やちむん通り',        time: '午前',         memo: 'お皿を選ぶ！ゆっくり歩く',            lat: 26.218, lng: 127.690, transport: 'bus_local',  categories: ['shopping'],     isDayEnd: false, label: 'バス（OTOPa）',       fare: 'パス対象', durHours: 0, durMins: 30 },
-      { name: '豊崎美らSUNビーチ',       time: '昼すぎ',       memo: '日光浴！空港近くで帰り動線OK',         lat: 26.168, lng: 127.666, transport: 'bus_local',  categories: ['sightseeing'],  isDayEnd: false, label: 'バス（OTOPa）',       fare: 'パス対象', durHours: 0, durMins: 20 },
-      { name: '那覇空港 スナックコーナー風月', time: '18:00頃', memo: '旅の締め！SNA26 20:30発で帰京',    lat: 26.196, lng: 127.646, transport: 'bus_local',  categories: [],               isDayEnd: true,  label: '',                    fare: '',         durHours: 0, durMins:  0 }
-    ]
-  }
-};
+var DAYS = {};
 
 /* ─── Defaults (for reset) ─── */
 var _DEFAULT_TRIP = JSON.parse(JSON.stringify(TRIP));
@@ -1539,6 +1499,55 @@ var CATEGORIES = {
 };
 var epCategories = [];
 
+
+/* ─── Route data loading ─── */
+function normalizeDaysData(days) {
+  var out = {};
+  if (Array.isArray(days)) {
+    days.forEach(function(day, idx) { out[idx + 1] = day; });
+  } else if (days && typeof days === 'object') {
+    Object.keys(days).forEach(function(k) { out[parseInt(k, 10)] = days[k]; });
+  }
+  _migrateDays(out);
+  return out;
+}
+function firstDayKey() {
+  var keys = Object.keys(DAYS).map(Number).filter(function(n){ return !isNaN(n); }).sort(function(a,b){ return a-b; });
+  return keys[0] || 1;
+}
+function applyRouteData(data, opts) {
+  opts = opts || {};
+  if (!data || !data.days) throw new Error('Route JSON must include days');
+  if (opts.applyTrip !== false) {
+    if (data.trip) {
+      TRIP.title    = data.trip.title    || TRIP.title;
+      TRIP.subtitle = data.trip.subtitle !== undefined ? data.trip.subtitle : TRIP.subtitle;
+      TRIP.palette  = data.trip.palette  || TRIP.palette;
+    } else if (data.title) {
+      TRIP.subtitle = data.title;
+    }
+  }
+  DAYS = normalizeDaysData(data.days);
+  return firstDayKey();
+}
+function loadDefaultTripData() {
+  return fetch('trips/okinawa-2026.json', { cache: 'no-store' })
+    .then(function(r) { if (!r.ok) throw new Error('default trip not found'); return r.json(); })
+    .then(function(data) {
+      applyRouteData(data);
+      _DEFAULT_TRIP = JSON.parse(JSON.stringify(TRIP));
+      _DEFAULT_DAYS = JSON.parse(JSON.stringify(DAYS));
+      return data;
+    })
+    .catch(function(err) {
+      console.warn('[Limey] Failed to load default trip JSON:', err.message);
+      DAYS = { 1: { center: [26.3, 127.7], zoom: 10, label: 'Day 1', cost: '', stops: [] } };
+      _DEFAULT_TRIP = JSON.parse(JSON.stringify(TRIP));
+      _DEFAULT_DAYS = JSON.parse(JSON.stringify(DAYS));
+      return null;
+    });
+}
+
 /* ─── localStorage ─── */
 var STORAGE_KEY = 'limey-route-data';
 
@@ -1556,9 +1565,7 @@ function loadFromStorage() {
       TRIP.palette  = data.trip.palette  || TRIP.palette;
     }
     if (data.days) {
-      DAYS = {};
-      Object.keys(data.days).forEach(function(k) { DAYS[parseInt(k)] = data.days[k]; });
-      _migrateDays(DAYS);
+      DAYS = normalizeDaysData(data.days);
     }
     return true;
   } catch(e) { return false; }
@@ -1668,10 +1675,8 @@ function handleImport(input) {
         TRIP.title    = data.trip.title    || TRIP.title;
         TRIP.subtitle = data.trip.subtitle !== undefined ? data.trip.subtitle : TRIP.subtitle;
       }
-      DAYS = {};
-      Object.keys(data.days).forEach(function(k) { DAYS[parseInt(k)] = data.days[k]; });
-      _migrateDays(DAYS);
-      var firstDay = parseInt(Object.keys(DAYS).sort(function(a,b){return a-b;})[0]) || 1;
+      DAYS = normalizeDaysData(data.days);
+      var firstDay = firstDayKey();
       saveToStorage();
       renderHeader();
       currentDay = firstDay;
@@ -4840,20 +4845,26 @@ function renderProfileBody(st) {
 }
 
 /* ─── Init ─── */
-loadFromStorage();
-_setPaletteVars(TRIP.palette || 'tropical');
-renderHeader();
-renderDayTabs();
-switchDay(currentDay);
-loadDefaultGtfsDb();
-requestAnimationFrame(function() {
-  requestAnimationFrame(function() {
-    if (isMobile()) setSheet('peek', false);
+function initApp() {
+  return loadDefaultTripData().then(function() {
+    loadFromStorage();
+    currentDay = firstDayKey();
+    _setPaletteVars(TRIP.palette || 'tropical');
+    renderHeader();
+    renderDayTabs();
+    switchDay(currentDay);
+    loadDefaultGtfsDb();
+    requestAnimationFrame(function() {
+      requestAnimationFrame(function() {
+        if (isMobile()) setSheet('peek', false);
+      });
+    });
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('.card-menu-wrap')) closeCardMenu();
+    });
   });
-});
-document.addEventListener('click', function(e) {
-  if (!e.target.closest('.card-menu-wrap')) closeCardMenu();
-});
+}
+initApp();
 
 </script>
 </body>
