@@ -11,8 +11,8 @@
   function readStoredConfig() {
     try {
       return {
-        url: global.localStorage && global.localStorage.getItem('limey.supabase.url'),
-        anonKey: global.localStorage && global.localStorage.getItem('limey.supabase.anonKey')
+        url: global.localStorage && global.localStorage.getItem('https://vybjtfbfketpoabaxaib.supabase.co'),
+        anonKey: global.localStorage && global.localStorage.getItem('sb_publishable_L3Vqy6WpyjxOEQSbhVPYzA_EWl44wnw')
       };
     } catch (err) {
       return {};
