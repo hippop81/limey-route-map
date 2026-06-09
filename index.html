@@ -16,10 +16,10 @@
   --radius:8px;--ease:cubic-bezier(0.25,0.8,0.25,1);--dur:220ms;
 }
 *{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:var(--font-body);background:var(--cream);color:var(--primary);height:100vh;overflow:hidden;-webkit-font-smoothing:antialiased;}
-.screen{display:none;height:100vh;}
+body{font-family:var(--font-body);background:var(--cream);color:var(--primary);height:100dvh;height:100vh;overflow:hidden;-webkit-font-smoothing:antialiased;}
+.screen{display:none;height:100dvh;height:100vh;}
 .screen.active{display:flex;}
-#mapScreen.active{flex:1;}
+#mapScreen.active{flex:1;min-height:0;height:100dvh;height:100vh;}
 
 /* ── My Trips screen ── */
 #tripsScreen{flex-direction:column;background:var(--cream);}
@@ -42,6 +42,7 @@ body{font-family:var(--font-body);background:var(--cream);color:var(--primary);h
 .trip-card-delete:hover{background:rgba(0,0,0,.06);color:var(--primary);}
 .trip-card-sync{display:none;font-size:9px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--peacock);margin-top:2px;}
 .trips-skeleton{display:flex;flex-direction:column;gap:12px;max-width:480px;margin:0 auto;width:100%;}
+.trips-skeleton[hidden]{display:none!important;}
 .skeleton-card{height:76px;background:linear-gradient(90deg,var(--light-gray) 25%,var(--white) 50%,var(--light-gray) 75%);background-size:200% 100%;animation:shimmer 1.2s ease-in-out infinite;border-radius:var(--radius);border:1px solid var(--warm-gray);}
 @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 .trips-empty{max-width:480px;margin:48px auto 0;text-align:center;padding:0 24px;}
@@ -102,9 +103,9 @@ body{font-family:var(--font-body);background:var(--cream);color:var(--primary);h
 .draft-warnings-box{margin-bottom:16px;padding:12px 14px;background:var(--soft-lime);border:1px solid rgba(197,232,74,.5);border-radius:var(--radius);font-size:11px;color:#556b00;line-height:1.5;}
 
 /* ── Map screen (unchanged layout) ── */
-#mapScreen{overflow:hidden;}
-.sidebar{width:308px;min-width:308px;background:var(--cream);border-right:1px solid var(--warm-gray);display:flex;flex-direction:column;overflow:hidden;}
-.sidebar-header{padding:18px 18px 14px;border-bottom:1px solid var(--warm-gray);background:var(--white);}
+#mapScreen{overflow:hidden;height:100dvh;height:100vh;}
+.sidebar{width:308px;min-width:308px;height:100dvh;height:100vh;max-height:100dvh;max-height:100vh;background:var(--cream);border-right:1px solid var(--warm-gray);display:flex;flex-direction:column;overflow:hidden;min-height:0;}
+.sidebar-header{flex-shrink:0;padding:18px 18px 14px;border-bottom:1px solid var(--warm-gray);background:var(--white);}
 .back-btn{display:inline-flex;align-items:center;gap:4px;border:none;background:transparent;color:var(--peacock);cursor:pointer;font-family:var(--font-body);font-size:11px;font-weight:600;letter-spacing:.04em;padding:0 0 10px;margin:0;transition:color var(--dur) var(--ease);}
 .back-btn:hover{color:var(--primary);}
 .map-save-status{display:block;font-size:10px;font-weight:600;letter-spacing:.04em;color:var(--secondary);margin-top:6px;min-height:14px;transition:color var(--dur) var(--ease);}
@@ -115,11 +116,11 @@ body{font-family:var(--font-body);background:var(--cream);color:var(--primary);h
 .eyebrow::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--lime);flex-shrink:0;}
 .app-title{font-family:var(--font-head);font-size:20px;font-weight:700;color:var(--primary);}
 .title-accent{background:var(--lime);padding:0 5px 1px;border-radius:3px;}
-.day-tabs{display:flex;border-bottom:1px solid var(--warm-gray);background:var(--white);}
+.day-tabs{flex-shrink:0;display:flex;border-bottom:1px solid var(--warm-gray);background:var(--white);}
 .day-tab{flex:1;padding:10px 4px;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--secondary);cursor:pointer;font-family:var(--font-body);font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;transition:all var(--dur) var(--ease);line-height:1.5;text-align:center;}
 .day-tab:hover{color:var(--primary);}
 .day-tab.active{color:var(--peacock);border-bottom-color:var(--peacock);background:var(--cream);}
-.timeline{flex:1;overflow-y:auto;padding:12px 16px;scrollbar-width:thin;scrollbar-color:var(--warm-gray) var(--cream);}
+.timeline{flex:1;min-height:0;overflow-y:auto;padding:12px 16px;scrollbar-width:thin;scrollbar-color:var(--warm-gray) var(--cream);}
 .timeline::-webkit-scrollbar{width:3px;}
 .timeline::-webkit-scrollbar-thumb{background:var(--warm-gray);border-radius:2px;}
 .stop-row{display:flex;gap:9px;cursor:pointer;}
@@ -147,10 +148,10 @@ body{font-family:var(--font-body);background:var(--cream);color:var(--primary);h
 .b-stay{background:rgba(197,232,74,.2);color:#556b00;border:1px solid rgba(197,232,74,.5);}
 .b-tour{background:rgba(0,122,138,.12);color:var(--peacock);border:1px solid rgba(0,122,138,.3);}
 .price-tag{font-family:var(--font-head);font-size:10px;font-weight:700;color:var(--primary);}
-.cost-bar{padding:9px 16px;border-top:1px solid var(--warm-gray);display:flex;justify-content:space-between;align-items:center;background:var(--soft-lime);}
+.cost-bar{flex-shrink:0;padding:9px 16px;border-top:1px solid var(--warm-gray);display:flex;justify-content:space-between;align-items:center;background:var(--soft-lime);}
 .cost-label{font-family:var(--font-body);font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#556b00;}
 .cost-num{font-family:var(--font-head);font-size:14px;font-weight:700;color:var(--primary);}
-.controls{padding:11px 16px;border-top:1px solid var(--warm-gray);display:flex;gap:8px;background:var(--white);}
+.controls{flex-shrink:0;margin-top:auto;padding:11px 16px;padding-bottom:max(11px,env(safe-area-inset-bottom));border-top:1px solid var(--warm-gray);display:flex;gap:8px;background:var(--white);}
 .btn{flex:1;padding:9px;border-radius:var(--radius);border:1.5px solid;cursor:pointer;font-family:var(--font-body);font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;transition:all var(--dur) var(--ease);}
 .btn-play{background:var(--peacock);border-color:var(--peacock);color:#fff;}
 .btn-play:hover{background:#006475;}
@@ -315,6 +316,7 @@ var saveDebounceTimer = null;
 var saveInFlight = null;
 var suppressAutosave = false;
 var AUTOSAVE_DEBOUNCE_MS = 1000;
+var TRIP_ENRICH_TIMEOUT_MS = 8000;
 var SAVE_STATUS_LABELS = {
   pending: 'Saving...',
   saving: 'Saving...',
@@ -1167,7 +1169,9 @@ async function handleShareTrip() {
 }
 
 function setTripsLoading(loading) {
-  document.getElementById('tripsLoading').hidden = !loading;
+  var skeleton = document.getElementById('tripsLoading');
+  skeleton.hidden = !loading;
+  skeleton.style.display = loading ? '' : 'none';
   if (loading) {
     document.getElementById('tripsList').hidden = true;
     document.getElementById('tripsEmpty').hidden = true;
@@ -1175,11 +1179,49 @@ function setTripsLoading(loading) {
   }
 }
 
+function withTimeout(promise, ms, label) {
+  return new Promise(function(resolve, reject) {
+    var settled = false;
+    var timer = setTimeout(function() {
+      if (settled) return;
+      settled = true;
+      reject(new Error((label || 'Operation') + ' timed out after ' + ms + 'ms'));
+    }, ms);
+    Promise.resolve(promise).then(function(value) {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      resolve(value);
+    }, function(err) {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      reject(err);
+    });
+  });
+}
+
+function fallbackEnrichedTrip(trip) {
+  return {
+    id: trip.id,
+    title: trip.title,
+    updated_at: trip.updated_at || trip.created_at,
+    stopCount: 0,
+    emoji: extractEmoji(trip.title, null)
+  };
+}
+
 async function enrichTrip(trip) {
   var routeData = null;
   try {
-    routeData = await TripRepository.loadTrip(trip.id);
-  } catch (err) { /* stop count falls back to 0 */ }
+    routeData = await withTimeout(
+      TripRepository.loadTrip(trip.id),
+      TRIP_ENRICH_TIMEOUT_MS,
+      'loadTrip'
+    );
+  } catch (err) {
+    console.warn('[Limey] enrichTrip failed for trip', trip.id, err);
+  }
   return {
     id: trip.id,
     title: trip.title,
@@ -1218,30 +1260,42 @@ function renderTripCard(trip) {
   return card;
 }
 
+function renderTripsList(enriched) {
+  var listEl = document.getElementById('tripsList');
+  listEl.innerHTML = '';
+  if (!enriched.length) {
+    listEl.hidden = true;
+    document.getElementById('tripsEmpty').hidden = false;
+    return;
+  }
+  document.getElementById('tripsEmpty').hidden = true;
+  listEl.hidden = false;
+  enriched.forEach(function(trip) { listEl.appendChild(renderTripCard(trip)); });
+}
+
 async function refreshTripsList() {
   setTripsLoading(true);
   document.getElementById('tripsError').hidden = true;
   try {
     var trips = await TripRepository.listTrips();
-    var enriched = await Promise.all(trips.map(enrichTrip));
     setTripsLoading(false);
-    var listEl = document.getElementById('tripsList');
-    listEl.innerHTML = '';
-    if (!enriched.length) {
-      listEl.hidden = true;
-      document.getElementById('tripsEmpty').hidden = false;
-      return;
-    }
-    document.getElementById('tripsEmpty').hidden = true;
-    listEl.hidden = false;
-    enriched.forEach(function(trip) { listEl.appendChild(renderTripCard(trip)); });
+    renderTripsList(trips.map(fallbackEnrichedTrip));
+    var enriched = await Promise.all(trips.map(function(trip) {
+      return enrichTrip(trip).catch(function(err) {
+        console.warn('[Limey] enrichTrip rejected:', trip.id, err);
+        return fallbackEnrichedTrip(trip);
+      });
+    }));
+    renderTripsList(enriched);
   } catch (err) {
-    setTripsLoading(false);
+    console.error('[Limey] refreshTripsList failed:', err);
     document.getElementById('tripsList').hidden = true;
     document.getElementById('tripsEmpty').hidden = true;
     var errEl = document.getElementById('tripsError');
     errEl.textContent = 'Could not load trips. ' + (err.message || 'Please try again.');
     errEl.hidden = false;
+  } finally {
+    setTripsLoading(false);
   }
 }
 
