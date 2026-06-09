@@ -61,7 +61,10 @@ body{font-family:var(--font-body);background:var(--cream);color:var(--primary);h
 .sidebar-header{padding:18px 18px 14px;border-bottom:1px solid var(--warm-gray);background:var(--white);}
 .back-btn{display:inline-flex;align-items:center;gap:4px;border:none;background:transparent;color:var(--peacock);cursor:pointer;font-family:var(--font-body);font-size:11px;font-weight:600;letter-spacing:.04em;padding:0 0 10px;margin:0;transition:color var(--dur) var(--ease);}
 .back-btn:hover{color:var(--primary);}
-.map-save-status{display:none;font-size:9px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--secondary);margin-top:4px;}
+.map-save-status{display:block;font-size:10px;font-weight:600;letter-spacing:.04em;color:var(--secondary);margin-top:6px;min-height:14px;transition:color var(--dur) var(--ease);}
+.map-save-status[data-save-state="pending"],.map-save-status[data-save-state="saving"]{color:var(--peacock);}
+.map-save-status[data-save-state="saved"]{color:#556b00;}
+.map-save-status[data-save-state="error"]{color:#a33;}
 .eyebrow{font-size:9px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--peacock);display:flex;align-items:center;gap:6px;margin-bottom:5px;}
 .eyebrow::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--lime);flex-shrink:0;}
 .app-title{font-family:var(--font-head);font-size:20px;font-weight:700;color:var(--primary);}
@@ -149,7 +152,7 @@ body{font-family:var(--font-body);background:var(--cream);color:var(--primary);h
       <button class="back-btn" type="button" onclick="goToTrips()">&#8592; My Trips</button>
       <div class="eyebrow" id="mapEyebrow">Trip</div>
       <div class="app-title"><span class="title-accent">ROUTE</span> MAP</div>
-      <div class="map-save-status" id="mapSaveStatus" data-save-state="saved">Saved</div>
+      <div class="map-save-status" id="mapSaveStatus" data-save-state="saved">Saved ✓</div>
     </div>
     <div class="day-tabs" id="dayTabs"></div>
     <div class="timeline" id="timeline"></div>
@@ -172,7 +175,15 @@ var currentTripTitle = '';
 var currentRoute = null;
 var savedSnapshot = '';
 var saveDebounceTimer = null;
+var saveInFlight = null;
+var suppressAutosave = false;
 var AUTOSAVE_DEBOUNCE_MS = 1000;
+var SAVE_STATUS_LABELS = {
+  pending: 'Saving...',
+  saving: 'Saving...',
+  saved: 'Saved ✓',
+  error: 'Save failed'
+};
 
 var DEFAULT_DAYS = [
   {
@@ -296,11 +307,6 @@ function isDirty() {
   return JSON.stringify(currentRoute) !== savedSnapshot;
 }
 
-function warnIfDirty() {
-  if (!isDirty()) return true;
-  return window.confirm('You have unsaved changes. Continue without saving?');
-}
-
 function getRouteTitle(routeData) {
   if (!routeData) return '';
   return routeData.title || (routeData.trip && routeData.trip.title) || '';
@@ -317,28 +323,166 @@ function updateSaveStatus(state) {
   var el = document.getElementById('mapSaveStatus');
   if (!el) return;
   el.setAttribute('data-save-state', state);
+  el.textContent = SAVE_STATUS_LABELS[state] || '';
+}
+
+function cancelAutoSave() {
+  clearTimeout(saveDebounceTimer);
+  saveDebounceTimer = null;
 }
 
 function notifyRouteChanged() {
-  if (!currentTripId || !currentRoute) return;
+  if (suppressAutosave || !currentTripId || !currentRoute) return;
+  if (!isDirty()) return;
   updateSaveStatus('pending');
   scheduleAutoSave();
 }
 
 function scheduleAutoSave() {
-  clearTimeout(saveDebounceTimer);
+  cancelAutoSave();
   saveDebounceTimer = setTimeout(function() {
+    saveDebounceTimer = null;
     if (!currentTripId || !currentRoute || !isDirty()) return;
-    saveTrip(currentTripId, currentRoute);
+    persistTrip(currentTripId, currentRoute);
   }, AUTOSAVE_DEBOUNCE_MS);
 }
 
-async function saveTrip(tripId, snapshot) {
-  await TripRepository._createTripVersion(tripId, snapshot);
-  if (tripId === currentTripId) {
-    savedSnapshot = JSON.stringify(snapshot);
-    updateSaveStatus('saved');
+async function flushPendingSave() {
+  cancelAutoSave();
+  if (!currentTripId || !currentRoute || !isDirty()) return true;
+  return persistTrip(currentTripId, currentRoute);
+}
+
+async function persistTrip(tripId, snapshot) {
+  if (saveInFlight) await saveInFlight;
+  var tripIdAtStart = tripId;
+  var savePromise = (async function() {
+    updateSaveStatus('saving');
+    try {
+      await TripRepository._createTripVersion(tripIdAtStart, snapshot);
+      if (tripIdAtStart === currentTripId) {
+        savedSnapshot = JSON.stringify(snapshot);
+        updateSaveStatus('saved');
+      }
+      return true;
+    } catch (err) {
+      console.error('[Limey] Auto-save failed:', err);
+      if (tripIdAtStart === currentTripId) updateSaveStatus('error');
+      return false;
+    } finally {
+      if (saveInFlight === savePromise) saveInFlight = null;
+    }
+  })();
+  saveInFlight = savePromise;
+  return savePromise;
+}
+
+/* ── Route data helpers (mutations sync currentRoute → DAYS) ── */
+function getRouteDaysArray(route) {
+  var raw = (route || currentRoute).days;
+  if (!raw) return [];
+  if (Array.isArray(raw)) return raw;
+  return Object.keys(raw).sort(function(a, b) {
+    var na = parseInt(a, 10), nb = parseInt(b, 10);
+    if (!isNaN(na) && !isNaN(nb)) return na - nb;
+    return String(a).localeCompare(String(b));
+  }).map(function(k) { return raw[k]; });
+}
+
+function writeRouteDays(daysArray) {
+  if (Array.isArray(currentRoute.days)) {
+    currentRoute.days = daysArray;
+    return;
   }
+  var obj = {};
+  for (var i = 0; i < daysArray.length; i++) obj[String(i)] = daysArray[i];
+  currentRoute.days = obj;
+}
+
+function syncDaysFromRoute() {
+  DAYS = routeDataToDays(currentRoute);
+}
+
+function mutateRoute(mutator, options) {
+  if (!currentRoute) return;
+  mutator(currentRoute);
+  if (!options || options.syncDays !== false) syncDaysFromRoute();
+  if (options && options.render) render();
+  notifyRouteChanged();
+}
+
+function saveStop(dayIndex, stopIndex, patch) {
+  mutateRoute(function() {
+    var days = getRouteDaysArray();
+    var stop = days[dayIndex] && days[dayIndex].stops && days[dayIndex].stops[stopIndex];
+    if (!stop) return;
+    Object.assign(stop, patch);
+    writeRouteDays(days);
+  }, { render: true });
+}
+
+function moveStop(fromDay, fromIndex, toDay, toIndex) {
+  mutateRoute(function() {
+    var days = getRouteDaysArray();
+    if (!days[fromDay] || !days[toDay]) return;
+    var stop = days[fromDay].stops.splice(fromIndex, 1)[0];
+    if (!stop) return;
+    if (toIndex === undefined || toIndex === null) days[toDay].stops.push(stop);
+    else days[toDay].stops.splice(toIndex, 0, stop);
+    writeRouteDays(days);
+  }, { render: true });
+}
+
+function delStop(dayIndex, stopIndex) {
+  mutateRoute(function() {
+    var days = getRouteDaysArray();
+    if (!days[dayIndex]) return;
+    days[dayIndex].stops.splice(stopIndex, 1);
+    writeRouteDays(days);
+  }, { render: true });
+}
+
+function addStop(dayIndex, stop, atIndex) {
+  mutateRoute(function() {
+    var days = getRouteDaysArray();
+    if (!days[dayIndex]) return;
+    if (!days[dayIndex].stops) days[dayIndex].stops = [];
+    if (atIndex === undefined || atIndex === null) days[dayIndex].stops.push(stop);
+    else days[dayIndex].stops.splice(atIndex, 0, stop);
+    writeRouteDays(days);
+  }, { render: true });
+}
+
+function editDayLabel(dayIndex, label) {
+  mutateRoute(function() {
+    var days = getRouteDaysArray();
+    if (!days[dayIndex]) return;
+    days[dayIndex].label = label;
+    writeRouteDays(days);
+  }, { render: true });
+}
+
+function editDayCost(dayIndex, cost) {
+  mutateRoute(function() {
+    var days = getRouteDaysArray();
+    if (!days[dayIndex]) return;
+    days[dayIndex].cost = cost;
+    writeRouteDays(days);
+  }, { render: true });
+}
+
+function editStopMemo(dayIndex, stopIndex, memo) {
+  saveStop(dayIndex, stopIndex, { memo: memo });
+}
+
+function editStopTransport(dayIndex, stopIndex, transport, label) {
+  var patch = { transport: transport };
+  if (label !== undefined) patch.label = label;
+  saveStop(dayIndex, stopIndex, patch);
+}
+
+function editStopCategories(dayIndex, stopIndex, categories) {
+  saveStop(dayIndex, stopIndex, { categories: categories });
 }
 
 function routeDataToDays(routeData) {
@@ -482,12 +626,12 @@ async function handleNewTrip() {
 
 async function handleDeleteTrip(tripId) {
   if (!window.confirm('Delete this trip?')) return;
+  cancelAutoSave();
   try {
     await TripRepository.deleteTrip(tripId);
     if (currentTripId === tripId) {
       stopReplay();
       clearRouteLayers();
-      clearTimeout(saveDebounceTimer);
       currentTripId = null;
       currentRoute = null;
       savedSnapshot = '';
@@ -499,11 +643,12 @@ async function handleDeleteTrip(tripId) {
   }
 }
 
-function goToTrips() {
+async function goToTrips() {
   stopReplay();
-  if (!warnIfDirty()) return;
+  await flushPendingSave();
+  if (isDirty() && !window.confirm('You have unsaved changes. Leave without saving?')) return;
+  cancelAutoSave();
   clearRouteLayers();
-  clearTimeout(saveDebounceTimer);
   currentTripId = null;
   currentRoute = null;
   savedSnapshot = '';
@@ -514,17 +659,20 @@ function goToTrips() {
 async function openTrip(tripId, tripTitle) {
   try {
     var routeData = await TripRepository.loadTrip(tripId);
-    if (!switchTrip(tripId, routeData, tripTitle)) return;
+    if (!await switchTrip(tripId, routeData, tripTitle)) return;
     setTimeout(function() { if (map) map.invalidateSize(); }, 50);
   } catch (err) {
     window.alert('Could not load trip: ' + (err.message || 'Unknown error'));
   }
 }
 
-function switchTrip(tripId, routeData, tripTitle) {
+async function switchTrip(tripId, routeData, tripTitle) {
   stopReplay();
-  if (!warnIfDirty()) return false;
+  await flushPendingSave();
+  if (isDirty() && !window.confirm('You have unsaved changes. Continue without saving?')) return false;
 
+  cancelAutoSave();
+  suppressAutosave = true;
   clearRouteLayers();
 
   currentTripId = tripId;
@@ -537,11 +685,13 @@ function switchTrip(tripId, routeData, tripTitle) {
   savedSnapshot = JSON.stringify(currentRoute);
   DAYS = routeDataToDays(currentRoute);
   document.getElementById('mapEyebrow').textContent = stripLeadingEmoji(currentTripTitle);
-  updateSaveStatus('saved');
 
   showScreen('map');
   ensureMap();
   render();
+
+  suppressAutosave = false;
+  updateSaveStatus('saved');
   return true;
 }
 
