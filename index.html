@@ -3995,7 +3995,7 @@ function closeAIDraftModal() {
   document.getElementById('aiDraftModal').classList.remove('open');
 }
 
-/* Supabase Edge Function call — ANTHROPIC_API_KEY stored server-side */
+/* Supabase Edge Function call — attaches errType/httpStatus/retryAfter on failure */
 async function _callEdgeFunction(text) {
   _aiAbortCtrl = new AbortController();
   var resp = await fetch(SUPABASE_EDGE_FN_URL, {
@@ -4004,13 +4004,24 @@ async function _callEdgeFunction(text) {
     body: JSON.stringify({ prompt: text }),
     signal: _aiAbortCtrl.signal
   });
+  var data = await resp.json().catch(function(){ return {}; });
   if (!resp.ok) {
-    var errData = await resp.json().catch(function(){ return {}; });
-    throw new Error((errData.error) || ('HTTP ' + resp.status));
+    var errType = (typeof data.error === 'string' ? data.error : 'provider_error');
+    var errMsg  = (typeof data.message === 'string' ? data.message : errType);
+    var err     = new Error(errMsg);
+    err.errType    = errType;
+    err.httpStatus = resp.status;
+    err.retryAfter = (typeof data.retryAfter === 'number' ? data.retryAfter : null);
+    throw err;
   }
-  var data = await resp.json();
-  if (data.error) throw new Error(data.error);
   return data.rawText || '';
+}
+
+/* Retry only on timeout / provider_error / network failures (not rate_limited / validation_error) */
+function _isRetryableError(err) {
+  if (!err || err.name === 'AbortError') return false;
+  if (err.errType === 'rate_limited' || err.errType === 'validation_error') return false;
+  return true;
 }
 
 async function generateDraftStops() {
@@ -4033,14 +4044,25 @@ async function generateDraftStops() {
       parseResult = _parseJsonSafely(rawTxt);
     } catch(e1) {
       if (e1.name === 'AbortError') { return; }
-      /* API error → retry once */
-      rawTxt = null; parseResult = null;
+      /* rate_limited: show retryAfter, no retry */
+      if (e1.errType === 'rate_limited') {
+        var mins = e1.retryAfter ? Math.ceil(e1.retryAfter / 60) : null;
+        _aiShowErr('レート制限に達しました。' + (mins ? mins + '分後に再試行できます。' : ''));
+        return;
+      }
+      /* validation_error: show message, no retry */
+      if (e1.errType === 'validation_error') {
+        _aiShowErr(e1.message || '入力内容を確認してください。');
+        return;
+      }
+      /* timeout / provider_error → fall through to attempt 2 */
     }
 
-    /* ─ attempt 2 (retry on API error or bad parse) ─ */
+    /* ─ attempt 2 — retry on timeout / provider_error / bad parse (1s delay) ─ */
     if (!parseResult || !parseResult.ok) {
       _aiRetryCount = 1;
       btn.textContent = '再試行中…';
+      await new Promise(function(r){ setTimeout(r, 1000); });
       try {
         rawTxt      = await _callEdgeFunction(text);
         parseResult = _parseJsonSafely(rawTxt);
