@@ -354,6 +354,8 @@ async function flushPendingSave() {
 }
 
 async function persistTrip(tripId, snapshot) {
+  // Update existing trip: TripRepository.saveTrip() creates new trips only;
+  // version insert is the correct persist path without modifying TripRepository.
   if (saveInFlight) await saveInFlight;
   var tripIdAtStart = tripId;
   var savePromise = (async function() {
