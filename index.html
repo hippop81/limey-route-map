@@ -378,6 +378,11 @@ var DEFAULT_DAYS = [
   }
 ];
 
+/* ── Edge Function config ── */
+var EDGE_FN_URL = 'https://vybjtfbfketpoabaxaib.supabase.co/functions/v1/generate-draft-stops';
+var SUPABASE_ANON_KEY = 'sb_publishable_L3Vqy6WpyjxOEQSbhVPYzA_EWl44wnw';
+var AI_MAX_RETRY = 1;
+var AI_RETRY_DELAY_MS = 1000;  
 var DAYS = [];
 
 function escapeHtml(str) {
@@ -544,13 +549,6 @@ var DRAFT_TRANSPORT_TYPES = [
   'shinkansen', 'ferry', 'walk', 'plane', 'stay', 'tour', 'unknown'
 ];
 
-var MOCK_DRAFT_STOPS = [
-  { name:'羽田空港', time:'06:00', desc:'出発✈️', locationText:'羽田空港', lat:35.549, lng:139.779, transport:'飛行機', type:'plane', price:'', confidence:0.95, warnings:[], operatorHint:null, categoryHint:null, source:'ai' },
-  { name:'那覇空港', time:'09:00', desc:'到着、ゆいレールで移動', locationText:'那覇空港', lat:26.196, lng:127.646, transport:'ゆいレール', type:'train_local', price:'', confidence:0.9, warnings:[], operatorHint:'Yui Rail', categoryHint:null, source:'ai' },
-  { name:'国際通り', time:'11:00', desc:'タコス🌮', locationText:'国際通り 那覇', lat:26.216, lng:127.688, transport:'徒歩', type:'walk', price:'', confidence:0.7, warnings:['複数の候補地あり'], operatorHint:null, categoryHint:null, source:'ai' },
-  { name:'美ら海水族館', time:'14:00', desc:'ジンベイザメ🐠 約2時間', locationText:'沖縄美ら海水族館', lat:26.694, lng:127.878, transport:'バス', type:'bus_local', price:'¥2,000', confidence:0.95, warnings:[], operatorHint:null, categoryHint:null, source:'ai' },
-  { name:'名護ホテル', time:'18:00', desc:'チェックイン', locationText:'名護市', lat:null, lng:null, transport:'', type:'stay', price:'', confidence:0.5, warnings:['ホテル名不明'], operatorHint:null, categoryHint:null, source:'ai' }
-];
 
 function parseRawStops(rawText) {
   var text = rawText;
@@ -648,12 +646,25 @@ function redoDraft() {
   openAiInput();
 }
 
+function showAiError(msg) {
+  var el = document.getElementById('aiErrorMsg');
+  if (!el) {
+    el = document.createElement('p');
+    el.id = 'aiErrorMsg';
+    el.style.cssText = 'margin-top:12px;font-size:12px;color:#a33;line-height:1.5;white-space:pre-line;';
+    document.querySelector('#aiInputScreen .draft-panel').appendChild(el);
+  }
+  el.textContent = msg;
+  el.hidden = !msg;
+}
+
 async function handleGenerateDraft() {
   var prompt = document.getElementById('aiPromptInput').value.trim();
   if (!prompt) {
-    window.alert('旅のイメージを入力してください。');
+    showAiError('旅のイメージを入力してください。');
     return;
   }
+  showAiError('');
   document.getElementById('aiGenerating').hidden = false;
   document.getElementById('aiGenerateBtn').disabled = true;
   try {
@@ -661,7 +672,21 @@ async function handleGenerateDraft() {
     renderDraftPreview();
     showScreen('draftPreview');
   } catch (err) {
-    window.alert('生成に失敗しました: ' + (err.message || 'Unknown error'));
+    var t = err.type || '';
+    var msg;
+    if (t === 'rate_limited') {
+      var wait = err.retryAfter ? '（' + err.retryAfter + '秒後に再試行できます）' : '';
+      msg = 'リクエスト上限に達しました。しばらく待ってから試してください。' + wait;
+    } else if (t === 'validation_error') {
+      msg = '入力内容に問題があります: ' + (err.message || '');
+    } else if (t === 'timeout') {
+      msg = '生成がタイムアウトしました。混雑している可能性があります。';
+    } else if (t === 'provider_error') {
+      msg = 'AI APIでエラーが発生しました。しばらく待ってから試してください。';
+    } else {
+      msg = '生成に失敗しました。' + (err.message || '');
+    }
+    showAiError(msg + '\n手動で旅程を作成する場合は「New Trip」をご利用ください。');
   } finally {
     document.getElementById('aiGenerating').hidden = true;
     document.getElementById('aiGenerateBtn').disabled = false;
