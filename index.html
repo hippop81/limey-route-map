@@ -54,6 +54,52 @@ body{font-family:var(--font-body);background:var(--cream);color:var(--primary);h
 .trips-footer-inner{max-width:480px;margin:0 auto;}
 .btn-new-trip{width:100%;padding:12px;border-radius:var(--radius);border:1.5px solid var(--peacock);background:var(--white);color:var(--peacock);cursor:pointer;font-family:var(--font-body);font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;transition:all var(--dur) var(--ease);}
 .btn-new-trip:hover{background:var(--peacock);color:#fff;}
+.btn-ai-trip{width:100%;padding:12px;border-radius:var(--radius);border:1.5px solid var(--lime);background:var(--soft-lime);color:#556b00;cursor:pointer;font-family:var(--font-body);font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;transition:all var(--dur) var(--ease);margin-bottom:10px;}
+.btn-ai-trip:hover{background:var(--lime);color:var(--primary);}
+.trips-footer-inner .btn-row{display:flex;flex-direction:column;gap:0;}
+
+/* ── AI Draft flow (Phase 1.5A) ── */
+#aiInputScreen,#draftPreviewScreen{flex-direction:column;background:var(--cream);}
+.draft-header{padding:28px 24px 20px;background:var(--white);border-bottom:1px solid var(--warm-gray);}
+.draft-header .back-link{display:inline-flex;align-items:center;border:none;background:transparent;color:var(--peacock);cursor:pointer;font-family:var(--font-body);font-size:11px;font-weight:600;letter-spacing:.04em;padding:0 0 10px;margin:0;}
+.draft-header .back-link:hover{color:var(--primary);}
+.draft-title{font-family:var(--font-head);font-size:22px;font-weight:700;color:var(--primary);}
+.draft-body{flex:1;overflow-y:auto;padding:20px 24px;}
+.draft-panel{max-width:520px;margin:0 auto;width:100%;}
+.draft-textarea{width:100%;min-height:140px;padding:14px;border:1px solid var(--warm-gray);border-radius:var(--radius);background:var(--white);font-family:var(--font-body);font-size:14px;line-height:1.6;color:var(--primary);resize:vertical;}
+.draft-textarea:focus{outline:none;border-color:var(--peacock);box-shadow:0 0 0 3px rgba(0,122,138,.12);}
+.draft-textarea::placeholder{color:var(--secondary);}
+.draft-generating{display:flex;flex-direction:column;align-items:center;gap:12px;padding:48px 0;color:var(--secondary);font-size:13px;}
+.draft-footer{padding:16px 24px 24px;background:var(--white);border-top:1px solid var(--warm-gray);}
+.draft-footer-inner{max-width:520px;margin:0 auto;display:flex;gap:10px;}
+.btn-draft-primary{flex:1;padding:12px;border-radius:var(--radius);border:1.5px solid var(--lime);background:var(--lime);color:var(--primary);cursor:pointer;font-family:var(--font-body);font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;}
+.btn-draft-primary:hover{background:#b8d942;}
+.btn-draft-primary:disabled{opacity:.5;cursor:not-allowed;}
+.btn-draft-secondary{flex:1;padding:12px;border-radius:var(--radius);border:1.5px solid var(--warm-gray);background:var(--white);color:var(--secondary);cursor:pointer;font-family:var(--font-body);font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;}
+.btn-draft-secondary:hover{border-color:var(--primary);color:var(--primary);}
+.draft-card-list{display:flex;flex-direction:column;gap:12px;}
+.draft-card{background:var(--white);border:1px solid var(--warm-gray);border-radius:var(--radius);padding:14px;box-shadow:0 1px 3px rgba(0,0,0,.04);}
+.draft-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:10px;}
+.draft-card-index{font-family:var(--font-head);font-size:11px;font-weight:700;color:var(--peacock);min-width:24px;}
+.draft-card-badges{display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-end;}
+.draft-badge{font-size:9px;font-weight:600;padding:2px 7px;border-radius:20px;white-space:nowrap;}
+.draft-badge-warn{background:rgba(255,193,7,.15);color:#8a6d00;border:1px solid rgba(255,193,7,.35);}
+.draft-badge-error{background:rgba(220,53,69,.1);color:#a33;border:1px solid rgba(220,53,69,.25);}
+.draft-badge-loc{background:rgba(0,122,138,.08);color:var(--peacock);border:1px solid rgba(0,122,138,.2);}
+.draft-field{margin-bottom:8px;}
+.draft-field label{display:block;font-size:9px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--secondary);margin-bottom:3px;}
+.draft-field input,.draft-field textarea,.draft-field select{width:100%;padding:7px 9px;border:1px solid var(--light-gray);border-radius:6px;font-family:var(--font-body);font-size:12px;color:var(--primary);background:var(--white);}
+.draft-field input:focus,.draft-field textarea:focus,.draft-field select:focus{outline:none;border-color:var(--peacock);}
+.draft-field textarea{min-height:52px;resize:vertical;line-height:1.5;}
+.draft-field-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.draft-card-actions{display:flex;gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid var(--light-gray);}
+.draft-icon-btn{width:32px;height:32px;border:1px solid var(--warm-gray);border-radius:6px;background:var(--white);color:var(--secondary);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;}
+.draft-icon-btn:hover{border-color:var(--peacock);color:var(--peacock);}
+.draft-icon-btn:disabled{opacity:.35;cursor:not-allowed;}
+.draft-icon-btn.draft-delete{margin-left:auto;color:#a33;border-color:#fcc;}
+.draft-icon-btn.draft-delete:hover{background:#fff5f5;}
+.draft-location{font-size:10px;color:var(--secondary);margin-top:4px;}
+.draft-warnings-box{margin-bottom:16px;padding:12px 14px;background:var(--soft-lime);border:1px solid rgba(197,232,74,.5);border-radius:var(--radius);font-size:11px;color:#556b00;line-height:1.5;}
 
 /* ── Map screen (unchanged layout) ── */
 #mapScreen{overflow:hidden;}
@@ -161,8 +207,56 @@ body.shared-view .back-btn,body.shared-view #mapSaveStatus,body.shared-view #sha
     <div class="trips-error" id="tripsError" hidden></div>
   </div>
   <footer class="trips-footer">
-    <div class="trips-footer-inner">
+    <div class="trips-footer-inner btn-row">
+      <button class="btn-ai-trip" type="button" onclick="openAiInput()">+ AI で旅程を作る</button>
       <button class="btn-new-trip" type="button" onclick="handleNewTrip()">New Trip</button>
+    </div>
+  </footer>
+</div>
+
+<!-- AI input screen -->
+<div id="aiInputScreen" class="screen">
+  <header class="draft-header">
+    <button class="back-link" type="button" onclick="showScreen('trips')">&#8592; My Trips</button>
+    <div class="eyebrow">AI Draft</div>
+    <h1 class="draft-title">旅程を<span class="title-accent">生成</span></h1>
+  </header>
+  <div class="draft-body">
+    <div class="draft-panel">
+      <div class="draft-field">
+        <label for="aiPromptInput">旅のイメージ</label>
+        <textarea id="aiPromptInput" class="draft-textarea" placeholder="例：羽田から沖縄へ。国際通りでタコス、美ら海、名護泊"></textarea>
+      </div>
+      <div class="draft-generating" id="aiGenerating" hidden>
+        <div class="shared-loading-spinner" aria-hidden="true"></div>
+        <span>生成中…</span>
+      </div>
+    </div>
+  </div>
+  <footer class="draft-footer">
+    <div class="draft-footer-inner">
+      <button class="btn-draft-primary" id="aiGenerateBtn" type="button" onclick="handleGenerateDraft()">生成する</button>
+    </div>
+  </footer>
+</div>
+
+<!-- DraftStop preview editor -->
+<div id="draftPreviewScreen" class="screen">
+  <header class="draft-header">
+    <button class="back-link" type="button" onclick="openAiInput()">&#8592; 入力に戻る</button>
+    <div class="eyebrow">Preview</div>
+    <h1 class="draft-title">下書き<span class="title-accent">確認</span></h1>
+  </header>
+  <div class="draft-body">
+    <div class="draft-panel">
+      <div class="draft-warnings-box" id="draftWarningsBox" hidden></div>
+      <div class="draft-card-list" id="draftCardList"></div>
+    </div>
+  </div>
+  <footer class="draft-footer">
+    <div class="draft-footer-inner">
+      <button class="btn-draft-secondary" type="button" onclick="redoDraft()">やり直す</button>
+      <button class="btn-draft-primary" type="button" onclick="saveDraftTrip()">この旅程を保存</button>
     </div>
   </footer>
 </div>
@@ -439,6 +533,263 @@ function renderTransitConnector(estimate) {
     '<div class="transit-label">&#8595; ' + estimate.emoji + ' ' + escapeHtml(estimate.text) + '</div></div>';
 }
 
+/* ── DraftStop Preview Editor (Phase 1.5A) ── */
+var draftStops = [];
+var aiPromptText = '';
+
+var DRAFT_TRANSPORT_TYPES = [
+  'bus_local', 'bus_express', 'shuttle', 'train_local', 'train_limited',
+  'shinkansen', 'ferry', 'walk', 'plane', 'stay', 'tour', 'unknown'
+];
+
+var MOCK_DRAFT_STOPS = [
+  { name:'羽田空港', time:'06:00', desc:'出発✈️', locationText:'羽田空港', lat:35.549, lng:139.779, transport:'飛行機', type:'plane', price:'', confidence:0.95, warnings:[], operatorHint:null, categoryHint:null, source:'ai' },
+  { name:'那覇空港', time:'09:00', desc:'到着、ゆいレールで移動', locationText:'那覇空港', lat:26.196, lng:127.646, transport:'ゆいレール', type:'train_local', price:'', confidence:0.9, warnings:[], operatorHint:'Yui Rail', categoryHint:null, source:'ai' },
+  { name:'国際通り', time:'11:00', desc:'タコス🌮', locationText:'国際通り 那覇', lat:26.216, lng:127.688, transport:'徒歩', type:'walk', price:'', confidence:0.7, warnings:['複数の候補地あり'], operatorHint:null, categoryHint:null, source:'ai' },
+  { name:'美ら海水族館', time:'14:00', desc:'ジンベイザメ🐠 約2時間', locationText:'沖縄美ら海水族館', lat:26.694, lng:127.878, transport:'バス', type:'bus_local', price:'¥2,000', confidence:0.95, warnings:[], operatorHint:null, categoryHint:null, source:'ai' },
+  { name:'名護ホテル', time:'18:00', desc:'チェックイン', locationText:'名護市', lat:null, lng:null, transport:'', type:'stay', price:'', confidence:0.5, warnings:['ホテル名不明'], operatorHint:null, categoryHint:null, source:'ai' }
+];
+
+function generateDraftStops(prompt) {
+  aiPromptText = prompt || '';
+  return new Promise(function(resolve) {
+    setTimeout(function() {
+      resolve(JSON.parse(JSON.stringify(MOCK_DRAFT_STOPS)));
+    }, 1500);
+  });
+}
+
+function openAiInput() {
+  showScreen('aiInput');
+  document.getElementById('aiGenerating').hidden = true;
+  document.getElementById('aiGenerateBtn').disabled = false;
+}
+
+function redoDraft() {
+  draftStops = [];
+  openAiInput();
+}
+
+async function handleGenerateDraft() {
+  var prompt = document.getElementById('aiPromptInput').value.trim();
+  if (!prompt) {
+    window.alert('旅のイメージを入力してください。');
+    return;
+  }
+  document.getElementById('aiGenerating').hidden = false;
+  document.getElementById('aiGenerateBtn').disabled = true;
+  try {
+    draftStops = await generateDraftStops(prompt);
+    renderDraftPreview();
+    showScreen('draftPreview');
+  } catch (err) {
+    window.alert('生成に失敗しました: ' + (err.message || 'Unknown error'));
+  } finally {
+    document.getElementById('aiGenerating').hidden = true;
+    document.getElementById('aiGenerateBtn').disabled = false;
+  }
+}
+
+function getConfidenceBadgeHtml(confidence) {
+  if (confidence >= 0.8) return '';
+  if (confidence >= 0.5) return '<span class="draft-badge draft-badge-warn">🟡 要確認</span>';
+  return '<span class="draft-badge draft-badge-error">🔴 要修正</span>';
+}
+
+function getLocationBadgeHtml(draft) {
+  if (draft.lat != null && draft.lng != null) return '';
+  return '<span class="draft-badge draft-badge-loc">📍 要位置設定</span>';
+}
+
+function renderTypeOptions(selected) {
+  var html = '';
+  for (var i = 0; i < DRAFT_TRANSPORT_TYPES.length; i++) {
+    var t = DRAFT_TRANSPORT_TYPES[i];
+    html += '<option value="' + t + '"' + (t === selected ? ' selected' : '') + '>' + t + '</option>';
+  }
+  return html;
+}
+
+function renderDraftPreview() {
+  var listEl = document.getElementById('draftCardList');
+  var warnings = getDraftWarnings(draftStops);
+  var warnBox = document.getElementById('draftWarningsBox');
+  if (warnings.length) {
+    warnBox.hidden = false;
+    warnBox.textContent = warnings.join(' / ');
+  } else {
+    warnBox.hidden = true;
+  }
+
+  var html = '';
+  for (var i = 0; i < draftStops.length; i++) {
+    var d = draftStops[i];
+    html += '<article class="draft-card" data-draft-idx="' + i + '">';
+    html += '<div class="draft-card-head"><span class="draft-card-index">#' + (i + 1) + '</span>';
+    html += '<div class="draft-card-badges">' + getConfidenceBadgeHtml(d.confidence) + getLocationBadgeHtml(d) + '</div></div>';
+    html += '<div class="draft-field"><label>名前</label><input type="text" data-field="name" value="' + escapeHtml(d.name) + '"></div>';
+    html += '<div class="draft-field-row">';
+    html += '<div class="draft-field"><label>時刻</label><input type="text" data-field="time" value="' + escapeHtml(d.time || '') + '" placeholder="09:00"></div>';
+    html += '<div class="draft-field"><label>交通</label><input type="text" data-field="transport" value="' + escapeHtml(d.transport || '') + '"></div>';
+    html += '</div>';
+    html += '<div class="draft-field"><label>説明</label><textarea data-field="desc">' + escapeHtml(d.desc) + '</textarea></div>';
+    html += '<div class="draft-field"><label>タイプ</label><select data-field="type">' + renderTypeOptions(d.type) + '</select></div>';
+    html += '<div class="draft-location">📍 ' + escapeHtml(d.locationText || '') + '</div>';
+    html += '<div class="draft-card-actions">';
+    html += '<button type="button" class="draft-icon-btn" onclick="moveDraftStop(' + i + ',-1)"' + (i === 0 ? ' disabled' : '') + ' title="上へ">↑</button>';
+    html += '<button type="button" class="draft-icon-btn" onclick="moveDraftStop(' + i + ',1)"' + (i === draftStops.length - 1 ? ' disabled' : '') + ' title="下へ">↓</button>';
+    html += '<button type="button" class="draft-icon-btn draft-delete" onclick="deleteDraftStop(' + i + ')" title="削除">&#128465;</button>';
+    html += '</div></article>';
+  }
+  listEl.innerHTML = html;
+
+  listEl.querySelectorAll('.draft-card').forEach(function(card) {
+    var idx = parseInt(card.getAttribute('data-draft-idx'), 10);
+    card.querySelectorAll('[data-field]').forEach(function(el) {
+      var field = el.getAttribute('data-field');
+      var eventName = el.tagName === 'SELECT' ? 'change' : 'input';
+      el.addEventListener(eventName, function() {
+        if (field === 'time') draftStops[idx].time = el.value || null;
+        else draftStops[idx][field] = el.value;
+      });
+    });
+  });
+}
+
+function moveDraftStop(index, direction) {
+  var target = index + direction;
+  if (target < 0 || target >= draftStops.length) return;
+  var tmp = draftStops[index];
+  draftStops[index] = draftStops[target];
+  draftStops[target] = tmp;
+  renderDraftPreview();
+}
+
+function deleteDraftStop(index) {
+  if (!window.confirm('このストップを削除しますか？')) return;
+  draftStops.splice(index, 1);
+  renderDraftPreview();
+}
+
+function validateDraftStops(drafts) {
+  var errors = [];
+  if (!drafts || !drafts.length) errors.push('少なくとも1つのストップが必要です。');
+  for (var i = 0; i < (drafts || []).length; i++) {
+    if (!drafts[i].name || !String(drafts[i].name).trim()) {
+      errors.push('ストップ #' + (i + 1) + ' に名前がありません。');
+    }
+  }
+  return errors;
+}
+
+function getDraftWarnings(drafts) {
+  var warnings = [];
+  if (!drafts || !drafts.length) return warnings;
+  var lowConf = 0;
+  var missingLoc = 0;
+  for (var i = 0; i < drafts.length; i++) {
+    if (drafts[i].confidence < 0.5) lowConf++;
+    if (drafts[i].lat == null || drafts[i].lng == null) missingLoc++;
+  }
+  if (lowConf > 0) warnings.push(lowConf + ' 件のストップは信頼度が低いです（要修正）');
+  if (missingLoc / drafts.length > 0.3) {
+    warnings.push(Math.round(100 * missingLoc / drafts.length) + '% のストップに位置情報がありません');
+  }
+  return warnings;
+}
+
+function deriveTripTitleFromDraft(drafts, prompt) {
+  if (drafts && drafts.length && drafts[0].name) {
+    return drafts[0].name + 'の旅';
+  }
+  if (prompt && prompt.trim()) {
+    var short = prompt.trim().slice(0, 24);
+    return short + (prompt.length > 24 ? '…' : '');
+  }
+  return 'AI 旅程';
+}
+
+function draftStopsToRouteData(drafts, title) {
+  var stops = drafts.map(function(d) {
+    var transportType = d.type === 'unknown' ? 'walk' : d.type;
+    return {
+      name: d.name,
+      time: d.time || '',
+      memo: d.desc || '',
+      lat: d.lat,
+      lng: d.lng,
+      transport: transportType,
+      label: d.transport || '',
+      fare: d.price || '',
+      categories: d.categoryHint ? [d.categoryHint] : []
+    };
+  });
+  var center = [26.39, 127.82];
+  var zoom = 10;
+  for (var i = 0; i < stops.length; i++) {
+    if (stops[i].lat != null && stops[i].lng != null) {
+      center = [stops[i].lat, stops[i].lng];
+      break;
+    }
+  }
+  return {
+    schemaVersion: TripRepository.schemaVersion,
+    title: title,
+    trip: { title: title, subtitle: '', palette: 'tropical' },
+    days: [{
+      label: 'Day 1',
+      cost: '',
+      center: center,
+      zoom: zoom,
+      stops: stops
+    }]
+  };
+}
+
+async function saveDraftTrip() {
+  syncDraftFromDom();
+  var errors = validateDraftStops(draftStops);
+  if (errors.length) {
+    window.alert(errors.join('\n'));
+    return;
+  }
+  var warnings = getDraftWarnings(draftStops);
+  if (warnings.length) {
+    if (!window.confirm(warnings.join('\n') + '\n\nこのまま保存しますか？')) return;
+  }
+  var title = deriveTripTitleFromDraft(draftStops, aiPromptText);
+  try {
+    var result = await TripRepository.createTrip(title);
+    if (!result || !result.trip) throw new Error('Trip creation failed');
+    await switchTrip(result.trip.id, TripRepository._emptyRouteData(title), title);
+    mutateRoute(function(route) {
+      var built = draftStopsToRouteData(draftStops, title);
+      route.days = built.days;
+      route.trip = built.trip;
+      route.title = built.title;
+      route.schemaVersion = built.schemaVersion;
+    }, { render: true });
+    draftStops = [];
+    await refreshTripsList();
+    setTimeout(function() { if (map) map.invalidateSize(); }, 50);
+  } catch (err) {
+    window.alert('保存に失敗しました: ' + (err.message || 'Unknown error'));
+  }
+}
+
+function syncDraftFromDom() {
+  var cards = document.querySelectorAll('#draftCardList .draft-card');
+  cards.forEach(function(card) {
+    var idx = parseInt(card.getAttribute('data-draft-idx'), 10);
+    if (isNaN(idx) || !draftStops[idx]) return;
+    card.querySelectorAll('[data-field]').forEach(function(el) {
+      var field = el.getAttribute('data-field');
+      if (field === 'time') draftStops[idx].time = el.value || null;
+      else draftStops[idx][field] = el.value;
+    });
+  });
+}
+
 function isDirty() {
   if (!currentRoute) return false;
   return JSON.stringify(currentRoute) !== savedSnapshot;
@@ -679,6 +1030,8 @@ function showScreen(name) {
   document.getElementById('tripsScreen').classList.toggle('active', name === 'trips');
   document.getElementById('mapScreen').classList.toggle('active', name === 'map');
   document.getElementById('sharedErrorScreen').classList.toggle('active', name === 'sharedError');
+  document.getElementById('aiInputScreen').classList.toggle('active', name === 'aiInput');
+  document.getElementById('draftPreviewScreen').classList.toggle('active', name === 'draftPreview');
 }
 
 function getSharedTripIdFromUrl() {
