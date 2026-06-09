@@ -552,13 +552,89 @@ var MOCK_DRAFT_STOPS = [
   { name:'名護ホテル', time:'18:00', desc:'チェックイン', locationText:'名護市', lat:null, lng:null, transport:'', type:'stay', price:'', confidence:0.5, warnings:['ホテル名不明'], operatorHint:null, categoryHint:null, source:'ai' }
 ];
 
-function generateDraftStops(prompt) {
-  aiPromptText = prompt || '';
-  return new Promise(function(resolve) {
-    setTimeout(function() {
-      resolve(JSON.parse(JSON.stringify(MOCK_DRAFT_STOPS)));
-    }, 1500);
+function parseRawStops(rawText) {
+  var text = rawText;
+  var fj = text.match(/```json\s*([\s\S]*?)```/i);
+  if (fj) text = fj[1].trim();
+  else {
+    var f = text.match(/```\s*([\s\S]*?)```/);
+    if (f) text = f[1].trim();
+    else {
+      var fo = text.indexOf('{'), lo = text.lastIndexOf('}');
+      if (fo !== -1 && lo > fo) text = text.slice(fo, lo + 1).trim();
+    }
+  }
+  try {
+    var parsed = JSON.parse(text);
+    var stops = Array.isArray(parsed) ? parsed
+      : Array.isArray(parsed.stops) ? parsed.stops
+      : [];
+    return stops.map(function(s) {
+      return {
+        name:         s.name        || '',
+        time:         s.time        || '',
+        desc:         s.activity    || '',
+        locationText: s.name        || '',
+        lat:          null,
+        lng:          null,
+        transport:    s.transport   || 'walk',
+        type:         s.transport   || 'walk',
+        price:        '',
+        confidence:   typeof s.confidence === 'number' ? s.confidence : 0.8,
+        warnings:     [],
+        operatorHint: s.operatorHint || null,
+        categoryHint: (s.categories && s.categories[0]) || null,
+        source:       'ai'
+      };
+    });
+  } catch (e) {
+    console.warn('[Limey] parseRawStops failed:', e);
+    return [];
+  }
+}
+
+async function callEdgeFn(prompt) {
+  var resp = await fetch(EDGE_FN_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
+    },
+    body: JSON.stringify({ prompt: prompt })
   });
+  var data = await resp.json().catch(function() { return {}; });
+  if (!resp.ok) {
+    var errType = (data && data.error) || 'unknown_error';
+    var err = new Error(data.message || errType);
+    err.type = errType;
+    err.retryAfter = data.retryAfter || null;
+    err.status = resp.status;
+    throw err;
+  }
+  var stops = parseRawStops(data.rawText || '');
+  return { stops: stops };
+}
+
+async function generateDraftStops(prompt) {
+  aiPromptText = prompt || '';
+  var lastErr = null;
+  for (var attempt = 0; attempt <= AI_MAX_RETRY; attempt++) {
+    try {
+      var data = await callEdgeFn(prompt);
+      if (!data || !Array.isArray(data.stops)) throw new Error('invalid_response');
+      return data.stops;
+    } catch (err) {
+      lastErr = err;
+      var t = err.type || '';
+      var shouldRetry = (t === 'timeout' || t === 'provider_error') && attempt < AI_MAX_RETRY;
+      if (shouldRetry) {
+        await new Promise(function(r) { setTimeout(r, AI_RETRY_DELAY_MS); });
+        continue;
+      }
+      throw err;
+    }
+  }
+  throw lastErr;
 }
 
 function openAiInput() {
