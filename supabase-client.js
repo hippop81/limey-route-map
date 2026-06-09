@@ -29,11 +29,11 @@
     };
   }
 
-  function isConfigured(config) {
-    return !!(config && config.url && config.anonKey &&
-      config.url !== DEFAULT_CONFIG.url &&
-      config.anonKey !== DEFAULT_CONFIG.anonKey);
-  }
+function isConfigured(config) {
+  return !!(config && config.url && config.anonKey &&
+    config.url.startsWith('https://') &&
+    config.anonKey.length > 20);
+}
 
   function getSupabaseFactory() {
     return global.supabase && typeof global.supabase.createClient === 'function'
