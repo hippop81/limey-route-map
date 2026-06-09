@@ -16,9 +16,52 @@
   --radius:8px;--ease:cubic-bezier(0.25,0.8,0.25,1);--dur:220ms;
 }
 *{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:var(--font-body);background:var(--cream);color:var(--primary);height:100vh;display:flex;overflow:hidden;-webkit-font-smoothing:antialiased;}
+body{font-family:var(--font-body);background:var(--cream);color:var(--primary);height:100vh;overflow:hidden;-webkit-font-smoothing:antialiased;}
+.screen{display:none;height:100vh;}
+.screen.active{display:flex;}
+#mapScreen.active{flex:1;}
+
+/* ── My Trips screen ── */
+#tripsScreen{flex-direction:column;background:var(--cream);}
+.trips-header{padding:28px 24px 20px;background:var(--white);border-bottom:1px solid var(--warm-gray);}
+.trips-header .eyebrow{font-size:9px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--peacock);display:flex;align-items:center;gap:6px;margin-bottom:5px;}
+.trips-header .eyebrow::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--lime);flex-shrink:0;}
+.trips-title{font-family:var(--font-head);font-size:24px;font-weight:700;color:var(--primary);}
+.trips-title-accent{background:var(--lime);padding:0 6px 2px;border-radius:3px;}
+.trips-body{flex:1;overflow-y:auto;padding:20px 24px 12px;}
+.trips-list{display:flex;flex-direction:column;gap:12px;max-width:480px;margin:0 auto;width:100%;}
+.trip-card{display:flex;align-items:center;gap:14px;padding:14px 16px;background:var(--white);border:1px solid var(--warm-gray);border-radius:var(--radius);box-shadow:0 1px 3px rgba(0,0,0,.04);cursor:pointer;transition:all var(--dur) var(--ease);position:relative;}
+.trip-card:hover,.trip-card:focus-visible{border-color:var(--peacock);box-shadow:0 4px 14px rgba(0,122,138,.12);transform:translateY(-1px);outline:none;}
+.trip-card-emoji{font-size:28px;line-height:1;flex-shrink:0;width:36px;text-align:center;}
+.trip-card-body{flex:1;min-width:0;}
+.trip-card-title{font-family:var(--font-head);font-size:15px;font-weight:700;color:var(--primary);margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.trip-card-meta{font-size:11px;color:var(--secondary);line-height:1.5;}
+.trip-card-meta span{display:block;}
+.trip-card-delete{flex-shrink:0;width:32px;height:32px;border:none;background:transparent;color:var(--secondary);border-radius:var(--radius);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all var(--dur) var(--ease);opacity:0;}
+.trip-card:hover .trip-card-delete,.trip-card:focus-within .trip-card-delete{opacity:1;}
+.trip-card-delete:hover{background:rgba(0,0,0,.06);color:var(--primary);}
+.trip-card-sync{display:none;font-size:9px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--peacock);margin-top:2px;}
+.trips-skeleton{display:flex;flex-direction:column;gap:12px;max-width:480px;margin:0 auto;width:100%;}
+.skeleton-card{height:76px;background:linear-gradient(90deg,var(--light-gray) 25%,var(--white) 50%,var(--light-gray) 75%);background-size:200% 100%;animation:shimmer 1.2s ease-in-out infinite;border-radius:var(--radius);border:1px solid var(--warm-gray);}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.trips-empty{max-width:480px;margin:48px auto 0;text-align:center;padding:0 24px;}
+.trips-empty-title{font-family:var(--font-head);font-size:18px;font-weight:700;color:var(--primary);margin-bottom:8px;}
+.trips-empty-sub{font-size:13px;color:var(--secondary);margin-bottom:20px;}
+.trips-empty-cta{padding:11px 24px;border-radius:var(--radius);border:1.5px solid var(--peacock);background:var(--peacock);color:#fff;cursor:pointer;font-family:var(--font-body);font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;transition:all var(--dur) var(--ease);}
+.trips-empty-cta:hover{background:#006475;}
+.trips-error{max-width:480px;margin:24px auto;padding:14px 16px;background:#fff5f5;border:1px solid #fcc;border-radius:var(--radius);font-size:12px;color:#a33;text-align:center;}
+.trips-footer{padding:16px 24px 24px;background:var(--white);border-top:1px solid var(--warm-gray);}
+.trips-footer-inner{max-width:480px;margin:0 auto;}
+.btn-new-trip{width:100%;padding:12px;border-radius:var(--radius);border:1.5px solid var(--peacock);background:var(--white);color:var(--peacock);cursor:pointer;font-family:var(--font-body);font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;transition:all var(--dur) var(--ease);}
+.btn-new-trip:hover{background:var(--peacock);color:#fff;}
+
+/* ── Map screen (unchanged layout) ── */
+#mapScreen{overflow:hidden;}
 .sidebar{width:308px;min-width:308px;background:var(--cream);border-right:1px solid var(--warm-gray);display:flex;flex-direction:column;overflow:hidden;}
 .sidebar-header{padding:18px 18px 14px;border-bottom:1px solid var(--warm-gray);background:var(--white);}
+.back-btn{display:inline-flex;align-items:center;gap:4px;border:none;background:transparent;color:var(--peacock);cursor:pointer;font-family:var(--font-body);font-size:11px;font-weight:600;letter-spacing:.04em;padding:0 0 10px;margin:0;transition:color var(--dur) var(--ease);}
+.back-btn:hover{color:var(--primary);}
+.map-save-status{display:none;font-size:9px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--secondary);margin-top:4px;}
 .eyebrow{font-size:9px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--peacock);display:flex;align-items:center;gap:6px;margin-bottom:5px;}
 .eyebrow::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--lime);flex-shrink:0;}
 .app-title{font-family:var(--font-head);font-size:20px;font-weight:700;color:var(--primary);}
@@ -71,27 +114,67 @@ body{font-family:var(--font-body);background:var(--cream);color:var(--primary);h
 </style>
 </head>
 <body>
-<div class="sidebar">
-  <div class="sidebar-header">
-    <div class="eyebrow">Okinawa June 2026</div>
-    <div class="app-title"><span class="title-accent">ROUTE</span> MAP</div>
-  </div>
-  <div class="day-tabs">
-    <button class="day-tab active" onclick="switchDay(0)">Day 1<br><span style="font-size:9px;font-weight:400;letter-spacing:.01em;text-transform:none">名護・北谷タコス旅</span></button>
-    <button class="day-tab" onclick="switchDay(1)">Day 2<br><span style="font-size:9px;font-weight:400;letter-spacing:.01em;text-transform:none">首里・コザ・ライブ</span></button>
-    <button class="day-tab" onclick="switchDay(2)">Day 3<br><span style="font-size:9px;font-weight:400;letter-spacing:.01em;text-transform:none">hippopバス・帰京</span></button>
-  </div>
-  <div class="timeline" id="timeline"></div>
-  <div class="cost-bar" id="costBar"></div>
-  <div class="controls">
-    <button class="btn btn-play" id="playBtn" onclick="togglePlay()">&#9654; Play</button>
-    <button class="btn btn-reset" onclick="resetAnim()">&#8635; Reset</button>
-  </div>
-</div>
-<div id="map"></div>
 
+<!-- My Trips screen -->
+<div id="tripsScreen" class="screen active">
+  <header class="trips-header">
+    <div class="eyebrow">Limey Route Replay</div>
+    <h1 class="trips-title"><span class="trips-title-accent">My</span> Trips</h1>
+  </header>
+  <div class="trips-body" id="tripsBody">
+    <div class="trips-skeleton" id="tripsLoading">
+      <div class="skeleton-card"></div>
+      <div class="skeleton-card"></div>
+      <div class="skeleton-card"></div>
+    </div>
+    <div class="trips-list" id="tripsList" hidden></div>
+    <div class="trips-empty" id="tripsEmpty" hidden>
+      <div class="trips-empty-title">No trips yet</div>
+      <div class="trips-empty-sub">Create your first trip</div>
+      <button class="trips-empty-cta" type="button" onclick="handleNewTrip()">Create your first trip</button>
+    </div>
+    <div class="trips-error" id="tripsError" hidden></div>
+  </div>
+  <footer class="trips-footer">
+    <div class="trips-footer-inner">
+      <button class="btn-new-trip" type="button" onclick="handleNewTrip()">New Trip</button>
+    </div>
+  </footer>
+</div>
+
+<!-- Map / replay screen -->
+<div id="mapScreen" class="screen">
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <button class="back-btn" type="button" onclick="goToTrips()">&#8592; My Trips</button>
+      <div class="eyebrow" id="mapEyebrow">Trip</div>
+      <div class="app-title"><span class="title-accent">ROUTE</span> MAP</div>
+      <div class="map-save-status" id="mapSaveStatus" data-save-state="saved">Saved</div>
+    </div>
+    <div class="day-tabs" id="dayTabs"></div>
+    <div class="timeline" id="timeline"></div>
+    <div class="cost-bar" id="costBar"></div>
+    <div class="controls">
+      <button class="btn btn-play" id="playBtn" onclick="togglePlay()">&#9654; Play</button>
+      <button class="btn btn-reset" onclick="resetAnim()">&#8635; Reset</button>
+    </div>
+  </div>
+  <div id="map"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="./supabase-client.js"></script>
+<script src="./trip-repository.js"></script>
 <script>
-var DAYS=[
+/* ── Trip Manager (Phase 3.1+) ── */
+var currentTripId = null;
+var currentTripTitle = '';
+var currentRoute = null;
+var savedSnapshot = '';
+var saveDebounceTimer = null;
+var AUTOSAVE_DEBOUNCE_MS = 1000;
+
+var DEFAULT_DAYS = [
   {
     label:'Day 1',cost:'交通費 ¥1,000（ゆいレール）+ YKB ¥1,600 + 120番',
     center:[26.39,127.82],zoom:10,
@@ -145,53 +228,425 @@ var DAYS=[
   }
 ];
 
-var PEACOCK='#007A8A',LIME='#C5E84A';
-var map=L.map('map',{zoomControl:true,attributionControl:false});
-L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19}).addTo(map);
-L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png',{maxZoom:19,opacity:.85}).addTo(map);
+var DAYS = [];
 
+function escapeHtml(str) {
+  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function startOfDay(d) {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
+
+function formatRelativeDate(isoString) {
+  if (!isoString) return '';
+  var date = new Date(isoString);
+  if (isNaN(date.getTime())) return '';
+  var now = new Date();
+  var diff = Math.round((startOfDay(now) - startOfDay(date)) / 86400000);
+  if (diff <= 0) return 'Today';
+  if (diff === 1) return 'Yesterday';
+  if (diff < 7) return diff + ' days ago';
+  if (diff < 14) return '1 week ago';
+  if (diff < 30) return Math.floor(diff / 7) + ' weeks ago';
+  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function extractEmoji(title, routeData) {
+  var emojiMatch = String(title || '').match(/\p{Extended_Pictographic}/u);
+  if (emojiMatch) return emojiMatch[0];
+  if (routeData && routeData.trip && routeData.trip.emoji) return routeData.trip.emoji;
+  return '✈️';
+}
+
+function stripLeadingEmoji(title) {
+  return String(title || '').replace(/^\p{Extended_Pictographic}\s*/u, '').trim() || 'Untitled Trip';
+}
+
+function countStops(routeData) {
+  if (!routeData || !routeData.days) return 0;
+  var days = Array.isArray(routeData.days) ? routeData.days : Object.values(routeData.days);
+  var total = 0;
+  for (var i = 0; i < days.length; i++) {
+    if (days[i] && days[i].stops) total += days[i].stops.length;
+  }
+  return total;
+}
+
+var TRANSPORT_BADGE = {
+  bus_express:'bus', bus_local:'bus', train_local:'train', shinkansen:'train',
+  shuttle:'bus', ferry:'bus', walk:'walk', plane:'plane', stay:'stay', tour:'tour',
+  hippop:'tour'
+};
+
+function transportToBadge(transport) {
+  if (!transport) return 'walk';
+  if (TRANSPORT_BADGE[transport]) return TRANSPORT_BADGE[transport];
+  var t = String(transport).toLowerCase();
+  if (/plane|air|flight|搭乗/.test(t)) return 'plane';
+  if (/train|レール|rail|mono/.test(t)) return 'train';
+  if (/walk|徒歩/.test(t)) return 'walk';
+  if (/tour|hippop|バスツアー/.test(t)) return 'tour';
+  if (/stay|ホテル|到着/.test(t)) return 'stay';
+  return 'bus';
+}
+
+function isDirty() {
+  if (!currentRoute) return false;
+  return JSON.stringify(currentRoute) !== savedSnapshot;
+}
+
+function warnIfDirty() {
+  if (!isDirty()) return true;
+  return window.confirm('You have unsaved changes. Continue without saving?');
+}
+
+function getRouteTitle(routeData) {
+  if (!routeData) return '';
+  return routeData.title || (routeData.trip && routeData.trip.title) || '';
+}
+
+function normalizeRouteData(routeData, title) {
+  if (!routeData || routeData.days === undefined || routeData.days === null) {
+    return JSON.parse(JSON.stringify(TripRepository._emptyRouteData(title)));
+  }
+  return JSON.parse(JSON.stringify(routeData));
+}
+
+function updateSaveStatus(state) {
+  var el = document.getElementById('mapSaveStatus');
+  if (!el) return;
+  el.setAttribute('data-save-state', state);
+}
+
+function notifyRouteChanged() {
+  if (!currentTripId || !currentRoute) return;
+  updateSaveStatus('pending');
+  scheduleAutoSave();
+}
+
+function scheduleAutoSave() {
+  clearTimeout(saveDebounceTimer);
+  saveDebounceTimer = setTimeout(function() {
+    if (!currentTripId || !currentRoute || !isDirty()) return;
+    saveTrip(currentTripId, currentRoute);
+  }, AUTOSAVE_DEBOUNCE_MS);
+}
+
+async function saveTrip(tripId, snapshot) {
+  await TripRepository._createTripVersion(tripId, snapshot);
+  if (tripId === currentTripId) {
+    savedSnapshot = JSON.stringify(snapshot);
+    updateSaveStatus('saved');
+  }
+}
+
+function routeDataToDays(routeData) {
+  if (!routeData || !routeData.days) return JSON.parse(JSON.stringify(DEFAULT_DAYS));
+  var raw = routeData.days;
+  var daysArray = Array.isArray(raw)
+    ? raw
+    : Object.keys(raw).sort(function(a, b) {
+        var na = parseInt(a, 10), nb = parseInt(b, 10);
+        if (!isNaN(na) && !isNaN(nb)) return na - nb;
+        return String(a).localeCompare(String(b));
+      }).map(function(k) { return raw[k]; });
+
+  if (!daysArray.length) {
+    return [{ label:'Day 1', cost:'', center:[26.39,127.82], zoom:10, stops:[] }];
+  }
+
+  return daysArray.map(function(day, idx) {
+    var stops = (day.stops || []).map(function(s) {
+      var transportLabel = s.label || s.transport || '';
+      if (typeof s.transport === 'string' && !s.label && s.transport.indexOf('_') === -1 && s.transport.length < 20) {
+        transportLabel = s.transport;
+      }
+      return {
+        name: s.name || '',
+        time: s.time || '',
+        desc: s.memo || s.desc || '',
+        transport: transportLabel,
+        type: transportToBadge(s.transport),
+        price: s.fare || s.price || '',
+        lat: s.lat,
+        lng: s.lng
+      };
+    });
+    return {
+      label: day.label || ('Day ' + (idx + 1)),
+      cost: day.cost || '',
+      center: day.center || [26.39, 127.82],
+      zoom: day.zoom || 10,
+      stops: stops
+    };
+  });
+}
+
+function showScreen(name) {
+  document.getElementById('tripsScreen').classList.toggle('active', name === 'trips');
+  document.getElementById('mapScreen').classList.toggle('active', name === 'map');
+}
+
+function setTripsLoading(loading) {
+  document.getElementById('tripsLoading').hidden = !loading;
+  if (loading) {
+    document.getElementById('tripsList').hidden = true;
+    document.getElementById('tripsEmpty').hidden = true;
+    document.getElementById('tripsError').hidden = true;
+  }
+}
+
+async function enrichTrip(trip) {
+  var routeData = null;
+  try {
+    routeData = await TripRepository.loadTrip(trip.id);
+  } catch (err) { /* stop count falls back to 0 */ }
+  return {
+    id: trip.id,
+    title: trip.title,
+    updated_at: trip.updated_at || trip.created_at,
+    stopCount: countStops(routeData),
+    emoji: extractEmoji(trip.title, routeData)
+  };
+}
+
+function renderTripCard(trip) {
+  var card = document.createElement('article');
+  card.className = 'trip-card';
+  card.tabIndex = 0;
+  card.setAttribute('role', 'button');
+  card.setAttribute('data-trip-id', trip.id);
+  card.innerHTML =
+    '<div class="trip-card-emoji" aria-hidden="true">' + escapeHtml(trip.emoji) + '</div>' +
+    '<div class="trip-card-body">' +
+      '<div class="trip-card-title">' + escapeHtml(stripLeadingEmoji(trip.title)) + '</div>' +
+      '<div class="trip-card-meta">' +
+        '<span>' + trip.stopCount + ' stop' + (trip.stopCount === 1 ? '' : 's') + '</span>' +
+        '<span>Updated ' + escapeHtml(formatRelativeDate(trip.updated_at)) + '</span>' +
+        '<span class="trip-card-sync" data-sync-state="idle"></span>' +
+      '</div>' +
+    '</div>' +
+    '<button class="trip-card-delete" type="button" aria-label="Delete trip" title="Delete trip">&#128465;</button>';
+
+  card.addEventListener('click', function() { openTrip(trip.id, trip.title); });
+  card.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openTrip(trip.id, trip.title); }
+  });
+  card.querySelector('.trip-card-delete').addEventListener('click', function(e) {
+    e.stopPropagation();
+    handleDeleteTrip(trip.id);
+  });
+  return card;
+}
+
+async function refreshTripsList() {
+  setTripsLoading(true);
+  document.getElementById('tripsError').hidden = true;
+  try {
+    var trips = await TripRepository.listTrips();
+    var enriched = await Promise.all(trips.map(enrichTrip));
+    setTripsLoading(false);
+    var listEl = document.getElementById('tripsList');
+    listEl.innerHTML = '';
+    if (!enriched.length) {
+      listEl.hidden = true;
+      document.getElementById('tripsEmpty').hidden = false;
+      return;
+    }
+    document.getElementById('tripsEmpty').hidden = true;
+    listEl.hidden = false;
+    enriched.forEach(function(trip) { listEl.appendChild(renderTripCard(trip)); });
+  } catch (err) {
+    setTripsLoading(false);
+    document.getElementById('tripsList').hidden = true;
+    document.getElementById('tripsEmpty').hidden = true;
+    var errEl = document.getElementById('tripsError');
+    errEl.textContent = 'Could not load trips. ' + (err.message || 'Please try again.');
+    errEl.hidden = false;
+  }
+}
+
+async function handleNewTrip() {
+  var title = window.prompt('Trip title');
+  if (title === null) return;
+  title = title.trim() || 'Untitled Trip';
+  try {
+    var result = await TripRepository.createTrip(title);
+    await refreshTripsList();
+    if (result && result.trip) openTrip(result.trip.id, result.trip.title);
+  } catch (err) {
+    window.alert('Could not create trip: ' + (err.message || 'Unknown error'));
+  }
+}
+
+async function handleDeleteTrip(tripId) {
+  if (!window.confirm('Delete this trip?')) return;
+  try {
+    await TripRepository.deleteTrip(tripId);
+    if (currentTripId === tripId) {
+      stopReplay();
+      clearRouteLayers();
+      clearTimeout(saveDebounceTimer);
+      currentTripId = null;
+      currentRoute = null;
+      savedSnapshot = '';
+      showScreen('trips');
+    }
+    await refreshTripsList();
+  } catch (err) {
+    window.alert('Could not delete trip: ' + (err.message || 'Unknown error'));
+  }
+}
+
+function goToTrips() {
+  stopReplay();
+  if (!warnIfDirty()) return;
+  clearRouteLayers();
+  clearTimeout(saveDebounceTimer);
+  currentTripId = null;
+  currentRoute = null;
+  savedSnapshot = '';
+  showScreen('trips');
+  refreshTripsList();
+}
+
+async function openTrip(tripId, tripTitle) {
+  try {
+    var routeData = await TripRepository.loadTrip(tripId);
+    if (!switchTrip(tripId, routeData, tripTitle)) return;
+    setTimeout(function() { if (map) map.invalidateSize(); }, 50);
+  } catch (err) {
+    window.alert('Could not load trip: ' + (err.message || 'Unknown error'));
+  }
+}
+
+function switchTrip(tripId, routeData, tripTitle) {
+  stopReplay();
+  if (!warnIfDirty()) return false;
+
+  clearRouteLayers();
+
+  currentTripId = tripId;
+  currentRoute = normalizeRouteData(routeData, tripTitle);
+  currentTripTitle = tripTitle || getRouteTitle(currentRoute) || 'Trip';
+
+  currentDay = 0;
+  currentStop = -1;
+
+  savedSnapshot = JSON.stringify(currentRoute);
+  DAYS = routeDataToDays(currentRoute);
+  document.getElementById('mapEyebrow').textContent = stripLeadingEmoji(currentTripTitle);
+  updateSaveStatus('saved');
+
+  showScreen('map');
+  ensureMap();
+  render();
+  return true;
+}
+
+function initApp() {
+  showScreen('trips');
+  refreshTripsList();
+}
+
+/* ── Map / replay engine ── */
+var PEACOCK='#007A8A',LIME='#C5E84A';
+var map=null, mapReady=false, routeLayer=null;
 var currentDay=0,currentStop=-1,playing=false,playTimer=null;
-var mapMarkers=[],mapLines=[];
+var mapMarkers=[];
+
+function stopReplay() {
+  clearInterval(playTimer);
+  playTimer = null;
+  playing = false;
+  currentStop = -1;
+  var btn = document.getElementById('playBtn');
+  if (btn) {
+    btn.innerHTML = '&#9654; Play';
+    btn.classList.remove('playing');
+  }
+}
+
+function clearRouteLayers() {
+  if (map) map.closePopup();
+  if (routeLayer) routeLayer.clearLayers();
+  mapMarkers = [];
+}
+
+function render() {
+  renderDayTabs();
+  renderTimeline();
+  renderMap();
+}
+
+function ensureMap() {
+  if (mapReady) return;
+  map=L.map('map',{zoomControl:true,attributionControl:false});
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19}).addTo(map);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png',{maxZoom:19,opacity:.85}).addTo(map);
+  routeLayer = L.layerGroup().addTo(map);
+  mapReady=true;
+}
+
+function renderDayTabs() {
+  var tabs = document.getElementById('dayTabs');
+  var html = '';
+  for (var i = 0; i < DAYS.length; i++) {
+    var d = DAYS[i];
+    var sub = escapeHtml(d.label || ('Day ' + (i + 1)));
+    html += '<button class="day-tab' + (i === currentDay ? ' active' : '') + '" onclick="switchDay(' + i + ')">Day ' + (i + 1) +
+      '<br><span style="font-size:9px;font-weight:400;letter-spacing:.01em;text-transform:none">' + sub + '</span></button>';
+  }
+  tabs.innerHTML = html;
+}
 
 function makeIcon(s,active){
   if(active){return L.divIcon({className:'',html:'<div style="width:34px;height:34px;background:'+LIME+';border:2.5px solid #222;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 4px rgba(197,232,74,.3),0 3px 10px rgba(0,0,0,.3)"><div style="width:10px;height:10px;background:#222;border-radius:50%"></div></div>',iconSize:[34,34],iconAnchor:[17,17],popupAnchor:[0,-17]});}
-  return L.divIcon({className:'',html:'<div style="width:22px;height:22px;background:#fff;border:2px solid '+PEACOCK+';border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.2)"><div style="width:7px;height:7px;background:'+PEACOCK+';border-radius:50%"></div></div>',iconSize:[22,22],iconAnchor:[11,11],popupAnchor:[0,-11]});
+  return L.divIcon({className:'',html:'<div style="width:22px;height:22px;background:#fff;border:2.5px solid '+PEACOCK+';border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.2)"><div style="width:7px;height:7px;background:'+PEACOCK+';border-radius:50%"></div></div>',iconSize:[22,22],iconAnchor:[11,11],popupAnchor:[0,-11]});
 }
 
 function renderTimeline(){
   var d=DAYS[currentDay];
+  if (!d) {
+    document.getElementById('timeline').innerHTML = '<div style="padding:16px;text-align:center;color:var(--secondary);font-size:12px">No stops in this day</div>';
+    document.getElementById('costBar').innerHTML = '';
+    return;
+  }
   var html='';
   for(var i=0;i<d.stops.length;i++){
     var s=d.stops[i];
     var isActive=i===currentStop;
     var hasT=s.transport&&s.transport!=='到着';
     var tHtml='';
-    if(hasT){tHtml='<div class="transport-row"><span class="badge b-'+s.type+'">'+s.transport+'</span>'+(s.price?'<span class="price-tag">'+s.price+'</span>':'')+'</div>';}
+    if(hasT){tHtml='<div class="transport-row"><span class="badge b-'+s.type+'">'+escapeHtml(s.transport)+'</span>'+(s.price?'<span class="price-tag">'+escapeHtml(s.price)+'</span>':'')+'</div>';}
     html+='<div class="stop-row'+(isActive?' active':'')+'" onclick="jumpTo('+i+')" id="sr'+i+'">';
     html+='<div class="stop-spine"><div class="stop-dot"></div>'+(i<d.stops.length-1?'<div class="stop-seg"></div>':'')+'</div>';
-    html+='<div style="flex:1"><div class="stop-card"><div class="stop-time">'+s.time+'</div><div class="stop-name">'+s.name+'</div><div class="stop-desc">'+s.desc+'</div>'+tHtml+'</div></div></div>';
+    html+='<div style="flex:1"><div class="stop-card"><div class="stop-time">'+escapeHtml(s.time)+'</div><div class="stop-name">'+escapeHtml(s.name)+'</div><div class="stop-desc">'+escapeHtml(s.desc)+'</div>'+tHtml+'</div></div></div>';
   }
   document.getElementById('timeline').innerHTML=html;
-  document.getElementById('costBar').innerHTML='<span class="cost-label">交通費メモ</span><span class="cost-num">'+d.cost+'</span>';
+  document.getElementById('costBar').innerHTML='<span class="cost-label">交通費メモ</span><span class="cost-num">'+escapeHtml(d.cost)+'</span>';
 }
 
 function renderMap(){
-  for(var i=0;i<mapMarkers.length;i++)map.removeLayer(mapMarkers[i]);
-  for(var i=0;i<mapLines.length;i++)map.removeLayer(mapLines[i]);
-  mapMarkers=[];mapLines=[];
+  if (!map || !routeLayer) return;
+  routeLayer.clearLayers();
+  mapMarkers=[];
   var d=DAYS[currentDay];
+  if (!d) return;
   var ll=[];
   for(var i=0;i<d.stops.length;i++)if(d.stops[i].lat)ll.push([d.stops[i].lat,d.stops[i].lng]);
-  if(ll.length>1)mapLines.push(L.polyline(ll,{color:PEACOCK,weight:2.5,opacity:.6,dashArray:'8 5'}).addTo(map));
+  if(ll.length>1)routeLayer.addLayer(L.polyline(ll,{color:PEACOCK,weight:2.5,opacity:.6,dashArray:'8 5'}));
   for(var i=0;i<d.stops.length;i++){
     (function(idx){
       var s=d.stops[idx];
       if(!s.lat)return;
-      var m=L.marker([s.lat,s.lng],{icon:makeIcon(s,idx===currentStop)}).addTo(map);
+      var m=L.marker([s.lat,s.lng],{icon:makeIcon(s,idx===currentStop)});
       var hasT=s.transport&&s.transport!=='到着';
-      var tHtml=hasT?'<div style="margin-top:5px"><span style="font-size:9px;font-weight:600;padding:2px 7px;border-radius:20px;background:rgba(0,122,138,.1);color:'+PEACOCK+';border:1px solid rgba(0,122,138,.3)">'+s.transport+'</span>'+(s.price?'<span style="font-size:10px;font-weight:700;color:#222;margin-left:4px">'+s.price+'</span>':'')+'</div>':'';
-      m.bindPopup('<div style="font-family:Space Grotesk,sans-serif;min-width:155px"><div style="font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:'+PEACOCK+';margin-bottom:2px">'+s.time+'</div><div style="font-family:DM Sans,sans-serif;font-weight:700;font-size:13px;color:#222;margin-bottom:3px;line-height:1.3">'+s.name+'</div><div style="font-size:11px;color:#777;line-height:1.5">'+s.desc+'</div>'+tHtml+'</div>');
+      var tHtml=hasT?'<div style="margin-top:5px"><span style="font-size:9px;font-weight:600;padding:2px 7px;border-radius:20px;background:rgba(0,122,138,.1);color:'+PEACOCK+';border:1px solid rgba(0,122,138,.3)">'+escapeHtml(s.transport)+'</span>'+(s.price?'<span style="font-size:10px;font-weight:700;color:#222;margin-left:4px">'+escapeHtml(s.price)+'</span>':'')+'</div>':'';
+      m.bindPopup('<div style="font-family:Space Grotesk,sans-serif;min-width:155px"><div style="font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:'+PEACOCK+';margin-bottom:2px">'+escapeHtml(s.time)+'</div><div style="font-family:DM Sans,sans-serif;font-weight:700;font-size:13px;color:#222;margin-bottom:3px;line-height:1.3">'+escapeHtml(s.name)+'</div><div style="font-size:11px;color:#777;line-height:1.5">'+escapeHtml(s.desc)+'</div>'+tHtml+'</div>');
       m.on('click',function(){jumpTo(idx);});
+      routeLayer.addLayer(m);
       mapMarkers.push(m);
     })(i);
   }
@@ -201,6 +656,7 @@ function renderMap(){
 function jumpTo(i){
   currentStop=i;
   var d=DAYS[currentDay];
+  if (!d || !d.stops[i] || !d.stops[i].lat) return;
   for(var j=0;j<mapMarkers.length;j++)mapMarkers[j].setIcon(makeIcon(d.stops[j],j===i));
   map.flyTo([d.stops[i].lat,d.stops[i].lng],13,{duration:.7});
   mapMarkers[i].openPopup();
@@ -210,11 +666,11 @@ function jumpTo(i){
 }
 
 function switchDay(i){
-  currentDay=i;currentStop=-1;playing=false;clearInterval(playTimer);
-  document.getElementById('playBtn').innerHTML='&#9654; Play';
-  document.getElementById('playBtn').classList.remove('playing');
+  stopReplay();
+  currentDay=i;
   document.querySelectorAll('.day-tab').forEach(function(t,j){t.classList.toggle('active',j===i);});
-  renderTimeline();renderMap();
+  renderTimeline();
+  renderMap();
 }
 
 function togglePlay(){
@@ -237,16 +693,12 @@ function togglePlay(){
 }
 
 function resetAnim(){
-  clearInterval(playTimer);playing=false;currentStop=-1;
-  document.getElementById('playBtn').innerHTML='&#9654; Play';
-  document.getElementById('playBtn').classList.remove('playing');
-  renderTimeline();renderMap();
+  stopReplay();
+  renderTimeline();
+  renderMap();
 }
 
-switchDay(0);
+initApp();
 </script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="./supabase-client.js"></script>
-<script src="./trip-repository.js"></script>
 </body>
 </html>
