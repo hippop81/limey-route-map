@@ -166,10 +166,13 @@ body{font-family:var(--font-body);background:var(--cream);color:var(--primary);h
 <script src="./supabase-client.js"></script>
 <script src="./trip-repository.js"></script>
 <script>
-/* ── Trip Manager (Phase 3.1) ── */
+/* ── Trip Manager (Phase 3.1+) ── */
 var currentTripId = null;
 var currentTripTitle = '';
-var hasUnsavedEdits = false; // Phase 3.2: auto-save will toggle this
+var currentRoute = null;
+var savedSnapshot = '';
+var saveDebounceTimer = null;
+var AUTOSAVE_DEBOUNCE_MS = 1000;
 
 var DEFAULT_DAYS = [
   {
@@ -286,6 +289,56 @@ function transportToBadge(transport) {
   if (/tour|hippop|バスツアー/.test(t)) return 'tour';
   if (/stay|ホテル|到着/.test(t)) return 'stay';
   return 'bus';
+}
+
+function isDirty() {
+  if (!currentRoute) return false;
+  return JSON.stringify(currentRoute) !== savedSnapshot;
+}
+
+function warnIfDirty() {
+  if (!isDirty()) return true;
+  return window.confirm('You have unsaved changes. Continue without saving?');
+}
+
+function getRouteTitle(routeData) {
+  if (!routeData) return '';
+  return routeData.title || (routeData.trip && routeData.trip.title) || '';
+}
+
+function normalizeRouteData(routeData, title) {
+  if (!routeData || routeData.days === undefined || routeData.days === null) {
+    return JSON.parse(JSON.stringify(TripRepository._emptyRouteData(title)));
+  }
+  return JSON.parse(JSON.stringify(routeData));
+}
+
+function updateSaveStatus(state) {
+  var el = document.getElementById('mapSaveStatus');
+  if (!el) return;
+  el.setAttribute('data-save-state', state);
+}
+
+function notifyRouteChanged() {
+  if (!currentTripId || !currentRoute) return;
+  updateSaveStatus('pending');
+  scheduleAutoSave();
+}
+
+function scheduleAutoSave() {
+  clearTimeout(saveDebounceTimer);
+  saveDebounceTimer = setTimeout(function() {
+    if (!currentTripId || !currentRoute || !isDirty()) return;
+    saveTrip(currentTripId, currentRoute);
+  }, AUTOSAVE_DEBOUNCE_MS);
+}
+
+async function saveTrip(tripId, snapshot) {
+  await TripRepository._createTripVersion(tripId, snapshot);
+  if (tripId === currentTripId) {
+    savedSnapshot = JSON.stringify(snapshot);
+    updateSaveStatus('saved');
+  }
 }
 
 function routeDataToDays(routeData) {
@@ -432,8 +485,12 @@ async function handleDeleteTrip(tripId) {
   try {
     await TripRepository.deleteTrip(tripId);
     if (currentTripId === tripId) {
+      stopReplay();
+      clearRouteLayers();
+      clearTimeout(saveDebounceTimer);
       currentTripId = null;
-      hasUnsavedEdits = false;
+      currentRoute = null;
+      savedSnapshot = '';
       showScreen('trips');
     }
     await refreshTripsList();
@@ -443,10 +500,13 @@ async function handleDeleteTrip(tripId) {
 }
 
 function goToTrips() {
-  if (hasUnsavedEdits) {
-    if (!window.confirm('You have unsaved changes. Leave without saving?')) return;
-    hasUnsavedEdits = false;
-  }
+  stopReplay();
+  if (!warnIfDirty()) return;
+  clearRouteLayers();
+  clearTimeout(saveDebounceTimer);
+  currentTripId = null;
+  currentRoute = null;
+  savedSnapshot = '';
   showScreen('trips');
   refreshTripsList();
 }
@@ -454,19 +514,35 @@ function goToTrips() {
 async function openTrip(tripId, tripTitle) {
   try {
     var routeData = await TripRepository.loadTrip(tripId);
-    DAYS = routeDataToDays(routeData);
-    currentTripId = tripId;
-    currentTripTitle = tripTitle || (routeData && (routeData.title || (routeData.trip && routeData.trip.title))) || 'Trip';
-    hasUnsavedEdits = false;
-    document.getElementById('mapEyebrow').textContent = stripLeadingEmoji(currentTripTitle);
-    showScreen('map');
-    ensureMap();
-    renderDayTabs();
-    switchDay(0);
+    if (!switchTrip(tripId, routeData, tripTitle)) return;
     setTimeout(function() { if (map) map.invalidateSize(); }, 50);
   } catch (err) {
     window.alert('Could not load trip: ' + (err.message || 'Unknown error'));
   }
+}
+
+function switchTrip(tripId, routeData, tripTitle) {
+  stopReplay();
+  if (!warnIfDirty()) return false;
+
+  clearRouteLayers();
+
+  currentTripId = tripId;
+  currentRoute = normalizeRouteData(routeData, tripTitle);
+  currentTripTitle = tripTitle || getRouteTitle(currentRoute) || 'Trip';
+
+  currentDay = 0;
+  currentStop = -1;
+
+  savedSnapshot = JSON.stringify(currentRoute);
+  DAYS = routeDataToDays(currentRoute);
+  document.getElementById('mapEyebrow').textContent = stripLeadingEmoji(currentTripTitle);
+  updateSaveStatus('saved');
+
+  showScreen('map');
+  ensureMap();
+  render();
+  return true;
 }
 
 function initApp() {
@@ -474,17 +550,42 @@ function initApp() {
   refreshTripsList();
 }
 
-/* ── Map / replay engine (unchanged logic) ── */
+/* ── Map / replay engine ── */
 var PEACOCK='#007A8A',LIME='#C5E84A';
-var map=null, mapReady=false;
+var map=null, mapReady=false, routeLayer=null;
 var currentDay=0,currentStop=-1,playing=false,playTimer=null;
-var mapMarkers=[],mapLines=[];
+var mapMarkers=[];
+
+function stopReplay() {
+  clearInterval(playTimer);
+  playTimer = null;
+  playing = false;
+  currentStop = -1;
+  var btn = document.getElementById('playBtn');
+  if (btn) {
+    btn.innerHTML = '&#9654; Play';
+    btn.classList.remove('playing');
+  }
+}
+
+function clearRouteLayers() {
+  if (map) map.closePopup();
+  if (routeLayer) routeLayer.clearLayers();
+  mapMarkers = [];
+}
+
+function render() {
+  renderDayTabs();
+  renderTimeline();
+  renderMap();
+}
 
 function ensureMap() {
   if (mapReady) return;
   map=L.map('map',{zoomControl:true,attributionControl:false});
   L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19}).addTo(map);
   L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png',{maxZoom:19,opacity:.85}).addTo(map);
+  routeLayer = L.layerGroup().addTo(map);
   mapReady=true;
 }
 
@@ -528,24 +629,24 @@ function renderTimeline(){
 }
 
 function renderMap(){
-  if (!map) return;
-  for(var i=0;i<mapMarkers.length;i++)map.removeLayer(mapMarkers[i]);
-  for(var i=0;i<mapLines.length;i++)map.removeLayer(mapLines[i]);
-  mapMarkers=[];mapLines=[];
+  if (!map || !routeLayer) return;
+  routeLayer.clearLayers();
+  mapMarkers=[];
   var d=DAYS[currentDay];
   if (!d) return;
   var ll=[];
   for(var i=0;i<d.stops.length;i++)if(d.stops[i].lat)ll.push([d.stops[i].lat,d.stops[i].lng]);
-  if(ll.length>1)mapLines.push(L.polyline(ll,{color:PEACOCK,weight:2.5,opacity:.6,dashArray:'8 5'}).addTo(map));
+  if(ll.length>1)routeLayer.addLayer(L.polyline(ll,{color:PEACOCK,weight:2.5,opacity:.6,dashArray:'8 5'}));
   for(var i=0;i<d.stops.length;i++){
     (function(idx){
       var s=d.stops[idx];
       if(!s.lat)return;
-      var m=L.marker([s.lat,s.lng],{icon:makeIcon(s,idx===currentStop)}).addTo(map);
+      var m=L.marker([s.lat,s.lng],{icon:makeIcon(s,idx===currentStop)});
       var hasT=s.transport&&s.transport!=='到着';
       var tHtml=hasT?'<div style="margin-top:5px"><span style="font-size:9px;font-weight:600;padding:2px 7px;border-radius:20px;background:rgba(0,122,138,.1);color:'+PEACOCK+';border:1px solid rgba(0,122,138,.3)">'+escapeHtml(s.transport)+'</span>'+(s.price?'<span style="font-size:10px;font-weight:700;color:#222;margin-left:4px">'+escapeHtml(s.price)+'</span>':'')+'</div>':'';
       m.bindPopup('<div style="font-family:Space Grotesk,sans-serif;min-width:155px"><div style="font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:'+PEACOCK+';margin-bottom:2px">'+escapeHtml(s.time)+'</div><div style="font-family:DM Sans,sans-serif;font-weight:700;font-size:13px;color:#222;margin-bottom:3px;line-height:1.3">'+escapeHtml(s.name)+'</div><div style="font-size:11px;color:#777;line-height:1.5">'+escapeHtml(s.desc)+'</div>'+tHtml+'</div>');
       m.on('click',function(){jumpTo(idx);});
+      routeLayer.addLayer(m);
       mapMarkers.push(m);
     })(i);
   }
@@ -565,11 +666,11 @@ function jumpTo(i){
 }
 
 function switchDay(i){
-  currentDay=i;currentStop=-1;playing=false;clearInterval(playTimer);
-  document.getElementById('playBtn').innerHTML='&#9654; Play';
-  document.getElementById('playBtn').classList.remove('playing');
+  stopReplay();
+  currentDay=i;
   document.querySelectorAll('.day-tab').forEach(function(t,j){t.classList.toggle('active',j===i);});
-  renderTimeline();renderMap();
+  renderTimeline();
+  renderMap();
 }
 
 function togglePlay(){
@@ -592,10 +693,9 @@ function togglePlay(){
 }
 
 function resetAnim(){
-  clearInterval(playTimer);playing=false;currentStop=-1;
-  document.getElementById('playBtn').innerHTML='&#9654; Play';
-  document.getElementById('playBtn').classList.remove('playing');
-  renderTimeline();renderMap();
+  stopReplay();
+  renderTimeline();
+  renderMap();
 }
 
 initApp();
