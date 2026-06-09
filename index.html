@@ -83,6 +83,10 @@ body{font-family:var(--font-body);background:var(--cream);color:var(--primary);h
 .stop-dot{width:8px;height:8px;border-radius:50%;background:var(--warm-gray);flex-shrink:0;transition:all .2s;}
 .stop-row.active .stop-dot{background:var(--peacock);width:10px;height:10px;margin-left:-1px;box-shadow:0 0 0 3px rgba(0,122,138,.15);}
 .stop-seg{width:1px;flex:1;background:var(--warm-gray);min-height:12px;}
+.transit-gap{display:flex;gap:9px;margin:0 0 2px;}
+.transit-gap .stop-spine{padding-top:0;align-self:stretch;}
+.transit-gap .stop-seg{min-height:22px;margin-top:0;}
+.transit-label{font-size:10px;color:var(--secondary);line-height:1.4;padding:4px 0 8px;flex:1;}
 .stop-card{flex:1;padding:8px 10px;border:1px solid var(--light-gray);border-radius:var(--radius);margin-bottom:9px;background:var(--white);transition:all .2s var(--ease);}
 .stop-time{font-family:var(--font-head);font-size:10px;font-weight:600;letter-spacing:.04em;color:var(--secondary);margin-bottom:1px;}
 .stop-row.active .stop-time{color:var(--peacock);}
@@ -341,6 +345,100 @@ function transportToBadge(transport) {
   return 'bus';
 }
 
+/* ── Transit time estimates (Phase 2-B) ── */
+var TRANSIT_SPEED_M_PER_MIN = {
+  walk: 80,
+  bus_local: 250,
+  bus_express: 400,
+  shuttle: 300,
+  train_local: 500,
+  train_limited: 700,
+  shinkansen: 1200,
+  ferry: 150
+};
+
+var TRANSIT_EMOJI = {
+  walk: '🚶',
+  bus_local: '🚌',
+  bus_express: '🚌',
+  shuttle: '🚌',
+  train_local: '🚃',
+  train_limited: '🚃',
+  shinkansen: '🚄',
+  ferry: '⛴️',
+  plane: '✈️'
+};
+
+function haversine(lat1, lng1, lat2, lng2) {
+  var R = 6371;
+  var dLat = (lat2 - lat1) * Math.PI / 180;
+  var dLng = (lng2 - lng1) * Math.PI / 180;
+  var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function normalizeTransportMode(stop) {
+  if (!stop) return 'walk';
+  var raw = stop.transportMode != null ? stop.transportMode : (stop.transport || '');
+  if (TRANSIT_SPEED_M_PER_MIN[raw] || raw === 'plane' || raw === 'stay' || raw === 'tour') return raw;
+  var label = String(raw);
+  if (/plane|air|flight|搭乗|ソラシド|flight/i.test(label)) return 'plane';
+  if (/stay|ホテル|到着|チェックイン/i.test(label) && stop.type === 'stay') return 'stay';
+  if (/tour|hippop|バスツアー/i.test(label) || stop.type === 'tour') return 'tour';
+  if (/ferry|フェリー|船/i.test(label)) return 'ferry';
+  if (/新幹線|shinkansen/i.test(label)) return 'shinkansen';
+  if (/急行|limited/i.test(label)) return 'train_limited';
+  if (/walk|徒歩/i.test(label) || stop.type === 'walk') return 'walk';
+  if (/train|レール|rail|mono|ゆいレール/i.test(label) || stop.type === 'train') return 'train_local';
+  if (/シャトル|shuttle/i.test(label)) return 'shuttle';
+  if (/高速|express|急行|リムジン|highway|limousine/i.test(label)) return 'bus_express';
+  if (stop.type === 'bus') return 'bus_local';
+  if (stop.type === 'plane') return 'plane';
+  if (stop.type === 'stay') return 'stay';
+  if (stop.type === 'tour') return 'tour';
+  return 'walk';
+}
+
+function formatTransitDuration(minutes) {
+  var m = Math.max(1, Math.round(minutes));
+  if (m < 60) return '約' + m + '分';
+  var h = Math.floor(m / 60);
+  var rem = m % 60;
+  if (rem === 0) return '約' + h + '時間';
+  return '約' + h + '時間' + rem + '分';
+}
+
+function getTransitEstimate(stopA, stopB) {
+  if (!stopA || !stopB) return { visible: false };
+  if (stopA.lat == null || stopA.lng == null || stopB.lat == null || stopB.lng == null) {
+    return { visible: false };
+  }
+  var mode = normalizeTransportMode(stopB);
+  if (mode === 'stay' || mode === 'tour') return { visible: false };
+  if (mode === 'plane') {
+    return { visible: true, emoji: TRANSIT_EMOJI.plane, text: 'Flight' };
+  }
+  var speed = TRANSIT_SPEED_M_PER_MIN[mode];
+  if (!speed) return { visible: false };
+  var distKm = haversine(stopA.lat, stopA.lng, stopB.lat, stopB.lng);
+  var minutes = (distKm * 1000) / speed;
+  return {
+    visible: true,
+    emoji: TRANSIT_EMOJI[mode] || '🚌',
+    text: formatTransitDuration(minutes)
+  };
+}
+
+function renderTransitConnector(estimate) {
+  if (!estimate || !estimate.visible) {
+    return '<div class="transit-gap"><div class="stop-spine"><div class="stop-seg"></div></div><div class="transit-label"></div></div>';
+  }
+  return '<div class="transit-gap"><div class="stop-spine"><div class="stop-seg"></div></div>' +
+    '<div class="transit-label">&#8595; ' + estimate.emoji + ' ' + escapeHtml(estimate.text) + '</div></div>';
+}
+
 function isDirty() {
   if (!currentRoute) return false;
   return JSON.stringify(currentRoute) !== savedSnapshot;
@@ -560,6 +658,7 @@ function routeDataToDays(routeData) {
         time: s.time || '',
         desc: s.memo || s.desc || '',
         transport: transportLabel,
+        transportMode: s.transport || '',
         type: transportToBadge(s.transport),
         price: s.fare || s.price || '',
         lat: s.lat,
@@ -960,8 +1059,11 @@ function renderTimeline(){
     var tHtml='';
     if(hasT){tHtml='<div class="transport-row"><span class="badge b-'+s.type+'">'+escapeHtml(s.transport)+'</span>'+(s.price?'<span class="price-tag">'+escapeHtml(s.price)+'</span>':'')+'</div>';}
     html+='<div class="stop-row'+(isActive?' active':'')+'" onclick="jumpTo('+i+')" id="sr'+i+'">';
-    html+='<div class="stop-spine"><div class="stop-dot"></div>'+(i<d.stops.length-1?'<div class="stop-seg"></div>':'')+'</div>';
+    html+='<div class="stop-spine"><div class="stop-dot"></div></div>';
     html+='<div style="flex:1"><div class="stop-card"><div class="stop-time">'+escapeHtml(s.time)+'</div><div class="stop-name">'+escapeHtml(s.name)+'</div><div class="stop-desc">'+escapeHtml(s.desc)+'</div>'+tHtml+'</div></div></div>';
+    if (i < d.stops.length - 1) {
+      html += renderTransitConnector(getTransitEstimate(s, d.stops[i + 1]));
+    }
   }
   document.getElementById('timeline').innerHTML=html;
   document.getElementById('costBar').innerHTML='<span class="cost-label">交通費メモ</span><span class="cost-num">'+escapeHtml(d.cost)+'</span>';
