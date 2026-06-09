@@ -883,8 +883,6 @@ body {
   padding: 16px; padding-bottom: max(60px, env(safe-area-inset-bottom, 60px));
   -webkit-overflow-scrolling: touch;
 }
-.ai-key-row { margin-bottom: 14px; }
-.ai-key-hint { font-family: var(--font-body); font-size: 10px; color: var(--secondary); margin-top: 4px; }
 .ai-textarea {
   width: 100%; box-sizing: border-box;
   min-height: 120px; resize: vertical;
@@ -1323,12 +1321,6 @@ body {
       <button class="profile-ph-close" onclick="closeAIDraftModal()">閉じる</button>
     </div>
     <div class="ai-draft-body">
-
-      <div class="ai-key-row">
-        <label class="ep-lbl">Anthropic API Key</label>
-        <input class="ep-input" id="aiApiKey" type="password" placeholder="sk-ant-…" autocomplete="off" spellcheck="false">
-        <div class="ai-key-hint">🔒 このデバイスのみ保存 — 旅データには含まれません</div>
-      </div>
 
       <div>
         <label class="ep-lbl">旅程テキスト</label>
@@ -3858,56 +3850,8 @@ function closeSettings() {
 /* ─────────────────────────────────────────────────────────────
    AI 旅程生成 (P1.5)
    ─────────────────────────────────────────────────────────────*/
-var AI_SYSTEM_PROMPT = [
-  'You are a travel itinerary parser.',
-  'Extract stops from the user\'s input.',
-  '',
-  'Return valid JSON only.',
-  'No markdown. No explanations.',
-  '',
-  'Output format:',
-  '{',
-  '  "stops": [',
-  '    {',
-  '      "name": "羽田空港",',
-  '      "time": "06:00",',
-  '      "transport": "plane",',
-  '      "categories": [],',
-  '      "activity": "",',
-  '      "operatorHint": "",',
-  '      "isDayEnd": false,',
-  '      "confidence": 0.95,',
-  '      "inferred": false',
-  '    }',
-  '  ]',
-  '}',
-  '',
-  'Transport inference priority:',
-  '1. Explicit mention (「飛行機で」「ゆいレール」)',
-  '2. Known operator mapping (「ゆいレール」→ train_local)',
-  '3. Distance heuristic',
-  '4. Default → walk',
-  '',
-  'Valid transport values:',
-  'plane, ferry, shinkansen, train_limited, train_local,',
-  'bus_express, bus_local, shuttle, car, bike, walk',
-  '',
-  'Category inference (multiple allowed):',
-  '「食べる」「ランチ」「タコス」→ food',
-  '「カフェ」「コーヒー」→ cafe',
-  '「泊まる」「ホテル」「宿」→ stay (also set isDayEnd: true)',
-  '「ライブ」「コンサート」「観戦」→ event',
-  '「観光」「水族館」「公園」→ sightseeing',
-  '「神社」「仏閣」「城」「遺跡」→ heritage',
-  '「買い物」「ショッピング」→ shopping',
-  '「温泉」「サウナ」「銭湯」→ onsen',
-  '',
-  'isDayEnd: true when 「泊まる」「宿泊」「ホテル」「宿」or last stop of the day.',
-  '',
-  'Do NOT output shapeId.',
-  'Output operatorHint instead.',
-  '(例: 「ゆいレール」→ operatorHint: "Yui Rail")'
-].join('\n');
+/* ── Supabase Edge Function URL — replace YOUR_PROJECT_REF after deploy ── */
+var SUPABASE_EDGE_FN_URL = 'https://YOUR_PROJECT_REF.supabase.co/functions/v1/generate-draft-stops';
 
 var _draftStops  = [];   // working copy for preview
 var _aiAbortCtrl = null;
@@ -4031,8 +3975,6 @@ var TRANSPORT_LABEL = {
 };
 
 function openAIDraftModal() {
-  var stored = localStorage.getItem('limey_api_key') || '';
-  document.getElementById('aiApiKey').value = stored;
   document.getElementById('aiDraftPreview').style.display = 'none';
   document.getElementById('aiErrMsg').innerHTML = '';
   _draftStops = [];
@@ -4053,38 +3995,25 @@ function closeAIDraftModal() {
   document.getElementById('aiDraftModal').classList.remove('open');
 }
 
-/* Low-level Claude API call — returns raw text or throws */
-async function _callClaude(key, text) {
+/* Supabase Edge Function call — ANTHROPIC_API_KEY stored server-side */
+async function _callEdgeFunction(text) {
   _aiAbortCtrl = new AbortController();
-  var resp = await fetch('https://api.anthropic.com/v1/messages', {
+  var resp = await fetch(SUPABASE_EDGE_FN_URL, {
     method: 'POST',
-    headers: {
-      'Content-Type':                   'application/json',
-      'x-api-key':                      key,
-      'anthropic-version':              '2023-06-01',
-      'anthropic-dangerous-allow-cors': 'true'
-    },
-    body: JSON.stringify({
-      model:    'claude-haiku-4-5',
-      max_tokens: 2048,
-      system:   AI_SYSTEM_PROMPT,
-      messages: [{ role: 'user', content: text }]
-    }),
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt: text }),
     signal: _aiAbortCtrl.signal
   });
   if (!resp.ok) {
     var errData = await resp.json().catch(function(){ return {}; });
-    throw new Error((errData.error && errData.error.message) || ('HTTP ' + resp.status));
+    throw new Error((errData.error) || ('HTTP ' + resp.status));
   }
   var data = await resp.json();
-  return (data.content && data.content[0] && data.content[0].text) || '';
+  if (data.error) throw new Error(data.error);
+  return data.rawText || '';
 }
 
 async function generateDraftStops() {
-  var key  = document.getElementById('aiApiKey').value.trim();
-  if (!key) { _aiShowErr('Anthropic API Key を入力してください。'); return; }
-  localStorage.setItem('limey_api_key', key);
-
   var text = document.getElementById('aiTextarea').value.trim();
   if (!text) { _aiShowErr('旅程テキストを入力してください。'); return; }
 
@@ -4100,7 +4029,7 @@ async function generateDraftStops() {
 
     /* ─ attempt 1 ─ */
     try {
-      rawTxt      = await _callClaude(key, text);
+      rawTxt      = await _callEdgeFunction(text);
       parseResult = _parseJsonSafely(rawTxt);
     } catch(e1) {
       if (e1.name === 'AbortError') { return; }
@@ -4113,7 +4042,7 @@ async function generateDraftStops() {
       _aiRetryCount = 1;
       btn.textContent = '再試行中…';
       try {
-        rawTxt      = await _callClaude(key, text);
+        rawTxt      = await _callEdgeFunction(text);
         parseResult = _parseJsonSafely(rawTxt);
       } catch(e2) {
         if (e2.name === 'AbortError') { return; }
