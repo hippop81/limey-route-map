@@ -2,8 +2,8 @@
   'use strict';
 
   var DEFAULT_CONFIG = {
-    url: '[YOUR_SUPABASE_URL]',
-    anonKey: '[YOUR_ANON_KEY]'
+    url: 'https://vybjtfbfketpoabaxaib.supabase.co',
+    anonKey: 'sb_publishable_L3Vqy6WpyjxOEQSbhVPYzA_EWl44wnw'
   };
 
   var client = null;
