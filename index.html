@@ -107,6 +107,24 @@ body{font-family:var(--font-body);background:var(--cream);color:var(--primary);h
 .btn-play.playing{background:var(--white);border-color:var(--peacock);color:var(--peacock);}
 .btn-reset{background:transparent;border-color:var(--warm-gray);color:var(--secondary);}
 .btn-reset:hover{border-color:var(--primary);color:var(--primary);}
+.share-btn{display:inline-flex;align-items:center;margin-top:8px;padding:7px 14px;border-radius:var(--radius);border:1.5px solid var(--peacock);background:var(--white);color:var(--peacock);cursor:pointer;font-family:var(--font-body);font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;transition:all var(--dur) var(--ease);}
+.share-btn:hover{background:var(--peacock);color:#fff;}
+.share-btn.copied{background:var(--soft-lime);border-color:#556b00;color:#556b00;}
+#sharedErrorScreen{flex-direction:column;align-items:center;justify-content:center;background:var(--cream);padding:24px;}
+.shared-error-inner{max-width:400px;width:100%;text-align:center;padding:32px 24px;background:var(--white);border:1px solid var(--warm-gray);border-radius:var(--radius);box-shadow:0 2px 12px rgba(0,0,0,.06);}
+.shared-error-title{font-family:var(--font-head);font-size:20px;font-weight:700;color:var(--primary);margin-bottom:8px;}
+.shared-error-sub{font-size:13px;color:var(--secondary);margin-bottom:24px;line-height:1.5;}
+.shared-error-actions{display:flex;flex-direction:column;gap:10px;}
+.shared-error-btn{padding:11px 20px;border-radius:var(--radius);border:1.5px solid;font-family:var(--font-body);font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;transition:all var(--dur) var(--ease);}
+.shared-error-btn-primary{background:var(--peacock);border-color:var(--peacock);color:#fff;}
+.shared-error-btn-primary:hover{background:#006475;}
+.shared-error-btn-secondary{background:var(--white);border-color:var(--warm-gray);color:var(--secondary);}
+.shared-error-btn-secondary:hover{border-color:var(--primary);color:var(--primary);}
+.shared-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:48px;color:var(--secondary);font-size:13px;}
+.shared-loading-spinner{width:28px;height:28px;border:2px solid var(--warm-gray);border-top-color:var(--peacock);border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+body.shared-view .back-btn,body.shared-view #mapSaveStatus,body.shared-view #shareBtn{display:none!important;}
+#mapScreen .sidebar-header-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
 #map{flex:1;}
 .leaflet-container{background:#1a6a7a;}
 .leaflet-popup-content-wrapper{background:var(--white)!important;border-top:3px solid var(--peacock)!important;border-radius:var(--radius)!important;color:var(--primary)!important;box-shadow:0 4px 16px rgba(0,0,0,.18)!important;padding:0!important;}
@@ -145,13 +163,32 @@ body{font-family:var(--font-body);background:var(--cream);color:var(--primary);h
   </footer>
 </div>
 
+<!-- Shared trip error / loading -->
+<div id="sharedErrorScreen" class="screen">
+  <div class="shared-error-inner" id="sharedErrorPanel" hidden>
+    <div class="shared-error-title" id="sharedErrorTitle">Trip not found</div>
+    <div class="shared-error-sub" id="sharedErrorSub"></div>
+    <div class="shared-error-actions">
+      <button class="shared-error-btn shared-error-btn-secondary" type="button" id="sharedRetryBtn" hidden onclick="retrySharedTrip()">Retry</button>
+      <button class="shared-error-btn shared-error-btn-primary" type="button" onclick="exitSharedView()">Go to My Trips</button>
+    </div>
+  </div>
+  <div class="shared-loading" id="sharedLoading">
+    <div class="shared-loading-spinner" aria-hidden="true"></div>
+    <span>Loading trip…</span>
+  </div>
+</div>
+
 <!-- Map / replay screen -->
 <div id="mapScreen" class="screen">
   <div class="sidebar">
     <div class="sidebar-header">
-      <button class="back-btn" type="button" onclick="goToTrips()">&#8592; My Trips</button>
+      <button class="back-btn" id="backToTripsBtn" type="button" onclick="goToTrips()">&#8592; My Trips</button>
       <div class="eyebrow" id="mapEyebrow">Trip</div>
       <div class="app-title"><span class="title-accent">ROUTE</span> MAP</div>
+      <div class="sidebar-header-actions">
+        <button class="share-btn" id="shareBtn" type="button" onclick="handleShareTrip()">Share</button>
+      </div>
       <div class="map-save-status" id="mapSaveStatus" data-save-state="saved">Saved ✓</div>
     </div>
     <div class="day-tabs" id="dayTabs"></div>
@@ -170,6 +207,8 @@ body{font-family:var(--font-body);background:var(--cream);color:var(--primary);h
 <script src="./trip-repository.js"></script>
 <script>
 /* ── Trip Manager (Phase 3.1+) ── */
+var isSharedView = false;
+var sharedTripId = null;
 var currentTripId = null;
 var currentTripTitle = '';
 var currentRoute = null;
@@ -332,7 +371,7 @@ function cancelAutoSave() {
 }
 
 function notifyRouteChanged() {
-  if (suppressAutosave || !currentTripId || !currentRoute) return;
+  if (isSharedView || suppressAutosave || !currentTripId || !currentRoute) return;
   if (!isDirty()) return;
   updateSaveStatus('pending');
   scheduleAutoSave();
@@ -348,12 +387,14 @@ function scheduleAutoSave() {
 }
 
 async function flushPendingSave() {
+  if (isSharedView) return true;
   cancelAutoSave();
   if (!currentTripId || !currentRoute || !isDirty()) return true;
   return persistTrip(currentTripId, currentRoute);
 }
 
 async function persistTrip(tripId, snapshot) {
+  if (isSharedView) return true;
   // Update existing trip: TripRepository.saveTrip() creates new trips only;
   // version insert is the correct persist path without modifying TripRepository.
   if (saveInFlight) await saveInFlight;
@@ -406,7 +447,7 @@ function syncDaysFromRoute() {
 }
 
 function mutateRoute(mutator, options) {
-  if (!currentRoute) return;
+  if (isSharedView || !currentRoute) return;
   mutator(currentRoute);
   if (!options || options.syncDays !== false) syncDaysFromRoute();
   if (options && options.render) render();
@@ -414,6 +455,7 @@ function mutateRoute(mutator, options) {
 }
 
 function saveStop(dayIndex, stopIndex, patch) {
+  if (isSharedView) return;
   mutateRoute(function() {
     var days = getRouteDaysArray();
     var stop = days[dayIndex] && days[dayIndex].stops && days[dayIndex].stops[stopIndex];
@@ -424,6 +466,7 @@ function saveStop(dayIndex, stopIndex, patch) {
 }
 
 function moveStop(fromDay, fromIndex, toDay, toIndex) {
+  if (isSharedView) return;
   mutateRoute(function() {
     var days = getRouteDaysArray();
     if (!days[fromDay] || !days[toDay]) return;
@@ -436,6 +479,7 @@ function moveStop(fromDay, fromIndex, toDay, toIndex) {
 }
 
 function delStop(dayIndex, stopIndex) {
+  if (isSharedView) return;
   mutateRoute(function() {
     var days = getRouteDaysArray();
     if (!days[dayIndex]) return;
@@ -445,6 +489,7 @@ function delStop(dayIndex, stopIndex) {
 }
 
 function addStop(dayIndex, stop, atIndex) {
+  if (isSharedView) return;
   mutateRoute(function() {
     var days = getRouteDaysArray();
     if (!days[dayIndex]) return;
@@ -456,6 +501,7 @@ function addStop(dayIndex, stop, atIndex) {
 }
 
 function editDayLabel(dayIndex, label) {
+  if (isSharedView) return;
   mutateRoute(function() {
     var days = getRouteDaysArray();
     if (!days[dayIndex]) return;
@@ -465,6 +511,7 @@ function editDayLabel(dayIndex, label) {
 }
 
 function editDayCost(dayIndex, cost) {
+  if (isSharedView) return;
   mutateRoute(function() {
     var days = getRouteDaysArray();
     if (!days[dayIndex]) return;
@@ -532,6 +579,139 @@ function routeDataToDays(routeData) {
 function showScreen(name) {
   document.getElementById('tripsScreen').classList.toggle('active', name === 'trips');
   document.getElementById('mapScreen').classList.toggle('active', name === 'map');
+  document.getElementById('sharedErrorScreen').classList.toggle('active', name === 'sharedError');
+}
+
+function getSharedTripIdFromUrl() {
+  var params = new URLSearchParams(window.location.search);
+  var tripId = params.get('trip');
+  return tripId && String(tripId).trim() ? String(tripId).trim() : null;
+}
+
+function buildShareUrl(tripId) {
+  return window.location.origin + window.location.pathname + '?trip=' + encodeURIComponent(tripId);
+}
+
+function setSharedViewMode(on) {
+  isSharedView = !!on;
+  document.body.classList.toggle('shared-view', isSharedView);
+  if (!isSharedView) suppressAutosave = false;
+}
+
+function showSharedLoading() {
+  document.getElementById('sharedLoading').hidden = false;
+  document.getElementById('sharedErrorPanel').hidden = true;
+  showScreen('sharedError');
+}
+
+function showSharedError(kind) {
+  document.getElementById('sharedLoading').hidden = true;
+  document.getElementById('sharedErrorPanel').hidden = false;
+  var titleEl = document.getElementById('sharedErrorTitle');
+  var subEl = document.getElementById('sharedErrorSub');
+  var retryBtn = document.getElementById('sharedRetryBtn');
+  if (kind === 'fetch-failed') {
+    titleEl.textContent = 'Unable to load trip';
+    subEl.textContent = 'Check your connection and try again.';
+    retryBtn.hidden = false;
+  } else {
+    titleEl.textContent = 'Trip not found';
+    subEl.textContent = 'This link may be invalid or the trip was deleted.';
+    retryBtn.hidden = true;
+  }
+  showScreen('sharedError');
+}
+
+function loadSharedTrip(tripId, routeData) {
+  stopReplay();
+  cancelAutoSave();
+  suppressAutosave = true;
+  clearRouteLayers();
+  currentTripId = tripId;
+  currentRoute = normalizeRouteData(routeData, null);
+  currentTripTitle = getRouteTitle(currentRoute) || 'Shared Trip';
+  currentDay = 0;
+  currentStop = -1;
+  savedSnapshot = JSON.stringify(currentRoute);
+  DAYS = routeDataToDays(currentRoute);
+  document.getElementById('mapEyebrow').textContent = stripLeadingEmoji(currentTripTitle);
+  showScreen('map');
+  ensureMap();
+  render();
+  setTimeout(function() { if (map) map.invalidateSize(); }, 50);
+}
+
+async function enterSharedView(tripId) {
+  sharedTripId = tripId;
+  setSharedViewMode(true);
+  suppressAutosave = true;
+  cancelAutoSave();
+  showSharedLoading();
+  try {
+    var routeData = await TripRepository.loadTrip(tripId);
+    if (!routeData) {
+      showSharedError('not-found');
+      return;
+    }
+    loadSharedTrip(tripId, routeData);
+  } catch (err) {
+    console.error('[Limey] Shared trip load failed:', err);
+    showSharedError('fetch-failed');
+  }
+}
+
+function retrySharedTrip() {
+  if (sharedTripId) enterSharedView(sharedTripId);
+}
+
+function exitSharedView() {
+  stopReplay();
+  clearRouteLayers();
+  cancelAutoSave();
+  currentTripId = null;
+  currentRoute = null;
+  savedSnapshot = '';
+  sharedTripId = null;
+  setSharedViewMode(false);
+  var url = new URL(window.location.href);
+  url.searchParams.delete('trip');
+  window.history.replaceState({}, '', url.pathname + (url.search || ''));
+  showScreen('trips');
+  refreshTripsList();
+}
+
+async function handleShareTrip() {
+  if (!currentTripId || isSharedView) return;
+  var url = buildShareUrl(currentTripId);
+  var copied = false;
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(url);
+      copied = true;
+    }
+  } catch (err) { /* fallback below */ }
+  if (!copied) {
+    try {
+      var ta = document.createElement('textarea');
+      ta.value = url;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      copied = document.execCommand('copy');
+      document.body.removeChild(ta);
+    } catch (err2) { /* ignore */ }
+  }
+  var btn = document.getElementById('shareBtn');
+  if (btn && copied) {
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(function() {
+      btn.textContent = 'Share';
+      btn.classList.remove('copied');
+    }, 2000);
+  }
 }
 
 function setTripsLoading(loading) {
@@ -660,6 +840,7 @@ async function goToTrips() {
 
 async function openTrip(tripId, tripTitle) {
   try {
+    setSharedViewMode(false);
     var routeData = await TripRepository.loadTrip(tripId);
     if (!await switchTrip(tripId, routeData, tripTitle)) return;
     setTimeout(function() { if (map) map.invalidateSize(); }, 50);
@@ -698,6 +879,12 @@ async function switchTrip(tripId, routeData, tripTitle) {
 }
 
 function initApp() {
+  var tripId = getSharedTripIdFromUrl();
+  if (tripId) {
+    enterSharedView(tripId);
+    return;
+  }
+  setSharedViewMode(false);
   showScreen('trips');
   refreshTripsList();
 }
