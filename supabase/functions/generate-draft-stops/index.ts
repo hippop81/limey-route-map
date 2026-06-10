@@ -5,6 +5,7 @@ import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-
 const MAX_PROMPT_CHARS  = 3_000;
 const MAX_STOPS         = 100;
 const MAX_DAYS          = 14;
+const MAX_POIS          = 20;
 const RATE_PER_IP_HOUR  = 5;
 const RATE_GLOBAL_DAY   = 100;
 const TIMEOUT_MS        = 30_000;
@@ -60,6 +61,13 @@ Output operatorHint instead.
 (例: 「ゆいレール」→ operatorHint: "Yui Rail")`;
 
 // ── Types ──────────────────────────────────────────────────────────────────
+interface POI {
+  name:     string;
+  lat:      number;
+  lng:      number;
+  category: string | null;
+}
+
 type ErrorType =
   | "validation_error"
   | "rate_limited"
@@ -101,6 +109,39 @@ async function hashIp(ip: string): Promise<string> {
     .slice(0, 8)
     .map(b => b.toString(16).padStart(2, "0"))
     .join("");
+}
+
+/** Validates the optional `pois` field: array of {name, lat, lng, category} (max MAX_POIS). */
+function validatePois(value: unknown): POI[] | null {
+  if (value === undefined) return [];
+  if (!Array.isArray(value) || value.length > MAX_POIS) return null;
+
+  const pois: POI[] = [];
+  for (const item of value) {
+    if (!item || typeof item !== "object" || Array.isArray(item)) return null;
+    const o = item as Record<string, unknown>;
+    if (typeof o.name !== "string") return null;
+    if (typeof o.lat !== "number" || !isFinite(o.lat) || o.lat < -90 || o.lat > 90) return null;
+    if (typeof o.lng !== "number" || !isFinite(o.lng) || o.lng < -180 || o.lng > 180) return null;
+    if (o.category !== null && typeof o.category !== "string") return null;
+    pois.push({ name: o.name, lat: o.lat, lng: o.lng, category: o.category as string | null });
+  }
+  return pois;
+}
+
+/** Appends grounding context for matched POIs to the system prompt. */
+function buildSystemPrompt(pois: POI[]): string {
+  if (pois.length === 0) return SYSTEM_PROMPT;
+
+  const poiContext =
+    `\n\nKnown POIs (use these when matched):\n` +
+    JSON.stringify(pois.map(p => ({ name: p.name, lat: p.lat, lng: p.lng, category: p.category }))) +
+    `\nWhen a location matches a known POI:\n` +
+    `- Use provided lat/lng coordinates\n` +
+    `- Use provided category\n` +
+    `- Do not invent coordinates`;
+
+  return SYSTEM_PROMPT + poiContext;
 }
 
 /** Mirror of client-side _extractJsonText for output validation only. */
@@ -176,6 +217,7 @@ async function checkAndRecord(
 async function callAnthropic(
   apiKey: string,
   prompt: string,
+  systemPrompt: string,
   signal: AbortSignal,
 ): Promise<string> {
   let lastStatus = 0;
@@ -193,7 +235,7 @@ async function callAnthropic(
       body: JSON.stringify({
         model:      MODEL,
         max_tokens: 2048,
-        system:     SYSTEM_PROMPT,
+        system:     systemPrompt,
         messages:   [{ role: "user", content: prompt }],
       }),
       signal,
@@ -252,7 +294,7 @@ serve(async (req: Request) => {
       return json({ error: "validation_error", message: "Invalid JSON body" }, 400);
     }
 
-    const unknown = Object.keys(body).filter(k => k !== "prompt");
+    const unknown = Object.keys(body).filter(k => k !== "prompt" && k !== "pois");
     if (unknown.length > 0) {
       errorType = "validation_error";
       return json({ error: "validation_error", message: `Unknown fields: ${unknown.join(", ")}` }, 400);
@@ -268,6 +310,12 @@ serve(async (req: Request) => {
     if (prompt.length > MAX_PROMPT_CHARS) {
       errorType = "validation_error";
       return json({ error: "validation_error", message: `prompt exceeds ${MAX_PROMPT_CHARS} characters` }, 400);
+    }
+
+    const pois = validatePois(body.pois);
+    if (pois === null) {
+      errorType = "validation_error";
+      return json({ error: "validation_error", message: `pois must be an array of at most ${MAX_POIS} {name, lat, lng, category} objects` }, 400);
     }
 
     // ── Rate limiting ────────────────────────────────────────────────────
@@ -288,9 +336,11 @@ serve(async (req: Request) => {
     const abort   = new AbortController();
     const timeoutId = setTimeout(() => abort.abort(), TIMEOUT_MS);
 
+    const systemPrompt = buildSystemPrompt(pois);
+
     let rawText = "";
     try {
-      rawText = await callAnthropic(apiKey, prompt, abort.signal);
+      rawText = await callAnthropic(apiKey, prompt, systemPrompt, abort.signal);
     } catch (err) {
       clearTimeout(timeoutId);
       if ((err as Error).name === "AbortError") {
