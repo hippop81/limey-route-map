@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>沖縄遠征 ROUTE MAP — limey</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -14,6 +14,10 @@
   --light-gray:#EEEEEE;--white:#FFFFFF;
   --font-head:"DM Sans",sans-serif;--font-body:"Space Grotesk",sans-serif;
   --radius:8px;--ease:cubic-bezier(0.25,0.8,0.25,1);--dur:220ms;
+  --safe-top:env(safe-area-inset-top,0px);
+  --safe-bottom:env(safe-area-inset-bottom,0px);
+  --safe-left:env(safe-area-inset-left,0px);
+  --safe-right:env(safe-area-inset-right,0px);
 }
 *{margin:0;padding:0;box-sizing:border-box;}
 body{font-family:var(--font-body);background:var(--cream);color:var(--primary);height:100dvh;height:100vh;overflow:hidden;-webkit-font-smoothing:antialiased;}
@@ -107,7 +111,7 @@ body{font-family:var(--font-body);background:var(--cream);color:var(--primary);h
 .draft-warnings-box{margin-bottom:16px;padding:12px 14px;background:var(--soft-lime);border:1px solid rgba(197,232,74,.5);border-radius:var(--radius);font-size:11px;color:#556b00;line-height:1.5;}
 
 /* ── Map screen (unchanged layout) ── */
-#mapScreen{overflow:hidden;height:100dvh;height:100vh;}
+#mapScreen{overflow:hidden;height:100dvh;height:100vh;position:relative;}
 .sidebar{width:308px;min-width:308px;height:100dvh;height:100vh;max-height:100dvh;max-height:100vh;background:var(--cream);border-right:1px solid var(--warm-gray);display:flex;flex-direction:column;overflow:hidden;min-height:0;}
 .sidebar-header{flex-shrink:0;padding:18px 18px 14px;border-bottom:1px solid var(--warm-gray);background:var(--white);}
 .back-btn{display:inline-flex;align-items:center;gap:4px;border:none;background:transparent;color:var(--peacock);cursor:pointer;font-family:var(--font-body);font-size:11px;font-weight:600;letter-spacing:.04em;padding:0 0 10px;margin:0;transition:color var(--dur) var(--ease);}
@@ -187,6 +191,58 @@ body.shared-view .back-btn,body.shared-view #mapSaveStatus,body.shared-view #sha
 .leaflet-popup-tip{background:var(--white)!important;}
 .leaflet-popup-close-button{color:var(--secondary)!important;}
 .leaflet-control-zoom a{background:var(--white)!important;color:var(--primary)!important;border-color:var(--warm-gray)!important;border-radius:6px!important;}
+button,.btn,.share-btn,.day-tab,.trip-card,.stop-row,.draft-icon-btn,.back-btn,.back-link{touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
+.sheet-handle{display:none;}
+.day-swipe-hint{display:none;}
+.shared-readonly-banner{position:absolute;top:0;left:0;right:0;display:flex;align-items:center;justify-content:center;gap:8px;padding:8px 14px;padding-top:max(8px,var(--safe-top));background:rgba(0,122,138,.92);color:#fff;font-size:11px;font-weight:600;letter-spacing:.04em;z-index:600;pointer-events:none;}
+.shared-readonly-banner[hidden]{display:none!important;}
+.shared-readonly-icon{font-size:14px;line-height:1;}
+.app-toast{position:fixed;left:50%;bottom:max(24px,calc(16px + var(--safe-bottom)));transform:translateX(-50%) translateY(12px);padding:12px 20px;background:var(--primary);color:#fff;font-size:12px;font-weight:600;border-radius:999px;box-shadow:0 6px 24px rgba(0,0,0,.2);opacity:0;pointer-events:none;transition:opacity var(--dur) var(--ease),transform var(--dur) var(--ease);z-index:9000;max-width:calc(100vw - 32px);text-align:center;}
+.app-toast.visible{opacity:1;transform:translateX(-50%) translateY(0);}
+#mapScreen.active{flex-direction:row;}
+#map{order:2;}
+.sidebar{order:1;}
+@media (max-width:767px){
+.trips-header{padding-top:max(20px,var(--safe-top));padding-left:max(20px,var(--safe-left));padding-right:max(20px,var(--safe-right));}
+.trips-footer{padding-bottom:max(20px,var(--safe-bottom));padding-left:max(16px,var(--safe-left));padding-right:max(16px,var(--safe-right));}
+.trips-body{padding-left:max(16px,var(--safe-left));padding-right:max(16px,var(--safe-right));}
+.draft-header{padding-top:max(20px,var(--safe-top));padding-left:max(20px,var(--safe-left));padding-right:max(20px,var(--safe-right));}
+.draft-footer{padding-bottom:max(20px,var(--safe-bottom));padding-left:max(16px,var(--safe-left));padding-right:max(16px,var(--safe-right));}
+.draft-body{padding-left:max(16px,var(--safe-left));padding-right:max(16px,var(--safe-right));}
+.btn-new-trip,.btn-ai-trip,.btn-draft-primary,.btn-draft-secondary,.trips-empty-cta{min-height:48px;}
+.trip-card-delete{opacity:1;min-width:44px;min-height:44px;}
+.draft-card-head{flex-direction:column;align-items:stretch;}
+.draft-card-badges{justify-content:flex-start;width:100%;gap:6px;}
+.draft-badge-poi{white-space:normal;max-width:100%;line-height:1.4;text-align:left;}
+.draft-icon-btn{min-width:44px;min-height:44px;}
+.draft-card{padding:16px;}
+#mapScreen.active{flex-direction:column;position:relative;}
+#map{order:1;flex:1;min-height:0;width:100%;}
+.sidebar{order:2;position:absolute;left:0;right:0;bottom:0;width:100%;min-width:0;max-height:none;border-right:none;border-top:1px solid var(--warm-gray);border-radius:16px 16px 0 0;box-shadow:0 -6px 28px rgba(0,0,0,.14);z-index:500;transition:height var(--dur) var(--ease);}
+.sidebar.sheet-dragging{transition:none;}
+.sidebar[data-sheet="peek"]{height:calc(104px + var(--safe-bottom));}
+.sidebar[data-sheet="half"]{height:min(54dvh,520px);}
+.sidebar[data-sheet="full"]{height:min(88dvh,calc(100dvh - 48px - var(--safe-top)));}
+.sheet-handle{display:flex;align-items:center;justify-content:center;width:100%;padding:10px 0 6px;border:none;background:transparent;cursor:grab;touch-action:none;flex-shrink:0;}
+.sheet-handle:active{cursor:grabbing;}
+.sheet-handle-bar{width:40px;height:4px;border-radius:99px;background:var(--warm-gray);}
+.sidebar[data-sheet="peek"] .timeline,.sidebar[data-sheet="peek"] .cost-bar,.sidebar[data-sheet="peek"] .controls,.sidebar[data-sheet="peek"] .map-save-status{display:none;}
+.sidebar[data-sheet="peek"] .sidebar-header{padding:8px 16px 10px;}
+.sidebar[data-sheet="peek"] .back-btn{padding-bottom:4px;}
+.sidebar[data-sheet="peek"] .app-title{font-size:16px;}
+.sidebar-header-actions{width:100%;margin-top:6px;}
+.share-btn{width:100%;justify-content:center;margin-top:0;min-height:44px;font-size:11px;}
+.sidebar-header{padding-left:max(16px,var(--safe-left));padding-right:max(16px,var(--safe-right));}
+.day-tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.day-tabs::-webkit-scrollbar{display:none;}
+.day-tab{min-width:72px;flex:0 0 auto;padding:12px 10px;}
+.timeline{-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y;}
+.timeline.day-swipe-lock{touch-action:none;}
+.controls .btn{min-height:44px;font-size:11px;}
+.cost-bar{padding-left:max(16px,var(--safe-left));padding-right:max(16px,var(--safe-right));}
+.day-swipe-hint:not([hidden]){display:block;text-align:center;font-size:9px;color:var(--secondary);padding:0 16px 6px;letter-spacing:.04em;}
+#sharedErrorScreen{padding-top:var(--safe-top);padding-bottom:var(--safe-bottom);}
+}
 </style>
 </head>
 <body>
@@ -284,7 +340,15 @@ body.shared-view .back-btn,body.shared-view #mapSaveStatus,body.shared-view #sha
 
 <!-- Map / replay screen -->
 <div id="mapScreen" class="screen">
-  <div class="sidebar">
+  <div class="shared-readonly-banner" id="sharedReadonlyBanner" hidden>
+    <span class="shared-readonly-icon" aria-hidden="true">&#128065;</span>
+    <span>閲覧のみ — 共有された旅程</span>
+  </div>
+  <div id="map"></div>
+  <div class="sidebar" id="routeSheet" data-sheet="half">
+    <button type="button" class="sheet-handle" id="sheetHandle" aria-label="ドラッグしてパネルサイズを変更">
+      <span class="sheet-handle-bar"></span>
+    </button>
     <div class="sidebar-header">
       <button class="back-btn" id="backToTripsBtn" type="button" onclick="goToTrips()">&#8592; My Trips</button>
       <div class="eyebrow" id="mapEyebrow">Trip</div>
@@ -295,6 +359,7 @@ body.shared-view .back-btn,body.shared-view #mapSaveStatus,body.shared-view #sha
       <div class="map-save-status" id="mapSaveStatus" data-save-state="saved">Saved ✓</div>
     </div>
     <div class="day-tabs" id="dayTabs"></div>
+    <div class="day-swipe-hint" id="daySwipeHint" hidden>左右スワイプで日を切り替え</div>
     <div class="timeline" id="timeline"></div>
     <div class="cost-bar" id="costBar"></div>
     <div class="controls">
@@ -302,8 +367,9 @@ body.shared-view .back-btn,body.shared-view #mapSaveStatus,body.shared-view #sha
       <button class="btn btn-reset" onclick="resetAnim()">&#8635; Reset</button>
     </div>
   </div>
-  <div id="map"></div>
 </div>
+
+<div class="app-toast" id="shareToast" role="status" aria-live="polite" hidden></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./supabase-client.js"></script>
@@ -1290,6 +1356,7 @@ function showScreen(name) {
   document.getElementById('sharedErrorScreen').classList.toggle('active', name === 'sharedError');
   document.getElementById('aiInputScreen').classList.toggle('active', name === 'aiInput');
   document.getElementById('draftPreviewScreen').classList.toggle('active', name === 'draftPreview');
+  if (name === 'map') onMapScreenVisible();
 }
 
 function getSharedTripIdFromUrl() {
@@ -1305,6 +1372,8 @@ function buildShareUrl(tripId) {
 function setSharedViewMode(on) {
   isSharedView = !!on;
   document.body.classList.toggle('shared-view', isSharedView);
+  var banner = document.getElementById('sharedReadonlyBanner');
+  if (banner) banner.hidden = !isSharedView;
   if (!isSharedView) suppressAutosave = false;
 }
 
@@ -1390,9 +1459,32 @@ function exitSharedView() {
   refreshTripsList();
 }
 
+function showShareToast(message) {
+  var toast = document.getElementById('shareToast');
+  if (!toast) return;
+  toast.textContent = message;
+  toast.hidden = false;
+  toast.classList.add('visible');
+  clearTimeout(showShareToast._timer);
+  showShareToast._timer = setTimeout(function() {
+    toast.classList.remove('visible');
+    toast.hidden = true;
+  }, 2600);
+}
+
 async function handleShareTrip() {
   if (!currentTripId || isSharedView) return;
   var url = buildShareUrl(currentTripId);
+  var title = currentTripTitle || 'Limey Trip';
+  if (isMobileLayout() && navigator.share) {
+    try {
+      await navigator.share({ title: title, text: title, url: url });
+      showShareToast('共有しました');
+      return;
+    } catch (err) {
+      if (err && err.name === 'AbortError') return;
+    }
+  }
   var copied = false;
   try {
     if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -1414,13 +1506,16 @@ async function handleShareTrip() {
     } catch (err2) { /* ignore */ }
   }
   var btn = document.getElementById('shareBtn');
-  if (btn && copied) {
-    btn.textContent = 'Copied!';
-    btn.classList.add('copied');
-    setTimeout(function() {
-      btn.textContent = 'Share';
-      btn.classList.remove('copied');
-    }, 2000);
+  if (copied) {
+    showShareToast('リンクをコピーしました');
+    if (btn) {
+      btn.textContent = 'Copied!';
+      btn.classList.add('copied');
+      setTimeout(function() {
+        btn.textContent = 'Share';
+        btn.classList.remove('copied');
+      }, 2000);
+    }
   }
 }
 
@@ -1688,6 +1783,7 @@ function ensureMap() {
   L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png',{maxZoom:19,opacity:.85}).addTo(map);
   routeLayer = L.layerGroup().addTo(map);
   mapReady=true;
+  updateMapChromeForSheet();
 }
 
 function renderDayTabs() {
@@ -1700,6 +1796,8 @@ function renderDayTabs() {
       '<br><span style="font-size:9px;font-weight:400;letter-spacing:.01em;text-transform:none">' + sub + '</span></button>';
   }
   tabs.innerHTML = html;
+  var hint = document.getElementById('daySwipeHint');
+  if (hint) hint.hidden = !(isMobileLayout() && DAYS.length > 1);
 }
 
 function makeIcon(s,active){
@@ -1801,6 +1899,181 @@ function resetAnim(){
   renderTimeline();
   renderMap();
 }
+
+/* ── Mobile UX (Pre-Okinawa review) ── */
+var MOBILE_MAX_WIDTH = 767;
+var SHEET_STATES = ['peek', 'half', 'full'];
+var sheetState = 'half';
+var sheetDrag = { active: false, startY: 0, startH: 0, moved: false };
+var daySwipe = { active: false, x0: 0, y0: 0, locked: null };
+
+function isMobileLayout() {
+  return window.matchMedia('(max-width: ' + MOBILE_MAX_WIDTH + 'px)').matches;
+}
+
+function getSheetHeightTargets() {
+  var vh = window.innerHeight;
+  return {
+    peek: 120,
+    half: Math.round(vh * 0.54),
+    full: Math.round(Math.min(vh * 0.88, vh - 48))
+  };
+}
+
+function setSheetState(state) {
+  if (SHEET_STATES.indexOf(state) === -1) state = 'half';
+  sheetState = state;
+  var sheet = document.getElementById('routeSheet');
+  if (sheet) {
+    sheet.setAttribute('data-sheet', state);
+    sheet.style.height = '';
+  }
+  updateMapChromeForSheet();
+  if (map && mapReady) {
+    setTimeout(function() { map.invalidateSize(); }, 240);
+  }
+}
+
+function updateMapChromeForSheet() {
+  var zoom = document.querySelector('#mapScreen .leaflet-bottom.leaflet-right');
+  if (!zoom) return;
+  if (!isMobileLayout()) {
+    zoom.style.bottom = '';
+    return;
+  }
+  var sheet = document.getElementById('routeSheet');
+  var h = sheet ? sheet.getBoundingClientRect().height : 0;
+  zoom.style.bottom = Math.max(12, h + 8) + 'px';
+}
+
+function onMapScreenVisible() {
+  if (!isMobileLayout()) {
+    setSheetState('half');
+    return;
+  }
+  setSheetState(sheetState || 'half');
+  updateMapChromeForSheet();
+  if (map && mapReady) setTimeout(function() { map.invalidateSize(); }, 80);
+}
+
+function initRouteSheet() {
+  var sheet = document.getElementById('routeSheet');
+  var handle = document.getElementById('sheetHandle');
+  if (!sheet || !handle || handle._sheetInit) return;
+  handle._sheetInit = true;
+
+  function snapSheetFromHeight(h) {
+    var targets = getSheetHeightTargets();
+    var best = 'half';
+    var bestDist = Infinity;
+    SHEET_STATES.forEach(function(state) {
+      var dist = Math.abs(h - targets[state]);
+      if (dist < bestDist) {
+        bestDist = dist;
+        best = state;
+      }
+    });
+    setSheetState(best);
+  }
+
+  handle.addEventListener('pointerdown', function(e) {
+    if (!isMobileLayout()) return;
+    sheetDrag.active = true;
+    sheetDrag.moved = false;
+    sheetDrag.startY = e.clientY;
+    sheetDrag.startH = sheet.getBoundingClientRect().height;
+    sheet.classList.add('sheet-dragging');
+    handle.setPointerCapture(e.pointerId);
+  });
+
+  handle.addEventListener('pointermove', function(e) {
+    if (!sheetDrag.active || !isMobileLayout()) return;
+    var dy = sheetDrag.startY - e.clientY;
+    if (Math.abs(dy) > 6) sheetDrag.moved = true;
+    var targets = getSheetHeightTargets();
+    var newH = Math.max(targets.peek, Math.min(targets.full, sheetDrag.startH + dy));
+    sheet.style.height = newH + 'px';
+    updateMapChromeForSheet();
+  });
+
+  function endSheetDrag(e) {
+    if (!sheetDrag.active) return;
+    sheetDrag.active = false;
+    sheet.classList.remove('sheet-dragging');
+    try { handle.releasePointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+    if (!sheetDrag.moved && isMobileLayout()) {
+      var idx = SHEET_STATES.indexOf(sheetState);
+      setSheetState(SHEET_STATES[(idx + 1) % SHEET_STATES.length]);
+      return;
+    }
+    snapSheetFromHeight(sheet.getBoundingClientRect().height);
+  }
+
+  handle.addEventListener('pointerup', endSheetDrag);
+  handle.addEventListener('pointercancel', endSheetDrag);
+
+  window.addEventListener('resize', function() {
+    if (!isMobileLayout()) {
+      sheet.style.height = '';
+      updateMapChromeForSheet();
+      return;
+    }
+    updateMapChromeForSheet();
+  });
+}
+
+function initDaySwipe() {
+  var el = document.getElementById('timeline');
+  if (!el || el._daySwipeInit) return;
+  el._daySwipeInit = true;
+
+  el.addEventListener('touchstart', function(e) {
+    if (!isMobileLayout() || e.touches.length !== 1 || sheetState === 'peek') return;
+    daySwipe.active = true;
+    daySwipe.x0 = e.touches[0].clientX;
+    daySwipe.y0 = e.touches[0].clientY;
+    daySwipe.locked = null;
+  }, { passive: true });
+
+  el.addEventListener('touchmove', function(e) {
+    if (!daySwipe.active || !isMobileLayout() || e.touches.length !== 1) return;
+    var dx = e.touches[0].clientX - daySwipe.x0;
+    var dy = e.touches[0].clientY - daySwipe.y0;
+    if (!daySwipe.locked) {
+      if (Math.abs(dy) > 14 && Math.abs(dy) > Math.abs(dx)) {
+        daySwipe.locked = 'vertical';
+        return;
+      }
+      if (Math.abs(dx) > 14 && Math.abs(dx) > Math.abs(dy) * 1.4) {
+        daySwipe.locked = 'horizontal';
+        el.classList.add('day-swipe-lock');
+      }
+    }
+    if (daySwipe.locked === 'horizontal') e.preventDefault();
+  }, { passive: false });
+
+  function endDaySwipe(e) {
+    if (!daySwipe.active) return;
+    el.classList.remove('day-swipe-lock');
+    if (daySwipe.locked !== 'horizontal' || !e.changedTouches || !e.changedTouches.length) {
+      daySwipe.active = false;
+      daySwipe.locked = null;
+      return;
+    }
+    var dx = e.changedTouches[0].clientX - daySwipe.x0;
+    daySwipe.active = false;
+    daySwipe.locked = null;
+    if (Math.abs(dx) < 56 || DAYS.length < 2) return;
+    if (dx < 0 && currentDay < DAYS.length - 1) switchDay(currentDay + 1);
+    else if (dx > 0 && currentDay > 0) switchDay(currentDay - 1);
+  }
+
+  el.addEventListener('touchend', endDaySwipe, { passive: true });
+  el.addEventListener('touchcancel', endDaySwipe, { passive: true });
+}
+
+initRouteSheet();
+initDaySwipe();
 
 initApp();
 </script>
