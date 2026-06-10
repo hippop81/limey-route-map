@@ -3884,23 +3884,53 @@ var POI_DATABASE = [
   { name: '瀬長島温泉 龍神の湯',   name_en: 'Senagajima Onsen Ryujin no Yu', lat: 26.1855, lng: 127.6453, category: 'onsen', tags: ['温泉', '豊見城', 'サウナ'] },
   { name: 'ちゅらーゆ',             name_en: 'Churayu',                lat: 26.6975, lng: 127.8773, category: 'onsen',      tags: ['温泉', '本部', 'サウナ'] },
   { name: '沖縄セルラースタジアム那覇', name_en: 'Okinawa Cellular Stadium Naha', lat: 26.2406, lng: 127.6917, category: 'event', tags: ['スタジアム', '野球', '那覇', '観戦'] },
-  { name: '奥武山陸上競技場',       name_en: 'Onoyama Athletic Stadium', lat: 26.2050, lng: 127.6789, category: 'event',    tags: ['競技場', '那覇', '観戦'] }
+  { name: '奥武山陸上競技場',       name_en: 'Onoyama Athletic Stadium', lat: 26.2050, lng: 127.6789, category: 'event',    tags: ['競技場', '那覇', '観戦'] },
+  { name: '東京ドーム',             name_en: 'Tokyo Dome',            lat: 35.7056, lng: 139.7519, category: 'event',    tags: ['ドーム', '野球', 'ライブ', 'コンサート', '東京', '観戦'] },
+  { name: 'Kアリーナ横浜',          name_en: 'K Arena Yokohama',      lat: 35.4658, lng: 139.6364, category: 'event',    tags: ['アリーナ', 'ライブ', 'コンサート', '横浜', '観戦'] },
+  { name: '羽田空港',               name_en: 'Haneda Airport',        lat: 35.5494, lng: 139.7798, category: null,       tags: ['空港', '東京', '飛行機'] }
 ];
 
-/** P1.5C: returns up to 20 POIs whose name/name_en/tags overlap the user's input words. */
-function findMatchingPOIs(userInput) {
-  var words = userInput
-    .replace(/[、。！？\n]/g, ' ')
-    .split(' ')
-    .filter(function(w){ return w.length >= 2; });
+/** Returns true if `haystack` contains any substring of `needle` with length >= minLen. */
+function _hasSubstringOverlap(haystack, needle, minLen) {
+  for (var len = needle.length; len >= minLen; len--) {
+    for (var i = 0; i + len <= needle.length; i++) {
+      if (haystack.indexOf(needle.substr(i, len)) !== -1) return true;
+    }
+  }
+  return false;
+}
 
-  return POI_DATABASE.filter(function(poi) {
-    return words.some(function(w) {
-      return poi.name.indexOf(w) !== -1 ||
-        poi.name_en.toLowerCase().indexOf(w.toLowerCase()) !== -1 ||
-        (poi.tags || []).some(function(t){ return t.indexOf(w) !== -1; });
+/**
+ * P1.5C: scores POI_DATABASE entries against the user's input and returns up
+ * to 20, sorted by score descending.
+ * Scoring: exact name/name_en match +100, partial (substring overlap) match
+ * +20, tag match +10. Japanese input is checked as raw substrings since it
+ * is rarely space-separated.
+ */
+function findMatchingPOIs(userInput) {
+  if (!userInput) return [];
+  var input      = userInput;
+  var inputLower = input.toLowerCase();
+
+  var scored = POI_DATABASE.map(function(poi) {
+    var score      = 0;
+    var nameEnLower = (poi.name_en || '').toLowerCase();
+
+    if (poi.name && input.indexOf(poi.name) !== -1) score += 100;
+    else if (poi.name && poi.name.length >= 2 && _hasSubstringOverlap(input, poi.name, 2)) score += 20;
+
+    if (nameEnLower && inputLower.indexOf(nameEnLower) !== -1) score += 100;
+    else if (nameEnLower.length >= 2 && _hasSubstringOverlap(inputLower, nameEnLower, 2)) score += 20;
+
+    (poi.tags || []).forEach(function(t) {
+      if (t && input.indexOf(t) !== -1) score += 10;
     });
-  }).slice(0, 20); // max 20件
+
+    return { poi: poi, score: score };
+  }).filter(function(s){ return s.score > 0; });
+
+  scored.sort(function(a, b){ return b.score - a.score; });
+  return scored.slice(0, 20).map(function(s){ return s.poi; }); // max 20件
 }
 
 /** P1.5C: finds a POI whose coordinates match the given lat/lng (within ~10m). */
@@ -3909,6 +3939,22 @@ function _findPOIByCoords(lat, lng) {
   for (var i = 0; i < POI_DATABASE.length; i++) {
     var poi = POI_DATABASE[i];
     if (Math.abs(poi.lat - lat) < EPS && Math.abs(poi.lng - lng) < EPS) return poi;
+  }
+  return null;
+}
+
+/** P1.5C: finds a POI whose name/name_en exactly or partially matches the given name. */
+function _findPOIByName(name) {
+  if (!name) return null;
+  var nameLower = name.toLowerCase();
+  for (var i = 0; i < POI_DATABASE.length; i++) {
+    var poi = POI_DATABASE[i];
+    if (poi.name === name || (poi.name_en || '').toLowerCase() === nameLower) return poi;
+  }
+  for (var j = 0; j < POI_DATABASE.length; j++) {
+    var poi = POI_DATABASE[j];
+    if (poi.name.indexOf(name) !== -1 || name.indexOf(poi.name) !== -1 ||
+        (poi.name_en || '').toLowerCase().indexOf(nameLower) !== -1) return poi;
   }
   return null;
 }
@@ -3952,17 +3998,32 @@ function _validateDraftStop(raw, index) {
   var time = String(raw.time || '').trim();
   if (!time) warnings.push('time_missing');
 
-  /* P1.5C: POI match → boost confidence & mark source */
-  var poiMatch = hasCoords ? _findPOIByCoords(lat, lng) : null;
-  var confidence = poiMatch
-    ? 0.95
-    : (isFinite(Number(raw.confidence)) ? Math.max(0, Math.min(1, Number(raw.confidence))) : 0.5);
-  if (!poiMatch && confidence <= 0.5) warnings.push('low_confidence');
+  /* P1.5C: POI match → boost confidence, prefer POI coords, mark source */
+  var poiMatch  = hasCoords ? _findPOIByCoords(lat, lng) : null;
+  var matchType = poiMatch ? 'exact' : null;
+  if (!poiMatch) {
+    poiMatch = _findPOIByName(name);
+    if (poiMatch) matchType = 'partial';
+  }
+
+  if (matchType === 'partial') {
+    /* prefer POI coordinates over inferred/missing ones */
+    lat = poiMatch.lat; lng = poiMatch.lng; hasCoords = true;
+    var ci = warnings.indexOf('coords_missing');
+    if (ci !== -1) warnings.splice(ci, 1);
+  }
+
+  var confidence = matchType === 'exact'   ? 0.95
+                  : matchType === 'partial' ? 0.80
+                  : (isFinite(Number(raw.confidence)) ? Math.max(0, Math.min(1, Number(raw.confidence))) : 0.5);
+  if (!matchType && confidence <= 0.5) warnings.push('low_confidence');
 
   var transport = Object.prototype.hasOwnProperty.call(TCFG, raw.transport) ? raw.transport : 'walk';
   var categories = Array.isArray(raw.categories)
     ? raw.categories.filter(function(c){ return !!CATEGORIES[c]; }) : [];
-  if (poiMatch && categories.indexOf(poiMatch.category) === -1) categories.push(poiMatch.category);
+  if (poiMatch && CATEGORIES[poiMatch.category] && categories.indexOf(poiMatch.category) === -1) {
+    categories.push(poiMatch.category);
+  }
 
   return {
     status: warnings.length ? 'needsReview' : 'valid',
@@ -3980,7 +4041,7 @@ function _validateDraftStop(raw, index) {
       confidence:         confidence,
       needsReview:        warnings.length > 0,
       validationWarnings: warnings,
-      source:             poiMatch ? 'poi' : 'ai'
+      source:             matchType ? 'poi' : 'ai'
     }
   };
 }
@@ -4043,7 +4104,16 @@ var TRANSPORT_LABEL = {
   car:'CAR', bike:'BIKE', walk:'WALK'
 };
 
+/* P1.5C PATCH C: AI機能アンロック — UX gate only, not a security boundary.
+   Phrase is intentionally visible in source. */
+var AI_UNLOCK_PHRASE = 'limey2026';
+
 function openAIDraftModal() {
+  if (sessionStorage.getItem('limey-ai-enabled') !== 'true') {
+    var input = prompt('AI旅程生成を有効にするにはパスフレーズを入力してください：');
+    if (input !== AI_UNLOCK_PHRASE) return;
+    sessionStorage.setItem('limey-ai-enabled', 'true');
+  }
   document.getElementById('aiDraftPreview').style.display = 'none';
   document.getElementById('aiErrMsg').innerHTML = '';
   _draftStops = [];

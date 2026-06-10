@@ -137,8 +137,9 @@ function buildSystemPrompt(pois: POI[]): string {
     `\n\nKnown POIs (use these when matched):\n` +
     JSON.stringify(pois.map(p => ({ name: p.name, lat: p.lat, lng: p.lng, category: p.category }))) +
     `\nWhen a location matches a known POI:\n` +
-    `- Use provided lat/lng coordinates\n` +
-    `- Use provided category\n` +
+    `- Use the provided lat/lng coordinates\n` +
+    `- Use the provided category\n` +
+    `- Prefer POI coordinates over inferred coordinates\n` +
     `- Do not invent coordinates`;
 
   return SYSTEM_PROMPT + poiContext;
