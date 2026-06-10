@@ -87,6 +87,10 @@ body{font-family:var(--font-body);background:var(--cream);color:var(--primary);h
 .draft-badge-warn{background:rgba(255,193,7,.15);color:#8a6d00;border:1px solid rgba(255,193,7,.35);}
 .draft-badge-error{background:rgba(220,53,69,.1);color:#a33;border:1px solid rgba(220,53,69,.25);}
 .draft-badge-loc{background:rgba(0,122,138,.08);color:var(--peacock);border:1px solid rgba(0,122,138,.2);}
+.draft-badge-poi{letter-spacing:.02em;line-height:1.35;}
+.draft-badge-poi-exact{background:rgba(197,232,74,.22);color:#4a5f00;border:1px solid rgba(197,232,74,.5);}
+.draft-badge-poi-near{background:rgba(255,193,7,.12);color:#8a6d00;border:1px solid rgba(255,193,7,.35);}
+.draft-transport-chip{font-size:9px;}
 .draft-field{margin-bottom:8px;}
 .draft-field label{display:block;font-size:9px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--secondary);margin-bottom:3px;}
 .draft-field input,.draft-field textarea,.draft-field select{width:100%;padding:7px 9px;border:1px solid var(--light-gray);border-radius:6px;font-family:var(--font-body);font-size:12px;color:var(--primary);background:var(--white);}
@@ -798,6 +802,52 @@ async function handleGenerateDraft() {
   }
 }
 
+var POI_CATEGORY_LABELS = {
+  event: 'Event Venue',
+  airport: 'Airport',
+  station: 'Station',
+  hotel: 'Hotel',
+  tourist: 'Tourist Spot',
+  food: 'Food',
+  other: 'Place'
+};
+
+function formatPoiCategoryLabel(categoryHint) {
+  if (!categoryHint) return 'Place';
+  var key = String(categoryHint).toLowerCase();
+  return POI_CATEGORY_LABELS[key] || categoryHint;
+}
+
+function getDraftTransportChipHtml(draft) {
+  var mode = draft.type || transportToBadge(draft.transport);
+  var badgeKey = transportToBadge(mode);
+  var label = (draft.transport && String(draft.transport).trim()) || mode;
+  if (!label) return '';
+  return '<span class="badge draft-transport-chip b-' + badgeKey + '">' + escapeHtml(label) + '</span>';
+}
+
+function getPoiMatchBadgeHtml(draft) {
+  if (!draft || draft.source !== 'poi') return '';
+  var conf = typeof draft.confidence === 'number' ? draft.confidence : 0;
+  var category = formatPoiCategoryLabel(draft.categoryHint);
+  if (conf >= 0.95) {
+    return '<span class="draft-badge draft-badge-poi draft-badge-poi-exact">📍 ' +
+      escapeHtml(category) + ' 🟢 POI Match</span>';
+  }
+  if (conf >= 0.8 && conf < 0.95) {
+    return '<span class="draft-badge draft-badge-poi draft-badge-poi-near">📍 ' +
+      escapeHtml(category) + ' 🟡 POI Near Match</span>';
+  }
+  return '';
+}
+
+function getDraftCardBadgesHtml(draft) {
+  return getDraftTransportChipHtml(draft) +
+    getPoiMatchBadgeHtml(draft) +
+    getConfidenceBadgeHtml(draft.confidence) +
+    getLocationBadgeHtml(draft);
+}
+
 function getConfidenceBadgeHtml(confidence) {
   if (confidence >= 0.8) return '';
   if (confidence >= 0.5) return '<span class="draft-badge draft-badge-warn">🟡 要確認</span>';
@@ -834,7 +884,7 @@ function renderDraftPreview() {
     var d = draftStops[i];
     html += '<article class="draft-card" data-draft-idx="' + i + '">';
     html += '<div class="draft-card-head"><span class="draft-card-index">#' + (i + 1) + '</span>';
-    html += '<div class="draft-card-badges">' + getConfidenceBadgeHtml(d.confidence) + getLocationBadgeHtml(d) + '</div></div>';
+    html += '<div class="draft-card-badges">' + getDraftCardBadgesHtml(d) + '</div></div>';
     html += '<div class="draft-field"><label>名前</label><input type="text" data-field="name" value="' + escapeHtml(d.name) + '"></div>';
     html += '<div class="draft-field-row">';
     html += '<div class="draft-field"><label>時刻</label><input type="text" data-field="time" value="' + escapeHtml(d.time || '') + '" placeholder="09:00"></div>';
