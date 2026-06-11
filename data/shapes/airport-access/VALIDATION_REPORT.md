@@ -72,8 +72,17 @@
 - **Warnings:** 0
 - **Output:** `data/shapes/airport-access/osaka_monorail_itami.txt`
 
+## keisei_skyliner.txt
+- **Source:** `sources/keisei_skyliner.geojson` (OSM relation `3120358`, 成田空港 → 京成上野)
+- **Points:** 924
+- **Median step:** 0.043 km (outlier threshold: 15.00 km)
+- **Max step:** 0.491 km
+- **Corrected:** 0
+- **Warnings:** 0
+- **Output:** `data/shapes/airport-access/keisei_skyliner.txt`
+
 ## Summary
-- **Total points:** 987
+- **Total points:** 1911
 - **Total corrected:** 1
 - **Total warnings:** 22
 
