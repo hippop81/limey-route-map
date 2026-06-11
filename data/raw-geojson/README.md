@@ -50,24 +50,36 @@ Move files through the pipeline in order: **Exported → Converting → Converte
 <route_name>_overpass.geojson
 ```
 
-- Use **lowercase** and **underscores** only.
-- `<route_name>` should match the eventual shape basename (without `shape_` prefix).
+Include the route name and optionally the OSM relation id in the filename when helpful.
+## Current Dataset
+
+| File                                      | Category       | Status      | Shape Output                   | Notes                           |
+| ----------------------------------------- | -------------- | ----------- | ------------------------------ | ------------------------------- |
+| `tokyo_monorail_overpass.geojson`         | Airport Access | ✅ Converted | `shape_tokyo_monorail`         | Haneda access                   |
+| `keikyu_airport_overpass.geojson`         | Airport Access | ✅ Converted | `shape_keikyu_airport`         | Coordinate typo fixed (139.xxx) |
+| `nankai_airport_overpass.geojson`         | Airport Access | ✅ Converted | `shape_nankai_airport`         | KIX access                      |
+| `fukuoka_subway_airport_overpass.geojson` | Airport Access | ✅ Converted | `shape_fukuoka_subway_airport` | Fukuoka Airport                 |
+
+### Status meanings
+
+* 🆕 Exported — GeoJSON exported from Overpass, not yet converted.
+* 🔄 Converting — Cursor/Codex currently processing.
+* ✅ Converted — Shape file generated and validated.
+* 🚀 Merged — Shape file merged into `data/shapes/` and available to the replay engine.
+
+### Naming Convention
+
+```
+<route_name>_overpass.geojson
+```
 
 Examples:
 
-- `tokyo_monorail_overpass.geojson`
-- `keikyu_airport_overpass.geojson`
-- `jr_haruka_overpass.geojson`
-- `keisei_skyliner_overpass.geojson`
+```
+tokyo_monorail_overpass.geojson
+keisei_skyliner_overpass.geojson
+jr_haruka_overpass.geojson
+hokuriku_shinkansen_overpass.geojson
+```
 
-Optional: include OSM relation id in **Notes** or the metadata template, not in the filename.
-
-## Metadata template
-
-Copy `TEMPLATE.md` beside each new export (e.g. `jr_haruka_overpass.md`) or paste its fields into the **Notes** column above.
-
-## Notes
-
-- Files here are **temporary source data**. Treat them as disposable once shapes are generated, validated, and merged.
-- Do not edit GeoJSON manually unless fixing a clear export issue.
-- **Production replay** should only use finalized files under `data/shapes/`, not this directory.
+Use lowercase with underscores for consistency.
