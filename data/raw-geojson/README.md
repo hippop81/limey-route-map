@@ -34,6 +34,7 @@ Track every file in this directory. Update the table when status changes.
 | `narita_express_overpass.geojson` | airport_access | 🆕 Exported | `shape_narita_express` | 成田エクスプレス — `narita_express_overpass.md` |
 | `chuo_sobu_local_overpass.geojson` | local_rail | 🆕 Exported | `shape_chuo_sobu_local` | 中央・総武線（各駅停車）— `chuo_sobu_local_overpass.md` |
 | `yurito_line_overpass.geojson` | bus | 🆕 Exported | `shape_yurito_line` | ゆとりーとライン — `yurito_line_overpass.md` |
+| `tokaido_shinkansen_overpass.geojson` | shinkansen | 🆕 Exported | `shape_tokaido_shinkansen` | 東海道新幹線 — relation/5263977 — `tokaido_shinkansen_overpass.md` |
 | `tokyo_monorail_overpass.geojson` | airport_access | ✅ Converted | `shape_tokyo_monorail` | Haneda access |
 | `keikyu_airport_overpass.geojson` | airport_access | ✅ Converted | `shape_keikyu_airport` | Coordinate typo fixed (139.xxx) |
 | `nankai_airport_overpass.geojson` | airport_access | ✅ Converted | `shape_nankai_airport` | KIX access |
@@ -70,6 +71,7 @@ Examples:
 - `jr_haruka_overpass.geojson`
 - `keisei_skyliner_overpass.geojson`
 - `narita_express_overpass.geojson`
+- `tokaido_shinkansen_overpass.geojson`
 
 Optional: include OSM relation id in the paired metadata file or **Notes** column, not in the filename.
 
@@ -86,6 +88,7 @@ Current metadata files:
 - `narita_express_overpass.md`
 - `chuo_sobu_local_overpass.md`
 - `yurito_line_overpass.md`
+- `tokaido_shinkansen_overpass.md`
 
 ## Notes
 
