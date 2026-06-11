@@ -1,0 +1,1962 @@
+{
+  "type": "FeatureCollection",
+  "generator": "overpass-turbo",
+  "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL.",
+  "timestamp": "2026-06-11T06:32:29Z",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "relation/1827999",
+        "colour": "blue",
+        "from": "栄町",
+        "name": "東豊線",
+        "name:de": "Tōhō-Linie",
+        "name:en": "Toho Line",
+        "name:ja": "東豊線",
+        "network": "札幌市営地下鉄",
+        "operator": "札幌市交通局",
+        "operator:en": "Sapporo City Transportation Bureau",
+        "public_transport:version": "2",
+        "ref": "H",
+        "route": "subway",
+        "to": "福住",
+        "type": "route",
+        "wikidata": "Q981822",
+        "wikipedia": "ja:札幌市営地下鉄東豊線",
+        "@relations": [
+          {
+            "role": "",
+            "rel": 8000565,
+            "reltags": {
+              "colour": "blue",
+              "name": "東豊線",
+              "name:en": "Toho Line",
+              "name:ja": "東豊線",
+              "network": "札幌市営地下鉄",
+              "network:en": "Sapporo Municipal Subway",
+              "network:wikidata": "Q736098",
+              "network:wikipedia": "ja:札幌市営地下鉄",
+              "operator": "札幌市交通局",
+              "operator:en": "Sapporo City Transportation Bureau",
+              "ref": "H",
+              "route_master": "subway",
+              "type": "route_master",
+              "wikidata": "Q981822",
+              "wikipedia": "ja:札幌市営地下鉄東豊線"
+            }
+          }
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            141.3671605,
+            43.1130084
+          ],
+          [
+            141.3691228,
+            43.1047395
+          ],
+          [
+            141.3717323,
+            43.0940863
+          ],
+          [
+            141.3745064,
+            43.0824273
+          ],
+          [
+            141.3748339,
+            43.081033
+          ],
+          [
+            141.3748726,
+            43.0808553
+          ],
+          [
+            141.3748636,
+            43.0806985
+          ],
+          [
+            141.3747739,
+            43.0804729
+          ],
+          [
+            141.3745926,
+            43.0801763
+          ],
+          [
+            141.3743535,
+            43.0799214
+          ],
+          [
+            141.3741197,
+            43.0797477
+          ],
+          [
+            141.3738083,
+            43.0795733
+          ],
+          [
+            141.3735127,
+            43.0794399
+          ],
+          [
+            141.3732259,
+            43.0793336
+          ],
+          [
+            141.3728875,
+            43.0792494
+          ],
+          [
+            141.3725734,
+            43.0792051
+          ],
+          [
+            141.3653738,
+            43.0782378
+          ],
+          [
+            141.3549734,
+            43.0768238
+          ],
+          [
+            141.3536067,
+            43.0766415
+          ],
+          [
+            141.353147,
+            43.0764934
+          ],
+          [
+            141.3528172,
+            43.0763558
+          ],
+          [
+            141.352509,
+            43.0761549
+          ],
+          [
+            141.352223,
+            43.0758829
+          ],
+          [
+            141.3519844,
+            43.075557
+          ],
+          [
+            141.3518805,
+            43.0753122
+          ],
+          [
+            141.3518263,
+            43.0751261
+          ],
+          [
+            141.3517811,
+            43.0749094
+          ],
+          [
+            141.3517991,
+            43.0746174
+          ],
+          [
+            141.3533447,
+            43.068572
+          ],
+          [
+            141.3539387,
+            43.0662607
+          ],
+          [
+            141.3551645,
+            43.0614115
+          ],
+          [
+            141.3553478,
+            43.0607273
+          ],
+          [
+            141.3565235,
+            43.0560978
+          ],
+          [
+            141.3570707,
+            43.0541765
+          ],
+          [
+            141.357575,
+            43.0520894
+          ],
+          [
+            141.3577236,
+            43.0518344
+          ],
+          [
+            141.3579061,
+            43.051693
+          ],
+          [
+            141.3580924,
+            43.0515829
+          ],
+          [
+            141.3583792,
+            43.0514479
+          ],
+          [
+            141.3587795,
+            43.0513186
+          ],
+          [
+            141.3593587,
+            43.0511727
+          ],
+          [
+            141.3600153,
+            43.0510376
+          ],
+          [
+            141.3615091,
+            43.0507537
+          ],
+          [
+            141.3627881,
+            43.0505638
+          ],
+          [
+            141.3648251,
+            43.0504353
+          ],
+          [
+            141.3659112,
+            43.0504025
+          ],
+          [
+            141.3665993,
+            43.0504035
+          ],
+          [
+            141.3670557,
+            43.050318
+          ],
+          [
+            141.3673713,
+            43.050224
+          ],
+          [
+            141.3676676,
+            43.0501017
+          ],
+          [
+            141.3679757,
+            43.0499316
+          ],
+          [
+            141.3682573,
+            43.0496997
+          ],
+          [
+            141.3684881,
+            43.0494388
+          ],
+          [
+            141.3686468,
+            43.0491899
+          ],
+          [
+            141.3687681,
+            43.0488401
+          ],
+          [
+            141.3690188,
+            43.0477863
+          ],
+          [
+            141.3691876,
+            43.0470674
+          ],
+          [
+            141.3693142,
+            43.0467092
+          ],
+          [
+            141.3693789,
+            43.0466194
+          ],
+          [
+            141.3695316,
+            43.0464074
+          ],
+          [
+            141.3699422,
+            43.0460258
+          ],
+          [
+            141.3701925,
+            43.0458363
+          ],
+          [
+            141.3708556,
+            43.0454148
+          ],
+          [
+            141.3742585,
+            43.0433149
+          ],
+          [
+            141.3756133,
+            43.0425055
+          ],
+          [
+            141.3762188,
+            43.0421507
+          ],
+          [
+            141.3779743,
+            43.0410645
+          ],
+          [
+            141.3808913,
+            43.0392565
+          ],
+          [
+            141.3831314,
+            43.0378874
+          ],
+          [
+            141.3851863,
+            43.0365855
+          ],
+          [
+            141.3856775,
+            43.0362987
+          ],
+          [
+            141.3866591,
+            43.0358736
+          ],
+          [
+            141.3888074,
+            43.0348704
+          ],
+          [
+            141.389112,
+            43.0347598
+          ],
+          [
+            141.3893644,
+            43.034698
+          ],
+          [
+            141.3896435,
+            43.0346635
+          ],
+          [
+            141.3900567,
+            43.0346492
+          ],
+          [
+            141.3909521,
+            43.0346554
+          ],
+          [
+            141.3913872,
+            43.0346418
+          ],
+          [
+            141.3917938,
+            43.034597
+          ],
+          [
+            141.3922538,
+            43.0345057
+          ],
+          [
+            141.3927654,
+            43.0343698
+          ],
+          [
+            141.3932869,
+            43.0341998
+          ],
+          [
+            141.3938273,
+            43.0339229
+          ],
+          [
+            141.3942093,
+            43.0336505
+          ],
+          [
+            141.3944324,
+            43.033417
+          ],
+          [
+            141.3946501,
+            43.0331272
+          ],
+          [
+            141.3948525,
+            43.0328376
+          ],
+          [
+            141.3967498,
+            43.029945
+          ],
+          [
+            141.3980558,
+            43.0278988
+          ],
+          [
+            141.3985188,
+            43.0269163
+          ],
+          [
+            141.3990225,
+            43.0258384
+          ],
+          [
+            141.3991512,
+            43.0255718
+          ],
+          [
+            141.3993464,
+            43.0252892
+          ],
+          [
+            141.3997172,
+            43.0248698
+          ],
+          [
+            141.402555,
+            43.0222097
+          ],
+          [
+            141.402919,
+            43.021863
+          ]
+        ]
+      },
+      "id": "relation/1827999"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "relation/8000553",
+        "colour": "blue",
+        "from": "福住",
+        "name": "東豊線",
+        "name:de": "Tōhō-Linie",
+        "name:en": "Toho Line",
+        "name:ja": "東豊線",
+        "network": "札幌市営地下鉄",
+        "operator": "札幌市交通局",
+        "operator:en": "Sapporo City Transportation Bureau",
+        "public_transport:version": "2",
+        "ref": "H",
+        "route": "subway",
+        "to": "栄町",
+        "type": "route",
+        "wikidata": "Q981822",
+        "wikipedia": "ja:札幌市営地下鉄東豊線",
+        "@relations": [
+          {
+            "role": "",
+            "rel": 8000565,
+            "reltags": {
+              "colour": "blue",
+              "name": "東豊線",
+              "name:en": "Toho Line",
+              "name:ja": "東豊線",
+              "network": "札幌市営地下鉄",
+              "network:en": "Sapporo Municipal Subway",
+              "network:wikidata": "Q736098",
+              "network:wikipedia": "ja:札幌市営地下鉄",
+              "operator": "札幌市交通局",
+              "operator:en": "Sapporo City Transportation Bureau",
+              "ref": "H",
+              "route_master": "subway",
+              "type": "route_master",
+              "wikidata": "Q981822",
+              "wikipedia": "ja:札幌市営地下鉄東豊線"
+            }
+          }
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            141.4028421,
+            43.0218264
+          ],
+          [
+            141.402478,
+            43.0221732
+          ],
+          [
+            141.3996387,
+            43.0248348
+          ],
+          [
+            141.3995108,
+            43.0249982
+          ],
+          [
+            141.3992646,
+            43.0252578
+          ],
+          [
+            141.3990662,
+            43.0255452
+          ],
+          [
+            141.3989361,
+            43.0258147
+          ],
+          [
+            141.3984323,
+            43.0268928
+          ],
+          [
+            141.3979704,
+            43.027873
+          ],
+          [
+            141.3966659,
+            43.0299168
+          ],
+          [
+            141.394769,
+            43.0328087
+          ],
+          [
+            141.3945674,
+            43.0330972
+          ],
+          [
+            141.3943517,
+            43.0333843
+          ],
+          [
+            141.3941339,
+            43.0336123
+          ],
+          [
+            141.3937596,
+            43.0338792
+          ],
+          [
+            141.3932282,
+            43.0341515
+          ],
+          [
+            141.3927141,
+            43.0343191
+          ],
+          [
+            141.392207,
+            43.0344538
+          ],
+          [
+            141.3917529,
+            43.0345439
+          ],
+          [
+            141.3913531,
+            43.034588
+          ],
+          [
+            141.3909229,
+            43.0346014
+          ],
+          [
+            141.3900273,
+            43.0345952
+          ],
+          [
+            141.3896087,
+            43.0346097
+          ],
+          [
+            141.3893212,
+            43.0346452
+          ],
+          [
+            141.3890602,
+            43.0347092
+          ],
+          [
+            141.3889357,
+            43.0347544
+          ],
+          [
+            141.3887488,
+            43.0348222
+          ],
+          [
+            141.3865985,
+            43.0358264
+          ],
+          [
+            141.3856288,
+            43.0362466
+          ],
+          [
+            141.3851156,
+            43.0365521
+          ],
+          [
+            141.3843924,
+            43.0370131
+          ],
+          [
+            141.3830332,
+            43.0378398
+          ],
+          [
+            141.3807933,
+            43.0392088
+          ],
+          [
+            141.3778763,
+            43.0410168
+          ],
+          [
+            141.3760994,
+            43.0420971
+          ],
+          [
+            141.3755156,
+            43.0424576
+          ],
+          [
+            141.3741608,
+            43.043267
+          ],
+          [
+            141.3707572,
+            43.0453674
+          ],
+          [
+            141.3700917,
+            43.0457904
+          ],
+          [
+            141.3698374,
+            43.0459829
+          ],
+          [
+            141.3694214,
+            43.0463696
+          ],
+          [
+            141.369198,
+            43.0466797
+          ],
+          [
+            141.369069,
+            43.0470447
+          ],
+          [
+            141.3688997,
+            43.0477654
+          ],
+          [
+            141.3686495,
+            43.0488175
+          ],
+          [
+            141.3685302,
+            43.0491615
+          ],
+          [
+            141.3683757,
+            43.0494038
+          ],
+          [
+            141.3681498,
+            43.0496592
+          ],
+          [
+            141.3678753,
+            43.0498851
+          ],
+          [
+            141.3675754,
+            43.0500507
+          ],
+          [
+            141.3672861,
+            43.0501702
+          ],
+          [
+            141.366978,
+            43.0502619
+          ],
+          [
+            141.3665336,
+            43.0503452
+          ],
+          [
+            141.3658894,
+            43.0503462
+          ],
+          [
+            141.3647627,
+            43.0503771
+          ],
+          [
+            141.362721,
+            43.0505059
+          ],
+          [
+            141.3614369,
+            43.0506966
+          ],
+          [
+            141.3599409,
+            43.0509809
+          ],
+          [
+            141.359282,
+            43.0511165
+          ],
+          [
+            141.3586986,
+            43.0512634
+          ],
+          [
+            141.3582916,
+            43.0513949
+          ],
+          [
+            141.3579979,
+            43.0515331
+          ],
+          [
+            141.3578058,
+            43.0516467
+          ],
+          [
+            141.3576129,
+            43.0517961
+          ],
+          [
+            141.3574573,
+            43.0520631
+          ],
+          [
+            141.356941,
+            43.054155
+          ],
+          [
+            141.3564522,
+            43.0560896
+          ],
+          [
+            141.3552765,
+            43.0607191
+          ],
+          [
+            141.3538674,
+            43.0662525
+          ],
+          [
+            141.3532734,
+            43.0685637
+          ],
+          [
+            141.351727,
+            43.0746122
+          ],
+          [
+            141.3517085,
+            43.0749118
+          ],
+          [
+            141.3517549,
+            43.0751342
+          ],
+          [
+            141.3518101,
+            43.0753236
+          ],
+          [
+            141.3519166,
+            43.0755744
+          ],
+          [
+            141.3521603,
+            43.0759074
+          ],
+          [
+            141.3524529,
+            43.0761857
+          ],
+          [
+            141.3527703,
+            43.0763926
+          ],
+          [
+            141.3531085,
+            43.0765337
+          ],
+          [
+            141.3535778,
+            43.0766849
+          ],
+          [
+            141.3549515,
+            43.0768681
+          ],
+          [
+            141.3653519,
+            43.0782821
+          ],
+          [
+            141.3725513,
+            43.0792494
+          ],
+          [
+            141.3728609,
+            43.079293
+          ],
+          [
+            141.3731912,
+            43.0793752
+          ],
+          [
+            141.3734718,
+            43.0794792
+          ],
+          [
+            141.3737625,
+            43.0796104
+          ],
+          [
+            141.3740681,
+            43.0797815
+          ],
+          [
+            141.374295,
+            43.0799501
+          ],
+          [
+            141.3745279,
+            43.0801984
+          ],
+          [
+            141.3747052,
+            43.0804884
+          ],
+          [
+            141.3747916,
+            43.0807058
+          ],
+          [
+            141.3748,
+            43.0808527
+          ],
+          [
+            141.3747624,
+            43.0810257
+          ],
+          [
+            141.3744349,
+            43.0824196
+          ],
+          [
+            141.3737858,
+            43.0851483
+          ],
+          [
+            141.3737513,
+            43.0852928
+          ],
+          [
+            141.3716609,
+            43.0940785
+          ],
+          [
+            141.3690514,
+            43.1047317
+          ],
+          [
+            141.3670891,
+            43.1130007
+          ]
+        ]
+      },
+      "id": "relation/8000553"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/353689263",
+        "@relations": [
+          {
+            "role": "stop",
+            "rel": 1827999,
+            "reltags": {
+              "colour": "blue",
+              "from": "栄町",
+              "name": "東豊線",
+              "name:de": "Tōhō-Linie",
+              "name:en": "Toho Line",
+              "name:ja": "東豊線",
+              "network": "札幌市営地下鉄",
+              "operator": "札幌市交通局",
+              "operator:en": "Sapporo City Transportation Bureau",
+              "public_transport:version": "2",
+              "ref": "H",
+              "route": "subway",
+              "to": "福住",
+              "type": "route",
+              "wikidata": "Q981822",
+              "wikipedia": "ja:札幌市営地下鉄東豊線"
+            }
+          }
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.3539387,
+          43.0662607
+        ]
+      },
+      "id": "node/353689263"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/353689299",
+        "@relations": [
+          {
+            "role": "stop",
+            "rel": 1827999,
+            "reltags": {
+              "colour": "blue",
+              "from": "栄町",
+              "name": "東豊線",
+              "name:de": "Tōhō-Linie",
+              "name:en": "Toho Line",
+              "name:ja": "東豊線",
+              "network": "札幌市営地下鉄",
+              "operator": "札幌市交通局",
+              "operator:en": "Sapporo City Transportation Bureau",
+              "public_transport:version": "2",
+              "ref": "H",
+              "route": "subway",
+              "to": "福住",
+              "type": "route",
+              "wikidata": "Q981822",
+              "wikipedia": "ja:札幌市営地下鉄東豊線"
+            }
+          }
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.3653738,
+          43.0782378
+        ]
+      },
+      "id": "node/353689299"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/353689313",
+        "@relations": [
+          {
+            "role": "stop",
+            "rel": 1827999,
+            "reltags": {
+              "colour": "blue",
+              "from": "栄町",
+              "name": "東豊線",
+              "name:de": "Tōhō-Linie",
+              "name:en": "Toho Line",
+              "name:ja": "東豊線",
+              "network": "札幌市営地下鉄",
+              "operator": "札幌市交通局",
+              "operator:en": "Sapporo City Transportation Bureau",
+              "public_transport:version": "2",
+              "ref": "H",
+              "route": "subway",
+              "to": "福住",
+              "type": "route",
+              "wikidata": "Q981822",
+              "wikipedia": "ja:札幌市営地下鉄東豊線"
+            }
+          }
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.3717323,
+          43.0940863
+        ]
+      },
+      "id": "node/353689313"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/353689341",
+        "@relations": [
+          {
+            "role": "stop",
+            "rel": 1827999,
+            "reltags": {
+              "colour": "blue",
+              "from": "栄町",
+              "name": "東豊線",
+              "name:de": "Tōhō-Linie",
+              "name:en": "Toho Line",
+              "name:ja": "東豊線",
+              "network": "札幌市営地下鉄",
+              "operator": "札幌市交通局",
+              "operator:en": "Sapporo City Transportation Bureau",
+              "public_transport:version": "2",
+              "ref": "H",
+              "route": "subway",
+              "to": "福住",
+              "type": "route",
+              "wikidata": "Q981822",
+              "wikipedia": "ja:札幌市営地下鉄東豊線"
+            }
+          }
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.3549734,
+          43.0768238
+        ]
+      },
+      "id": "node/353689341"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/353689366",
+        "@relations": [
+          {
+            "role": "stop",
+            "rel": 1827999,
+            "reltags": {
+              "colour": "blue",
+              "from": "栄町",
+              "name": "東豊線",
+              "name:de": "Tōhō-Linie",
+              "name:en": "Toho Line",
+              "name:ja": "東豊線",
+              "network": "札幌市営地下鉄",
+              "operator": "札幌市交通局",
+              "operator:en": "Sapporo City Transportation Bureau",
+              "public_transport:version": "2",
+              "ref": "H",
+              "route": "subway",
+              "to": "福住",
+              "type": "route",
+              "wikidata": "Q981822",
+              "wikipedia": "ja:札幌市営地下鉄東豊線"
+            }
+          }
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.3691228,
+          43.1047395
+        ]
+      },
+      "id": "node/353689366"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/353690073",
+        "@relations": [
+          {
+            "role": "stop",
+            "rel": 1827999,
+            "reltags": {
+              "colour": "blue",
+              "from": "栄町",
+              "name": "東豊線",
+              "name:de": "Tōhō-Linie",
+              "name:en": "Toho Line",
+              "name:ja": "東豊線",
+              "network": "札幌市営地下鉄",
+              "operator": "札幌市交通局",
+              "operator:en": "Sapporo City Transportation Bureau",
+              "public_transport:version": "2",
+              "ref": "H",
+              "route": "subway",
+              "to": "福住",
+              "type": "route",
+              "wikidata": "Q981822",
+              "wikipedia": "ja:札幌市営地下鉄東豊線"
+            }
+          }
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.3745064,
+          43.0824273
+        ]
+      },
+      "id": "node/353690073"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/353690112",
+        "@relations": [
+          {
+            "role": "stop",
+            "rel": 1827999,
+            "reltags": {
+              "colour": "blue",
+              "from": "栄町",
+              "name": "東豊線",
+              "name:de": "Tōhō-Linie",
+              "name:en": "Toho Line",
+              "name:ja": "東豊線",
+              "network": "札幌市営地下鉄",
+              "operator": "札幌市交通局",
+              "operator:en": "Sapporo City Transportation Bureau",
+              "public_transport:version": "2",
+              "ref": "H",
+              "route": "subway",
+              "to": "福住",
+              "type": "route",
+              "wikidata": "Q981822",
+              "wikipedia": "ja:札幌市営地下鉄東豊線"
+            }
+          }
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.3570707,
+          43.0541765
+        ]
+      },
+      "id": "node/353690112"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/353690247",
+        "@relations": [
+          {
+            "role": "stop",
+            "rel": 1827999,
+            "reltags": {
+              "colour": "blue",
+              "from": "栄町",
+              "name": "東豊線",
+              "name:de": "Tōhō-Linie",
+              "name:en": "Toho Line",
+              "name:ja": "東豊線",
+              "network": "札幌市営地下鉄",
+              "operator": "札幌市交通局",
+              "operator:en": "Sapporo City Transportation Bureau",
+              "public_transport:version": "2",
+              "ref": "H",
+              "route": "subway",
+              "to": "福住",
+              "type": "route",
+              "wikidata": "Q981822",
+              "wikipedia": "ja:札幌市営地下鉄東豊線"
+            }
+          }
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.3967498,
+          43.029945
+        ]
+      },
+      "id": "node/353690247"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/353690290",
+        "@relations": [
+          {
+            "role": "stop",
+            "rel": 1827999,
+            "reltags": {
+              "colour": "blue",
+              "from": "栄町",
+              "name": "東豊線",
+              "name:de": "Tōhō-Linie",
+              "name:en": "Toho Line",
+              "name:ja": "東豊線",
+              "network": "札幌市営地下鉄",
+              "operator": "札幌市交通局",
+              "operator:en": "Sapporo City Transportation Bureau",
+              "public_transport:version": "2",
+              "ref": "H",
+              "route": "subway",
+              "to": "福住",
+              "type": "route",
+              "wikidata": "Q981822",
+              "wikipedia": "ja:札幌市営地下鉄東豊線"
+            }
+          }
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.3762188,
+          43.0421507
+        ]
+      },
+      "id": "node/353690290"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/353690339",
+        "@relations": [
+          {
+            "role": "stop",
+            "rel": 1827999,
+            "reltags": {
+              "colour": "blue",
+              "from": "栄町",
+              "name": "東豊線",
+              "name:de": "Tōhō-Linie",
+              "name:en": "Toho Line",
+              "name:ja": "東豊線",
+              "network": "札幌市営地下鉄",
+              "operator": "札幌市交通局",
+              "operator:en": "Sapporo City Transportation Bureau",
+              "public_transport:version": "2",
+              "ref": "H",
+              "route": "subway",
+              "to": "福住",
+              "type": "route",
+              "wikidata": "Q981822",
+              "wikipedia": "ja:札幌市営地下鉄東豊線"
+            }
+          }
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.3856775,
+          43.0362987
+        ]
+      },
+      "id": "node/353690339"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/353690349",
+        "@relations": [
+          {
+            "role": "stop",
+            "rel": 1827999,
+            "reltags": {
+              "colour": "blue",
+              "from": "栄町",
+              "name": "東豊線",
+              "name:de": "Tōhō-Linie",
+              "name:en": "Toho Line",
+              "name:ja": "東豊線",
+              "network": "札幌市営地下鉄",
+              "operator": "札幌市交通局",
+              "operator:en": "Sapporo City Transportation Bureau",
+              "public_transport:version": "2",
+              "ref": "H",
+              "route": "subway",
+              "to": "福住",
+              "type": "route",
+              "wikidata": "Q981822",
+              "wikipedia": "ja:札幌市営地下鉄東豊線"
+            }
+          }
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.402919,
+          43.021863
+        ]
+      },
+      "id": "node/353690349"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/353690394",
+        "@relations": [
+          {
+            "role": "stop",
+            "rel": 1827999,
+            "reltags": {
+              "colour": "blue",
+              "from": "栄町",
+              "name": "東豊線",
+              "name:de": "Tōhō-Linie",
+              "name:en": "Toho Line",
+              "name:ja": "東豊線",
+              "network": "札幌市営地下鉄",
+              "operator": "札幌市交通局",
+              "operator:en": "Sapporo City Transportation Bureau",
+              "public_transport:version": "2",
+              "ref": "H",
+              "route": "subway",
+              "to": "福住",
+              "type": "route",
+              "wikidata": "Q981822",
+              "wikipedia": "ja:札幌市営地下鉄東豊線"
+            }
+          }
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.3690188,
+          43.0477863
+        ]
+      },
+      "id": "node/353690394"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/5729328868",
+        "@relations": [
+          {
+            "role": "stop",
+            "rel": 1827999,
+            "reltags": {
+              "colour": "blue",
+              "from": "栄町",
+              "name": "東豊線",
+              "name:de": "Tōhō-Linie",
+              "name:en": "Toho Line",
+              "name:ja": "東豊線",
+              "network": "札幌市営地下鉄",
+              "operator": "札幌市交通局",
+              "operator:en": "Sapporo City Transportation Bureau",
+              "public_transport:version": "2",
+              "ref": "H",
+              "route": "subway",
+              "to": "福住",
+              "type": "route",
+              "wikidata": "Q981822",
+              "wikipedia": "ja:札幌市営地下鉄東豊線"
+            }
+          }
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.3671605,
+          43.1130084
+        ]
+      },
+      "id": "node/5729328868"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/6516226625",
+        "@relations": [
+          {
+            "role": "stop",
+            "rel": 1827999,
+            "reltags": {
+              "colour": "blue",
+              "from": "栄町",
+              "name": "東豊線",
+              "name:de": "Tōhō-Linie",
+              "name:en": "Toho Line",
+              "name:ja": "東豊線",
+              "network": "札幌市営地下鉄",
+              "operator": "札幌市交通局",
+              "operator:en": "Sapporo City Transportation Bureau",
+              "public_transport:version": "2",
+              "ref": "H",
+              "route": "subway",
+              "to": "福住",
+              "type": "route",
+              "wikidata": "Q981822",
+              "wikipedia": "ja:札幌市営地下鉄東豊線"
+            }
+          }
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.3553478,
+          43.0607273
+        ]
+      },
+      "id": "node/6516226625"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7656576084",
+        "@relations": [
+          {
+            "role": "stop",
+            "rel": 8000553,
+            "reltags": {
+              "colour": "blue",
+              "from": "福住",
+              "name": "東豊線",
+              "name:de": "Tōhō-Linie",
+              "name:en": "Toho Line",
+              "name:ja": "東豊線",
+              "network": "札幌市営地下鉄",
+              "operator": "札幌市交通局",
+              "operator:en": "Sapporo City Transportation Bureau",
+              "public_transport:version": "2",
+              "ref": "H",
+              "route": "subway",
+              "to": "栄町",
+              "type": "route",
+              "wikidata": "Q981822",
+              "wikipedia": "ja:札幌市営地下鉄東豊線"
+            }
+          }
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.4028421,
+          43.0218264
+        ]
+      },
+      "id": "node/7656576084"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7656576076",
+        "@relations": [
+          {
+            "role": "stop",
+            "rel": 8000553,
+            "reltags": {
+              "colour": "blue",
+              "from": "福住",
+              "name": "東豊線",
+              "name:de": "Tōhō-Linie",
+              "name:en": "Toho Line",
+              "name:ja": "東豊線",
+              "network": "札幌市営地下鉄",
+              "operator": "札幌市交通局",
+              "operator:en": "Sapporo City Transportation Bureau",
+              "public_transport:version": "2",
+              "ref": "H",
+              "route": "subway",
+              "to": "栄町",
+              "type": "route",
+              "wikidata": "Q981822",
+              "wikipedia": "ja:札幌市営地下鉄東豊線"
+            }
+          }
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.3966659,
+          43.0299168
+        ]
+      },
+      "id": "node/7656576076"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7656576058",
+        "@relations": [
+          {
+            "role": "stop",
+            "rel": 8000553,
+            "reltags": {
+              "colour": "blue",
+              "from": "福住",
+              "name": "東豊線",
+              "name:de": "Tōhō-Linie",
+              "name:en": "Toho Line",
+              "name:ja": "東豊線",
+              "network": "札幌市営地下鉄",
+              "operator": "札幌市交通局",
+              "operator:en": "Sapporo City Transportation Bureau",
+              "public_transport:version": "2",
+              "ref": "H",
+              "route": "subway",
+              "to": "栄町",
+              "type": "route",
+              "wikidata": "Q981822",
+              "wikipedia": "ja:札幌市営地下鉄東豊線"
+            }
+          }
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.3856288,
+          43.0362466
+        ]
+      },
+      "id": "node/7656576058"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7656576115",
+        "@relations": [
+          {
+            "role": "stop",
+            "rel": 8000553,
+            "reltags": {
+              "colour": "blue",
+              "from": "福住",
+              "name": "東豊線",
+              "name:de": "Tōhō-Linie",
+              "name:en": "Toho Line",
+              "name:ja": "東豊線",
+              "network": "札幌市営地下鉄",
+              "operator": "札幌市交通局",
+              "operator:en": "Sapporo City Transportation Bureau",
+              "public_transport:version": "2",
+              "ref": "H",
+              "route": "subway",
+              "to": "栄町",
+              "type": "route",
+              "wikidata": "Q981822",
+              "wikipedia": "ja:札幌市営地下鉄東豊線"
+            }
+          }
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.3760994,
+          43.0420971
+        ]
+      },
+      "id": "node/7656576115"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7656576106",
+        "@relations": [
+          {
+            "role": "stop",
+            "rel": 8000553,
+            "reltags": {
+              "colour": "blue",
+              "from": "福住",
+              "name": "東豊線",
+              "name:de": "Tōhō-Linie",
+              "name:en": "Toho Line",
+              "name:ja": "東豊線",
+              "network": "札幌市営地下鉄",
+              "operator": "札幌市交通局",
+              "operator:en": "Sapporo City Transportation Bureau",
+              "public_transport:version": "2",
+              "ref": "H",
+              "route": "subway",
+              "to": "栄町",
+              "type": "route",
+              "wikidata": "Q981822",
+              "wikipedia": "ja:札幌市営地下鉄東豊線"
+            }
+          }
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.3688997,
+          43.0477654
+        ]
+      },
+      "id": "node/7656576106"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7656576154",
+        "@relations": [
+          {
+            "role": "stop",
+            "rel": 8000553,
+            "reltags": {
+              "colour": "blue",
+              "from": "福住",
+              "name": "東豊線",
+              "name:de": "Tōhō-Linie",
+              "name:en": "Toho Line",
+              "name:ja": "東豊線",
+              "network": "札幌市営地下鉄",
+              "operator": "札幌市交通局",
+              "operator:en": "Sapporo City Transportation Bureau",
+              "public_transport:version": "2",
+              "ref": "H",
+              "route": "subway",
+              "to": "栄町",
+              "type": "route",
+              "wikidata": "Q981822",
+              "wikipedia": "ja:札幌市営地下鉄東豊線"
+            }
+          }
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.356941,
+          43.054155
+        ]
+      },
+      "id": "node/7656576154"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7656576149",
+        "@relations": [
+          {
+            "role": "stop",
+            "rel": 8000553,
+            "reltags": {
+              "colour": "blue",
+              "from": "福住",
+              "name": "東豊線",
+              "name:de": "Tōhō-Linie",
+              "name:en": "Toho Line",
+              "name:ja": "東豊線",
+              "network": "札幌市営地下鉄",
+              "operator": "札幌市交通局",
+              "operator:en": "Sapporo City Transportation Bureau",
+              "public_transport:version": "2",
+              "ref": "H",
+              "route": "subway",
+              "to": "栄町",
+              "type": "route",
+              "wikidata": "Q981822",
+              "wikipedia": "ja:札幌市営地下鉄東豊線"
+            }
+          }
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.3552765,
+          43.0607191
+        ]
+      },
+      "id": "node/7656576149"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7656576148",
+        "@relations": [
+          {
+            "role": "stop",
+            "rel": 8000553,
+            "reltags": {
+              "colour": "blue",
+              "from": "福住",
+              "name": "東豊線",
+              "name:de": "Tōhō-Linie",
+              "name:en": "Toho Line",
+              "name:ja": "東豊線",
+              "network": "札幌市営地下鉄",
+              "operator": "札幌市交通局",
+              "operator:en": "Sapporo City Transportation Bureau",
+              "public_transport:version": "2",
+              "ref": "H",
+              "route": "subway",
+              "to": "栄町",
+              "type": "route",
+              "wikidata": "Q981822",
+              "wikipedia": "ja:札幌市営地下鉄東豊線"
+            }
+          }
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.3538674,
+          43.0662525
+        ]
+      },
+      "id": "node/7656576148"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7656576136",
+        "@relations": [
+          {
+            "role": "stop",
+            "rel": 8000553,
+            "reltags": {
+              "colour": "blue",
+              "from": "福住",
+              "name": "東豊線",
+              "name:de": "Tōhō-Linie",
+              "name:en": "Toho Line",
+              "name:ja": "東豊線",
+              "network": "札幌市営地下鉄",
+              "operator": "札幌市交通局",
+              "operator:en": "Sapporo City Transportation Bureau",
+              "public_transport:version": "2",
+              "ref": "H",
+              "route": "subway",
+              "to": "栄町",
+              "type": "route",
+              "wikidata": "Q981822",
+              "wikipedia": "ja:札幌市営地下鉄東豊線"
+            }
+          }
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.3549515,
+          43.0768681
+        ]
+      },
+      "id": "node/7656576136"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7656576135",
+        "@relations": [
+          {
+            "role": "stop",
+            "rel": 8000553,
+            "reltags": {
+              "colour": "blue",
+              "from": "福住",
+              "name": "東豊線",
+              "name:de": "Tōhō-Linie",
+              "name:en": "Toho Line",
+              "name:ja": "東豊線",
+              "network": "札幌市営地下鉄",
+              "operator": "札幌市交通局",
+              "operator:en": "Sapporo City Transportation Bureau",
+              "public_transport:version": "2",
+              "ref": "H",
+              "route": "subway",
+              "to": "栄町",
+              "type": "route",
+              "wikidata": "Q981822",
+              "wikipedia": "ja:札幌市営地下鉄東豊線"
+            }
+          }
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.3653519,
+          43.0782821
+        ]
+      },
+      "id": "node/7656576135"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7656576122",
+        "@relations": [
+          {
+            "role": "stop",
+            "rel": 8000553,
+            "reltags": {
+              "colour": "blue",
+              "from": "福住",
+              "name": "東豊線",
+              "name:de": "Tōhō-Linie",
+              "name:en": "Toho Line",
+              "name:ja": "東豊線",
+              "network": "札幌市営地下鉄",
+              "operator": "札幌市交通局",
+              "operator:en": "Sapporo City Transportation Bureau",
+              "public_transport:version": "2",
+              "ref": "H",
+              "route": "subway",
+              "to": "栄町",
+              "type": "route",
+              "wikidata": "Q981822",
+              "wikipedia": "ja:札幌市営地下鉄東豊線"
+            }
+          }
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.3744349,
+          43.0824196
+        ]
+      },
+      "id": "node/7656576122"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7656576121",
+        "@relations": [
+          {
+            "role": "stop",
+            "rel": 8000553,
+            "reltags": {
+              "colour": "blue",
+              "from": "福住",
+              "name": "東豊線",
+              "name:de": "Tōhō-Linie",
+              "name:en": "Toho Line",
+              "name:ja": "東豊線",
+              "network": "札幌市営地下鉄",
+              "operator": "札幌市交通局",
+              "operator:en": "Sapporo City Transportation Bureau",
+              "public_transport:version": "2",
+              "ref": "H",
+              "route": "subway",
+              "to": "栄町",
+              "type": "route",
+              "wikidata": "Q981822",
+              "wikipedia": "ja:札幌市営地下鉄東豊線"
+            }
+          }
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.3716609,
+          43.0940785
+        ]
+      },
+      "id": "node/7656576121"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7656576120",
+        "@relations": [
+          {
+            "role": "stop",
+            "rel": 8000553,
+            "reltags": {
+              "colour": "blue",
+              "from": "福住",
+              "name": "東豊線",
+              "name:de": "Tōhō-Linie",
+              "name:en": "Toho Line",
+              "name:ja": "東豊線",
+              "network": "札幌市営地下鉄",
+              "operator": "札幌市交通局",
+              "operator:en": "Sapporo City Transportation Bureau",
+              "public_transport:version": "2",
+              "ref": "H",
+              "route": "subway",
+              "to": "栄町",
+              "type": "route",
+              "wikidata": "Q981822",
+              "wikipedia": "ja:札幌市営地下鉄東豊線"
+            }
+          }
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.3690514,
+          43.1047317
+        ]
+      },
+      "id": "node/7656576120"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7656576119",
+        "@relations": [
+          {
+            "role": "stop",
+            "rel": 8000553,
+            "reltags": {
+              "colour": "blue",
+              "from": "福住",
+              "name": "東豊線",
+              "name:de": "Tōhō-Linie",
+              "name:en": "Toho Line",
+              "name:ja": "東豊線",
+              "network": "札幌市営地下鉄",
+              "operator": "札幌市交通局",
+              "operator:en": "Sapporo City Transportation Bureau",
+              "public_transport:version": "2",
+              "ref": "H",
+              "route": "subway",
+              "to": "栄町",
+              "type": "route",
+              "wikidata": "Q981822",
+              "wikipedia": "ja:札幌市営地下鉄東豊線"
+            }
+          }
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.3670891,
+          43.1130007
+        ]
+      },
+      "id": "node/7656576119"
+    }
+  ]
+}
