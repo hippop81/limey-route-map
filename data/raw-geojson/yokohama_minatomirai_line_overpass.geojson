@@ -1,0 +1,601 @@
+{
+  "type": "FeatureCollection",
+  "generator": "overpass-turbo",
+  "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL.",
+  "timestamp": "2026-06-11T06:17:07Z",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "way/849716698",
+        "@relations": [
+          {
+            "role": "platform",
+            "rel": 11650588,
+            "reltags": {
+              "name": "横浜 (みなとみらい線 東急東横線)",
+              "name:en": "Yokohama (subway)",
+              "name:es": "Yokohama (metro)",
+              "name:ja": "横浜 (みなとみらい線 東急東横線)",
+              "network": "みなとみらい線;東急電鉄",
+              "operator": "横浜高速鉄道;東急電鉄",
+              "operator:ja": "横浜高速鉄道;東急電鉄",
+              "public_transport": "stop_area",
+              "ref": "MM01",
+              "type": "public_transport"
+            }
+          }
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            139.6219583,
+            35.4660904
+          ],
+          [
+            139.6222612,
+            35.4664106
+          ],
+          [
+            139.6222766,
+            35.4664009
+          ],
+          [
+            139.6219737,
+            35.4660808
+          ],
+          [
+            139.6219583,
+            35.4660904
+          ]
+        ]
+      },
+      "id": "way/849716698"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "way/222625749",
+        "@relations": [
+          {
+            "role": "forward",
+            "rel": 12248124,
+            "reltags": {
+              "colour": "#01AAAA",
+              "name": "東武東上線 - 副都心線 - 東急東横線・みなとみらい線 直通運転",
+              "name:ja": "東武東上線 - 副都心線 - 東急東横線・みなとみらい線 直通運転: 森林公園→元町・中華街",
+              "operator": "東武鉄道;東京メトロ;東急電鉄;横浜高速鉄道",
+              "ref": "TJ",
+              "route": "subway",
+              "to": "元町・中華街",
+              "type": "superroute",
+              "via": "和光市;渋谷;横浜"
+            }
+          },
+          {
+            "role": "forward",
+            "rel": 12248576,
+            "reltags": {
+              "colour": "#9c5e31",
+              "from": "元町・中華街",
+              "name": "東武東上線 - 副都心線 - 東急東横線・みなとみらい線 直通運転",
+              "name:ja": "東武東上線 - 副都心線 - 東急東横線・みなとみらい線 直通運転: 元町・中華街→森林公園",
+              "operator": "東武鉄道;東京メトロ;東急電鉄;横浜高速鉄道",
+              "ref": "F",
+              "route": "subway",
+              "to": "森林公園",
+              "type": "superroute",
+              "via": "和光市;渋谷;横浜"
+            }
+          },
+          {
+            "role": "forward",
+            "rel": 12250875,
+            "reltags": {
+              "colour": "#004098",
+              "name": "西武池袋線 - 西武有楽町線 - 副都心線 - 東横線・みなとみらい線 直通運転",
+              "name:ja": "西武池袋線 - 西武有楽町線 - 副都心線 - 東横線・みなとみらい線 直通運転: 飯能→元町・中華街",
+              "operator": "西武鉄道;東京地下鉄;東急電鉄;横浜高速鉄道",
+              "ref": "TJ",
+              "route": "subway",
+              "to": "元町・中華街",
+              "type": "superroute",
+              "via": "練馬;小竹向原;渋谷;横浜"
+            }
+          },
+          {
+            "role": "forward",
+            "rel": 12250875,
+            "reltags": {
+              "colour": "#004098",
+              "name": "西武池袋線 - 西武有楽町線 - 副都心線 - 東横線・みなとみらい線 直通運転",
+              "name:ja": "西武池袋線 - 西武有楽町線 - 副都心線 - 東横線・みなとみらい線 直通運転: 飯能→元町・中華街",
+              "operator": "西武鉄道;東京地下鉄;東急電鉄;横浜高速鉄道",
+              "ref": "TJ",
+              "route": "subway",
+              "to": "元町・中華街",
+              "type": "superroute",
+              "via": "練馬;小竹向原;渋谷;横浜"
+            }
+          }
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            139.6684329,
+            35.6060042
+          ],
+          [
+            139.6683632,
+            35.6060298
+          ],
+          [
+            139.6683956,
+            35.6061069
+          ],
+          [
+            139.6684616,
+            35.6061053
+          ],
+          [
+            139.6684991,
+            35.6063409
+          ],
+          [
+            139.6686352,
+            35.6063345
+          ],
+          [
+            139.6686522,
+            35.6061019
+          ],
+          [
+            139.6687387,
+            35.6061005
+          ],
+          [
+            139.6687526,
+            35.6060162
+          ],
+          [
+            139.6686901,
+            35.6059994
+          ],
+          [
+            139.6686894,
+            35.605935
+          ],
+          [
+            139.6684321,
+            35.605937
+          ],
+          [
+            139.6684329,
+            35.6060042
+          ]
+        ]
+      },
+      "id": "way/222625749"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/355843853",
+        "@relations": [
+          {
+            "role": "stop",
+            "rel": 11650588,
+            "reltags": {
+              "name": "横浜 (みなとみらい線 東急東横線)",
+              "name:en": "Yokohama (subway)",
+              "name:es": "Yokohama (metro)",
+              "name:ja": "横浜 (みなとみらい線 東急東横線)",
+              "network": "みなとみらい線;東急電鉄",
+              "operator": "横浜高速鉄道;東急電鉄",
+              "operator:ja": "横浜高速鉄道;東急電鉄",
+              "public_transport": "stop_area",
+              "ref": "MM01",
+              "type": "public_transport"
+            }
+          }
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          139.622118,
+          35.4662723
+        ]
+      },
+      "id": "node/355843853"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/2142236909",
+        "@relations": [
+          {
+            "role": "",
+            "rel": 11650588,
+            "reltags": {
+              "name": "横浜 (みなとみらい線 東急東横線)",
+              "name:en": "Yokohama (subway)",
+              "name:es": "Yokohama (metro)",
+              "name:ja": "横浜 (みなとみらい線 東急東横線)",
+              "network": "みなとみらい線;東急電鉄",
+              "operator": "横浜高速鉄道;東急電鉄",
+              "operator:ja": "横浜高速鉄道;東急電鉄",
+              "public_transport": "stop_area",
+              "ref": "MM01",
+              "type": "public_transport"
+            }
+          }
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          139.621321,
+          35.4672503
+        ]
+      },
+      "id": "node/2142236909"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/2546957259",
+        "@relations": [
+          {
+            "role": "",
+            "rel": 11650588,
+            "reltags": {
+              "name": "横浜 (みなとみらい線 東急東横線)",
+              "name:en": "Yokohama (subway)",
+              "name:es": "Yokohama (metro)",
+              "name:ja": "横浜 (みなとみらい線 東急東横線)",
+              "network": "みなとみらい線;東急電鉄",
+              "operator": "横浜高速鉄道;東急電鉄",
+              "operator:ja": "横浜高速鉄道;東急電鉄",
+              "public_transport": "stop_area",
+              "ref": "MM01",
+              "type": "public_transport"
+            }
+          }
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          139.6232703,
+          35.464345
+        ]
+      },
+      "id": "node/2546957259"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/2546957260",
+        "@relations": [
+          {
+            "role": "",
+            "rel": 11650588,
+            "reltags": {
+              "name": "横浜 (みなとみらい線 東急東横線)",
+              "name:en": "Yokohama (subway)",
+              "name:es": "Yokohama (metro)",
+              "name:ja": "横浜 (みなとみらい線 東急東横線)",
+              "network": "みなとみらい線;東急電鉄",
+              "operator": "横浜高速鉄道;東急電鉄",
+              "operator:ja": "横浜高速鉄道;東急電鉄",
+              "public_transport": "stop_area",
+              "ref": "MM01",
+              "type": "public_transport"
+            }
+          }
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          139.623198,
+          35.4646068
+        ]
+      },
+      "id": "node/2546957260"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/2546957261",
+        "@relations": [
+          {
+            "role": "",
+            "rel": 11650588,
+            "reltags": {
+              "name": "横浜 (みなとみらい線 東急東横線)",
+              "name:en": "Yokohama (subway)",
+              "name:es": "Yokohama (metro)",
+              "name:ja": "横浜 (みなとみらい線 東急東横線)",
+              "network": "みなとみらい線;東急電鉄",
+              "operator": "横浜高速鉄道;東急電鉄",
+              "operator:ja": "横浜高速鉄道;東急電鉄",
+              "public_transport": "stop_area",
+              "ref": "MM01",
+              "type": "public_transport"
+            }
+          }
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          139.6230151,
+          35.4646968
+        ]
+      },
+      "id": "node/2546957261"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/2546957262",
+        "@relations": [
+          {
+            "role": "",
+            "rel": 11650588,
+            "reltags": {
+              "name": "横浜 (みなとみらい線 東急東横線)",
+              "name:en": "Yokohama (subway)",
+              "name:es": "Yokohama (metro)",
+              "name:ja": "横浜 (みなとみらい線 東急東横線)",
+              "network": "みなとみらい線;東急電鉄",
+              "operator": "横浜高速鉄道;東急電鉄",
+              "operator:ja": "横浜高速鉄道;東急電鉄",
+              "public_transport": "stop_area",
+              "ref": "MM01",
+              "type": "public_transport"
+            }
+          }
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          139.6229163,
+          35.4647451
+        ]
+      },
+      "id": "node/2546957262"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/2546998912",
+        "@relations": [
+          {
+            "role": "",
+            "rel": 11650588,
+            "reltags": {
+              "name": "横浜 (みなとみらい線 東急東横線)",
+              "name:en": "Yokohama (subway)",
+              "name:es": "Yokohama (metro)",
+              "name:ja": "横浜 (みなとみらい線 東急東横線)",
+              "network": "みなとみらい線;東急電鉄",
+              "operator": "横浜高速鉄道;東急電鉄",
+              "operator:ja": "横浜高速鉄道;東急電鉄",
+              "public_transport": "stop_area",
+              "ref": "MM01",
+              "type": "public_transport"
+            }
+          }
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          139.6242845,
+          35.464233
+        ]
+      },
+      "id": "node/2546998912"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/3110625207",
+        "@relations": [
+          {
+            "role": "",
+            "rel": 11650588,
+            "reltags": {
+              "name": "横浜 (みなとみらい線 東急東横線)",
+              "name:en": "Yokohama (subway)",
+              "name:es": "Yokohama (metro)",
+              "name:ja": "横浜 (みなとみらい線 東急東横線)",
+              "network": "みなとみらい線;東急電鉄",
+              "operator": "横浜高速鉄道;東急電鉄",
+              "operator:ja": "横浜高速鉄道;東急電鉄",
+              "public_transport": "stop_area",
+              "ref": "MM01",
+              "type": "public_transport"
+            }
+          }
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          139.62186,
+          35.4666783
+        ]
+      },
+      "id": "node/3110625207"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/3377392859",
+        "@relations": [
+          {
+            "role": "",
+            "rel": 11650588,
+            "reltags": {
+              "name": "横浜 (みなとみらい線 東急東横線)",
+              "name:en": "Yokohama (subway)",
+              "name:es": "Yokohama (metro)",
+              "name:ja": "横浜 (みなとみらい線 東急東横線)",
+              "network": "みなとみらい線;東急電鉄",
+              "operator": "横浜高速鉄道;東急電鉄",
+              "operator:ja": "横浜高速鉄道;東急電鉄",
+              "public_transport": "stop_area",
+              "ref": "MM01",
+              "type": "public_transport"
+            }
+          }
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          139.6216502,
+          35.4663224
+        ]
+      },
+      "id": "node/3377392859"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/3377392882",
+        "@relations": [
+          {
+            "role": "",
+            "rel": 11650588,
+            "reltags": {
+              "name": "横浜 (みなとみらい線 東急東横線)",
+              "name:en": "Yokohama (subway)",
+              "name:es": "Yokohama (metro)",
+              "name:ja": "横浜 (みなとみらい線 東急東横線)",
+              "network": "みなとみらい線;東急電鉄",
+              "operator": "横浜高速鉄道;東急電鉄",
+              "operator:ja": "横浜高速鉄道;東急電鉄",
+              "public_transport": "stop_area",
+              "ref": "MM01",
+              "type": "public_transport"
+            }
+          }
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          139.6220028,
+          35.4660353
+        ]
+      },
+      "id": "node/3377392882"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/3377392889",
+        "@relations": [
+          {
+            "role": "",
+            "rel": 11650588,
+            "reltags": {
+              "name": "横浜 (みなとみらい線 東急東横線)",
+              "name:en": "Yokohama (subway)",
+              "name:es": "Yokohama (metro)",
+              "name:ja": "横浜 (みなとみらい線 東急東横線)",
+              "network": "みなとみらい線;東急電鉄",
+              "operator": "横浜高速鉄道;東急電鉄",
+              "operator:ja": "横浜高速鉄道;東急電鉄",
+              "public_transport": "stop_area",
+              "ref": "MM01",
+              "type": "public_transport"
+            }
+          }
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          139.6227367,
+          35.4667247
+        ]
+      },
+      "id": "node/3377392889"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7967959831",
+        "@relations": [
+          {
+            "role": "",
+            "rel": 11650588,
+            "reltags": {
+              "name": "横浜 (みなとみらい線 東急東横線)",
+              "name:en": "Yokohama (subway)",
+              "name:es": "Yokohama (metro)",
+              "name:ja": "横浜 (みなとみらい線 東急東横線)",
+              "network": "みなとみらい線;東急電鉄",
+              "operator": "横浜高速鉄道;東急電鉄",
+              "operator:ja": "横浜高速鉄道;東急電鉄",
+              "public_transport": "stop_area",
+              "ref": "MM01",
+              "type": "public_transport"
+            }
+          }
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          139.6220811,
+          35.466292
+        ]
+      },
+      "id": "node/7967959831"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/6448866771",
+        "@relations": [
+          {
+            "role": "stop",
+            "rel": 11650588,
+            "reltags": {
+              "name": "横浜 (みなとみらい線 東急東横線)",
+              "name:en": "Yokohama (subway)",
+              "name:es": "Yokohama (metro)",
+              "name:ja": "横浜 (みなとみらい線 東急東横線)",
+              "network": "みなとみらい線;東急電鉄",
+              "operator": "横浜高速鉄道;東急電鉄",
+              "operator:ja": "横浜高速鉄道;東急電鉄",
+              "public_transport": "stop_area",
+              "ref": "MM01",
+              "type": "public_transport"
+            }
+          }
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          139.6221488,
+          35.4662537
+        ]
+      },
+      "id": "node/6448866771"
+    }
+  ]
+}
