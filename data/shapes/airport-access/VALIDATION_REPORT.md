@@ -54,8 +54,26 @@
 - **Warnings:** 0
 - **Output:** `data/shapes/airport-access/fukuoka_subway_airport.txt`
 
+## meitetsu_airport.txt
+- **Source:** `sources/meitetsu_airport.geojson` (OSM relation `11852485`, 常滑 → 中部国際空港)
+- **Points:** 71
+- **Median step:** 0.036 km (outlier threshold: 15.00 km)
+- **Max step:** 0.675 km
+- **Corrected:** 0
+- **Warnings:** 0
+- **Output:** `data/shapes/airport-access/meitetsu_airport.txt`
+
+## osaka_monorail_itami.txt
+- **Source:** `sources/osaka_monorail_itami.geojson` (OSM relation `6011645`, 門真市 → 大阪空港)
+- **Points:** 704
+- **Median step:** 0.018 km (outlier threshold: 15.00 km)
+- **Max step:** 0.661 km
+- **Corrected:** 0
+- **Warnings:** 0
+- **Output:** `data/shapes/airport-access/osaka_monorail_itami.txt`
+
 ## Summary
-- **Total points:** 212
+- **Total points:** 987
 - **Total corrected:** 1
 - **Total warnings:** 22
 
