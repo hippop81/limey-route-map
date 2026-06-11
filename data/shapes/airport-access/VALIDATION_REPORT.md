@@ -81,8 +81,17 @@
 - **Warnings:** 0
 - **Output:** `data/shapes/airport-access/keisei_skyliner.txt`
 
+## jr_haruka.txt
+- **Source:** `sources/jr_haruka.geojson` (OSM relation `18635200`, 特急はるか 関西空港 → 京都)
+- **Points:** 1720
+- **Median step:** 0.038 km (outlier threshold: 15.00 km)
+- **Max step:** 2.116 km
+- **Corrected:** 0
+- **Warnings:** 0
+- **Output:** `data/shapes/airport-access/jr_haruka.txt`
+
 ## Summary
-- **Total points:** 1911
+- **Total points:** 3631
 - **Total corrected:** 1
 - **Total warnings:** 22
 
