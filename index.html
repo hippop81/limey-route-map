@@ -20,10 +20,10 @@
   --safe-right:env(safe-area-inset-right,0px);
 }
 *{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:var(--font-body);background:var(--cream);color:var(--primary);height:100dvh;height:100vh;overflow:hidden;-webkit-font-smoothing:antialiased;}
-.screen{display:none;height:100dvh;height:100vh;}
+body{font-family:var(--font-body);background:var(--cream);color:var(--primary);height:100vh;height:100dvh;overflow:hidden;-webkit-font-smoothing:antialiased;}
+.screen{display:none;height:100vh;height:100dvh;}
 .screen.active{display:flex;}
-#mapScreen.active{flex:1;min-height:0;height:100dvh;height:100vh;}
+#mapScreen.active{flex:1;min-height:0;height:100vh;height:100dvh;}
 
 /* ── My Trips screen ── */
 #tripsScreen{flex-direction:column;background:var(--cream);height:100dvh;height:100vh;min-height:0;max-height:100dvh;max-height:100vh;overflow:hidden;}
@@ -111,8 +111,8 @@ body{font-family:var(--font-body);background:var(--cream);color:var(--primary);h
 .draft-warnings-box{margin-bottom:16px;padding:12px 14px;background:var(--soft-lime);border:1px solid rgba(197,232,74,.5);border-radius:var(--radius);font-size:11px;color:#556b00;line-height:1.5;}
 
 /* ── Map screen (unchanged layout) ── */
-#mapScreen{overflow:hidden;height:100dvh;height:100vh;position:relative;}
-.sidebar{width:308px;min-width:308px;height:100dvh;height:100vh;max-height:100dvh;max-height:100vh;background:var(--cream);border-right:1px solid var(--warm-gray);display:flex;flex-direction:column;overflow:hidden;min-height:0;}
+#mapScreen{overflow:hidden;height:100vh;height:100dvh;position:relative;}
+.sidebar{width:308px;min-width:308px;height:100vh;height:100dvh;max-height:100vh;max-height:100dvh;background:var(--cream);border-right:1px solid var(--warm-gray);display:flex;flex-direction:column;overflow:hidden;min-height:0;}
 .sidebar-header{flex-shrink:0;padding:18px 18px 14px;border-bottom:1px solid var(--warm-gray);background:var(--white);}
 .back-btn{display:inline-flex;align-items:center;gap:4px;border:none;background:transparent;color:var(--peacock);cursor:pointer;font-family:var(--font-body);font-size:11px;font-weight:600;letter-spacing:.04em;padding:0 0 10px;margin:0;transition:color var(--dur) var(--ease);}
 .back-btn:hover{color:var(--primary);}
@@ -183,7 +183,39 @@ body{font-family:var(--font-body);background:var(--cream);color:var(--primary);h
 .shared-loading-spinner{width:28px;height:28px;border:2px solid var(--warm-gray);border-top-color:var(--peacock);border-radius:50%;animation:spin .8s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg)}}
 body.shared-view .back-btn,body.shared-view #mapSaveStatus,body.shared-view #shareBtn{display:none!important;}
+body.shared-view .edit-toggle-btn{display:none!important;}
 #mapScreen .sidebar-header-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
+
+/* ── Edit mode (Stop add/edit/delete/reorder) ── */
+.edit-toggle-btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:7px 14px;border-radius:var(--radius);border:1.5px solid var(--warm-gray);background:var(--white);color:var(--secondary);cursor:pointer;font-family:var(--font-body);font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;transition:all var(--dur) var(--ease);}
+.edit-toggle-btn:hover{border-color:var(--peacock);color:var(--peacock);}
+.edit-toggle-btn.on{background:var(--lime);border-color:var(--lime);color:var(--primary);}
+.add-row{display:none;justify-content:center;margin:0 0 9px 23px;}
+.timeline.edit-mode .add-row{display:flex;}
+.btn-add-stop{display:flex;align-items:center;gap:5px;justify-content:center;width:100%;font-family:var(--font-body);font-size:9px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--secondary);background:transparent;border:1.5px dashed var(--warm-gray);border-radius:6px;padding:6px 10px;cursor:pointer;transition:all .2s;}
+.btn-add-stop:hover{border-color:var(--peacock);color:var(--peacock);background:rgba(0,122,138,.03);}
+.timeline.edit-mode .stop-row{cursor:default;}
+.timeline.edit-mode .stop-row[draggable="true"]{cursor:grab;}
+.timeline.edit-mode .stop-row.drag-over .stop-card{border-top:2px solid var(--peacock);}
+.stop-edit-actions{display:none;flex-direction:column;align-items:center;gap:2px;padding-top:11px;}
+.timeline.edit-mode .stop-edit-actions{display:flex;}
+.drag-handle{font-size:14px;color:var(--secondary);cursor:grab;padding:2px 5px;user-select:none;line-height:1;}
+.drag-handle:active{cursor:grabbing;}
+.stop-action-btn{border:none;background:transparent;color:var(--secondary);cursor:pointer;font-size:13px;padding:2px 5px;border-radius:4px;line-height:1;}
+.stop-action-btn:hover{background:var(--light-gray);color:var(--primary);}
+.edit-panel-overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:1000;display:none;}
+.edit-panel-overlay.open{display:block;}
+.edit-panel{position:fixed;left:0;right:0;bottom:0;max-height:88vh;max-height:88dvh;overflow-y:auto;background:var(--white);border-radius:16px 16px 0 0;box-shadow:0 -6px 28px rgba(0,0,0,.18);z-index:1001;padding:18px;transform:translateY(110%);transition:transform var(--dur) var(--ease);}
+.edit-panel.open{transform:translateY(0);}
+.edit-panel-title{font-family:var(--font-head);font-size:15px;font-weight:700;color:var(--primary);margin-bottom:14px;}
+.edit-panel-actions{display:flex;gap:8px;margin-top:16px;}
+.edit-delete-btn{background:transparent;border:1.5px solid #d9534f;color:#d9534f;}
+.edit-delete-btn:hover{background:#d9534f;color:#fff;}
+.edit-checkbox-row{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--secondary);margin-top:4px;}
+@media (min-width:768px){
+.edit-panel{left:auto;right:24px;bottom:24px;width:340px;border-radius:var(--radius);transform:translateY(20px);opacity:0;pointer-events:none;}
+.edit-panel.open{transform:translateY(0);opacity:1;pointer-events:auto;}
+}
 #map{flex:1;}
 .leaflet-container{background:#1a6a7a;}
 .leaflet-popup-content-wrapper{background:var(--white)!important;border-top:3px solid var(--peacock)!important;border-radius:var(--radius)!important;color:var(--primary)!important;box-shadow:0 4px 16px rgba(0,0,0,.18)!important;padding:0!important;}
@@ -228,7 +260,8 @@ button,.btn,.share-btn,.day-tab,.trip-card,.stop-row,.draft-icon-btn,.back-btn,.
 .sidebar[data-sheet="peek"] .back-btn{padding-bottom:4px;}
 .sidebar[data-sheet="peek"] .app-title{font-size:16px;}
 .sidebar-header-actions{width:100%;margin-top:6px;}
-.share-btn{width:100%;justify-content:center;margin-top:0;min-height:44px;font-size:11px;}
+.share-btn{flex:1;justify-content:center;margin-top:0;min-height:44px;font-size:11px;}
+.edit-toggle-btn{flex:1;justify-content:center;min-height:44px;font-size:11px;}
 .sidebar-header{padding-left:max(16px,var(--safe-left));padding-right:max(16px,var(--safe-right));}
 .day-tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
 .day-tabs::-webkit-scrollbar{display:none;}
@@ -351,6 +384,7 @@ button,.btn,.share-btn,.day-tab,.trip-card,.stop-row,.draft-icon-btn,.back-btn,.
       <div class="eyebrow" id="mapEyebrow">Trip</div>
       <div class="app-title"><span class="title-accent">ROUTE</span> MAP</div>
       <div class="sidebar-header-actions">
+        <button class="edit-toggle-btn" id="editToggleBtn" type="button" onclick="toggleEditMode()">&#9999; Edit Trip</button>
         <button class="share-btn" id="shareBtn" type="button" onclick="handleShareTrip()">Share</button>
       </div>
       <div class="map-save-status" id="mapSaveStatus" data-save-state="saved">Saved ✓</div>
@@ -366,6 +400,35 @@ button,.btn,.share-btn,.day-tab,.trip-card,.stop-row,.draft-icon-btn,.back-btn,.
   </div>
 </div>
 
+<!-- Stop edit panel (Edit Trip mode) -->
+<div class="edit-panel-overlay" id="editPanelOverlay" onclick="closeEP()"></div>
+<div class="edit-panel" id="editPanel">
+  <div class="edit-panel-title" id="epTitle">Stop を編集</div>
+  <div class="draft-field">
+    <label for="ef-name">名前</label>
+    <input type="text" id="ef-name">
+    <div class="draft-badge draft-badge-error" id="ef-name-err" style="display:none;margin-top:4px;">名前を入力してください</div>
+  </div>
+  <div class="draft-field-row">
+    <div class="draft-field"><label for="ef-time">時刻</label><input type="text" id="ef-time" placeholder="09:00"></div>
+    <div class="draft-field"><label for="ef-fare">運賃/価格</label><input type="text" id="ef-fare" placeholder="¥1,000"></div>
+  </div>
+  <div class="draft-field"><label for="ef-memo">メモ</label><textarea id="ef-memo"></textarea></div>
+  <div class="draft-field"><label for="ef-transport">交通手段</label><select id="ef-transport"></select></div>
+  <div class="draft-field-row">
+    <div class="draft-field"><label for="ef-lat">緯度</label><input type="text" id="ef-lat" placeholder="26.21"></div>
+    <div class="draft-field"><label for="ef-lng">経度</label><input type="text" id="ef-lng" placeholder="127.68"></div>
+  </div>
+  <label class="edit-checkbox-row" for="ef-is-day-end">
+    <input type="checkbox" id="ef-is-day-end"> この日の最終地点（宿泊など）
+  </label>
+  <div class="edit-panel-actions">
+    <button class="btn-draft-secondary" type="button" onclick="closeEP()">キャンセル</button>
+    <button class="edit-delete-btn btn-draft-secondary" type="button" id="epDelBtn" onclick="deleteEPStop()">削除</button>
+    <button class="btn-draft-primary" type="button" onclick="saveEPStop()">保存</button>
+  </div>
+</div>
+
 <div class="app-toast" id="shareToast" role="status" aria-live="polite" hidden></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -373,6 +436,11 @@ button,.btn,.share-btn,.day-tab,.trip-card,.stop-row,.draft-icon-btn,.back-btn,.
 <script src="./trip-repository.js"></script>
 <script>
 /* ── Trip Manager (Phase 3.1+) ── */
+var editMode = false;
+var epDayIndex = -1;
+var epStopIndex = -1;
+var epInsertAfter = -1;
+var dragFromIndex = -1;
 var isSharedView = false;
 var sharedTripId = null;
 var currentTripId = null;
@@ -1304,6 +1372,126 @@ function editStopCategories(dayIndex, stopIndex, categories) {
   saveStop(dayIndex, stopIndex, { categories: categories });
 }
 
+/* ── Edit mode UI (Stop add/edit/delete/reorder) ── */
+function toggleEditMode() {
+  if (isSharedView) return;
+  editMode = !editMode;
+  var btn = document.getElementById('editToggleBtn');
+  if (btn) {
+    btn.innerHTML = editMode ? '&#10003; Done' : '&#9999; Edit Trip';
+    btn.classList.toggle('on', editMode);
+  }
+  if (!editMode) closeEP();
+  renderTimeline();
+}
+
+function getRawStop(dayIndex, stopIndex) {
+  var days = getRouteDaysArray();
+  var day = days[dayIndex];
+  if (!day || !day.stops) return null;
+  return day.stops[stopIndex] || null;
+}
+
+function openEP(idx, insertAfter) {
+  if (isSharedView) return;
+  epDayIndex = currentDay;
+  epStopIndex = idx;
+  epInsertAfter = idx >= 0 ? -1 : insertAfter;
+
+  var raw = idx >= 0 ? getRawStop(currentDay, idx) : null;
+
+  document.getElementById('ef-name').value = raw ? (raw.name || '') : '';
+  document.getElementById('ef-time').value = raw ? (raw.time || '') : '';
+  document.getElementById('ef-fare').value = raw ? (raw.fare || raw.price || '') : '';
+  document.getElementById('ef-memo').value = raw ? (raw.memo || raw.desc || '') : '';
+  document.getElementById('ef-lat').value = raw && raw.lat != null ? raw.lat : '';
+  document.getElementById('ef-lng').value = raw && raw.lng != null ? raw.lng : '';
+  document.getElementById('ef-is-day-end').checked = raw ? !!raw.isDayEnd : false;
+
+  var transportSel = document.getElementById('ef-transport');
+  transportSel.innerHTML = renderTypeOptions(raw ? (raw.transport || 'walk') : 'walk');
+
+  document.getElementById('epTitle').textContent = idx >= 0 ? 'Stop を編集' : 'Stop を追加';
+  document.getElementById('epDelBtn').style.display = idx >= 0 ? '' : 'none';
+  document.getElementById('ef-name-err').style.display = 'none';
+
+  document.getElementById('editPanel').classList.add('open');
+  document.getElementById('editPanelOverlay').classList.add('open');
+}
+
+function closeEP() {
+  document.getElementById('editPanel').classList.remove('open');
+  document.getElementById('editPanelOverlay').classList.remove('open');
+}
+
+function saveEPStop() {
+  var name = document.getElementById('ef-name').value.trim();
+  if (!name) {
+    document.getElementById('ef-name-err').style.display = '';
+    return;
+  }
+  var lat = document.getElementById('ef-lat').value.trim();
+  var lng = document.getElementById('ef-lng').value.trim();
+  var patch = {
+    name: name,
+    time: document.getElementById('ef-time').value.trim(),
+    memo: document.getElementById('ef-memo').value.trim(),
+    transport: document.getElementById('ef-transport').value,
+    fare: document.getElementById('ef-fare').value.trim(),
+    lat: lat === '' ? null : parseFloat(lat),
+    lng: lng === '' ? null : parseFloat(lng),
+    isDayEnd: document.getElementById('ef-is-day-end').checked
+  };
+
+  if (epStopIndex >= 0) {
+    saveStop(epDayIndex, epStopIndex, patch);
+  } else {
+    var atIndex = epInsertAfter + 1;
+    addStop(epDayIndex, patch, atIndex);
+  }
+  closeEP();
+}
+
+function deleteEPStop() {
+  if (epStopIndex >= 0) {
+    delStop(epDayIndex, epStopIndex);
+  }
+  closeEP();
+}
+
+function handleDeleteStop(idx) {
+  if (!confirm('このStopを削除しますか？')) return;
+  delStop(currentDay, idx);
+}
+
+function onDragStart(e, idx) {
+  dragFromIndex = idx;
+  e.dataTransfer.effectAllowed = 'move';
+  try { e.dataTransfer.setData('text/plain', String(idx)); } catch (err) {}
+}
+
+function onDragOver(e, idx) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  var row = document.getElementById('sr' + idx);
+  if (row) row.classList.add('drag-over');
+}
+
+function onDrop(e, idx) {
+  e.preventDefault();
+  var row = document.getElementById('sr' + idx);
+  if (row) row.classList.remove('drag-over');
+  if (dragFromIndex < 0 || dragFromIndex === idx) { dragFromIndex = -1; return; }
+  moveStop(currentDay, dragFromIndex, currentDay, idx);
+  dragFromIndex = -1;
+}
+
+function onDragEnd() {
+  dragFromIndex = -1;
+  var rows = document.querySelectorAll('.stop-row.drag-over');
+  for (var i = 0; i < rows.length; i++) rows[i].classList.remove('drag-over');
+}
+
 function routeDataToDays(routeData) {
   if (!routeData || !routeData.days) return JSON.parse(JSON.stringify(DEFAULT_DAYS));
   var raw = routeData.days;
@@ -1366,12 +1554,23 @@ function buildShareUrl(tripId) {
   return window.location.origin + window.location.pathname + '?trip=' + encodeURIComponent(tripId);
 }
 
+function resetEditMode() {
+  editMode = false;
+  closeEP();
+  var btn = document.getElementById('editToggleBtn');
+  if (btn) {
+    btn.innerHTML = '&#9999; Edit Trip';
+    btn.classList.remove('on');
+  }
+}
+
 function setSharedViewMode(on) {
   isSharedView = !!on;
   document.body.classList.toggle('shared-view', isSharedView);
   var banner = document.getElementById('sharedReadonlyBanner');
   if (banner) banner.hidden = !isSharedView;
   if (!isSharedView) suppressAutosave = false;
+  if (isSharedView) resetEditMode();
 }
 
 function showSharedLoading() {
@@ -1711,6 +1910,7 @@ async function switchTrip(tripId, routeData, tripTitle) {
   cancelAutoSave();
   suppressAutosave = true;
   clearRouteLayers();
+  resetEditMode();
 
   currentTripId = tripId;
   currentRoute = normalizeRouteData(routeData, tripTitle);
@@ -1802,28 +2002,50 @@ function makeIcon(s,active){
   return L.divIcon({className:'',html:'<div style="width:22px;height:22px;background:#fff;border:2.5px solid '+PEACOCK+';border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.2)"><div style="width:7px;height:7px;background:'+PEACOCK+';border-radius:50%"></div></div>',iconSize:[22,22],iconAnchor:[11,11],popupAnchor:[0,-11]});
 }
 
+function renderAddRow(insertAfter){
+  return '<div class="add-row"><button type="button" class="btn-add-stop" onclick="event.stopPropagation();openEP(-1,'+insertAfter+')">+ Add stop'+(insertAfter>=0?' after':' at start')+'</button></div>';
+}
+
 function renderTimeline(){
   var d=DAYS[currentDay];
+  var tl=document.getElementById('timeline');
+  var canEdit = editMode && !isSharedView;
+  tl.className = 'timeline' + (canEdit ? ' edit-mode' : '');
   if (!d) {
-    document.getElementById('timeline').innerHTML = '<div style="padding:16px;text-align:center;color:var(--secondary);font-size:12px">No stops in this day</div>';
+    tl.innerHTML = canEdit
+      ? renderAddRow(-1) + '<div style="padding:16px;text-align:center;color:var(--secondary);font-size:12px">No stops in this day</div>'
+      : '<div style="padding:16px;text-align:center;color:var(--secondary);font-size:12px">No stops in this day</div>';
     document.getElementById('costBar').innerHTML = '';
     return;
   }
   var html='';
+  if (canEdit) html += renderAddRow(-1);
   for(var i=0;i<d.stops.length;i++){
     var s=d.stops[i];
     var isActive=i===currentStop;
     var hasT=s.transport&&s.transport!=='到着';
     var tHtml='';
     if(hasT){tHtml='<div class="transport-row"><span class="badge b-'+s.type+'">'+escapeHtml(s.transport)+'</span>'+(s.price?'<span class="price-tag">'+escapeHtml(s.price)+'</span>':'')+'</div>';}
-    html+='<div class="stop-row'+(isActive?' active':'')+'" onclick="jumpTo('+i+')" id="sr'+i+'">';
+    var dragAttr = canEdit ? ' draggable="true" ondragstart="onDragStart(event,'+i+')" ondragover="onDragOver(event,'+i+')" ondrop="onDrop(event,'+i+')" ondragend="onDragEnd(event)"' : '';
+    var clickAttr = canEdit ? '' : ' onclick="jumpTo('+i+')"';
+    var editActions = canEdit
+      ? '<div class="stop-edit-actions">'+
+          '<span class="drag-handle" draggable="false" ondragstart="event.stopPropagation()" title="ドラッグして並び替え">&#10495;</span>'+
+          '<button type="button" class="stop-action-btn" onclick="event.stopPropagation();openEP('+i+',-1)" title="編集">&#9999;</button>'+
+          '<button type="button" class="stop-action-btn" onclick="event.stopPropagation();handleDeleteStop('+i+')" title="削除">&#128465;</button>'+
+        '</div>'
+      : '';
+    html+='<div class="stop-row'+(isActive?' active':'')+'"'+clickAttr+dragAttr+' id="sr'+i+'">';
     html+='<div class="stop-spine"><div class="stop-dot"></div></div>';
-    html+='<div style="flex:1"><div class="stop-card"><div class="stop-time">'+escapeHtml(s.time)+'</div><div class="stop-name">'+escapeHtml(s.name)+'</div><div class="stop-desc">'+escapeHtml(s.desc)+'</div>'+tHtml+'</div></div></div>';
+    html+='<div style="flex:1"><div class="stop-card"><div class="stop-time">'+escapeHtml(s.time)+'</div><div class="stop-name">'+escapeHtml(s.name)+'</div><div class="stop-desc">'+escapeHtml(s.desc)+'</div>'+tHtml+'</div></div>';
+    html+=editActions;
+    html+='</div>';
     if (i < d.stops.length - 1) {
       html += renderTransitConnector(getTransitEstimate(s, d.stops[i + 1]));
     }
+    if (canEdit) html += renderAddRow(i);
   }
-  document.getElementById('timeline').innerHTML=html;
+  tl.innerHTML=html;
   document.getElementById('costBar').innerHTML='<span class="cost-label">交通費メモ</span><span class="cost-num">'+escapeHtml(d.cost)+'</span>';
 }
 
@@ -1867,6 +2089,7 @@ function jumpTo(i){
 function switchDay(i){
   stopReplay();
   currentDay=i;
+  closeEP();
   document.querySelectorAll('.day-tab').forEach(function(t,j){t.classList.toggle('active',j===i);});
   renderTimeline();
   renderMap();
