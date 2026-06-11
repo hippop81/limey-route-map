@@ -44,19 +44,15 @@ Include the route name and optionally the OSM relation id in the filename when h
 * ✅ Converted — Shape file generated and validated.
 * 🚀 Merged — Shape file merged into `data/shapes/` and available to the replay engine.
 
-### Naming Convention
+Naming Convention
 
-```
-<route_name>_overpass.geojson
-```
+<operator>_<route_name>_overpass.geojson
 
 Examples:
-
-```
-tokyo_monorail_overpass.geojson
-keisei_skyliner_overpass.geojson
-jr_haruka_overpass.geojson
-hokuriku_shinkansen_overpass.geojson
-```
+- jre_narita_express_overpass.geojson
+- jre_chuo_sobu_local_overpass.geojson
+- keisei_skyliner_overpass.geojson
+- keikyu_airport_overpass.geojson
+- tokyo_monorail_overpass.geojson
 
 Use lowercase with underscores for consistency.
