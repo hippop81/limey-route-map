@@ -31,7 +31,17 @@ Track every file in this directory. Update the table when status changes.
 
 | File | Category | Status | Shape output | Notes |
 | ---- | -------- | ------ | ------------ | ----- |
-| _(none yet)_ | — | — | — | Add a row when the first export is committed |
+| `narita_express_overpass.geojson` | airport_access | 🆕 Exported | `shape_narita_express` | 成田エクスプレス — `narita_express_overpass.md` |
+| `chuo_sobu_local_overpass.geojson` | local_rail | 🆕 Exported | `shape_chuo_sobu_local` | 中央・総武線（各駅停車）— `chuo_sobu_local_overpass.md` |
+| `yurito_line_overpass.geojson` | bus | 🆕 Exported | `shape_yurito_line` | ゆとりーとライン — `yurito_line_overpass.md` |
+| `tokyo_monorail_overpass.geojson` | airport_access | ✅ Converted | `shape_tokyo_monorail` | Haneda access |
+| `keikyu_airport_overpass.geojson` | airport_access | ✅ Converted | `shape_keikyu_airport` | Coordinate typo fixed (139.xxx) |
+| `nankai_airport_overpass.geojson` | airport_access | ✅ Converted | `shape_nankai_airport` | KIX access |
+| `fukuoka_subway_airport_overpass.geojson` | airport_access | ✅ Converted | `shape_fukuoka_subway_airport` | Fukuoka Airport |
+| `meitetsu_airport_overpass.geojson` | airport_access | ✅ Converted | `shape_meitetsu_airport` | Source in `shapes/airport-access/sources/` |
+| `osaka_monorail_itami_overpass.geojson` | airport_access | ✅ Converted | `shape_osaka_monorail_itami` | Source in `shapes/airport-access/sources/` |
+| `keisei_skyliner_overpass.geojson` | airport_access | ✅ Converted | `shape_keisei_skyliner` | Source in `shapes/airport-access/sources/` |
+| `jr_haruka_overpass.geojson` | airport_access | ✅ Converted | `shape_jr_haruka` | Source in `shapes/airport-access/sources/` |
 
 ### Status values
 
@@ -50,36 +60,35 @@ Move files through the pipeline in order: **Exported → Converting → Converte
 <route_name>_overpass.geojson
 ```
 
-Include the route name and optionally the OSM relation id in the filename when helpful.
-## Current Dataset
-
-| File                                      | Category       | Status      | Shape Output                   | Notes                           |
-| ----------------------------------------- | -------------- | ----------- | ------------------------------ | ------------------------------- |
-| `tokyo_monorail_overpass.geojson`         | Airport Access | ✅ Converted | `shape_tokyo_monorail`         | Haneda access                   |
-| `keikyu_airport_overpass.geojson`         | Airport Access | ✅ Converted | `shape_keikyu_airport`         | Coordinate typo fixed (139.xxx) |
-| `nankai_airport_overpass.geojson`         | Airport Access | ✅ Converted | `shape_nankai_airport`         | KIX access                      |
-| `fukuoka_subway_airport_overpass.geojson` | Airport Access | ✅ Converted | `shape_fukuoka_subway_airport` | Fukuoka Airport                 |
-
-### Status meanings
-
-* 🆕 Exported — GeoJSON exported from Overpass, not yet converted.
-* 🔄 Converting — Cursor/Codex currently processing.
-* ✅ Converted — Shape file generated and validated.
-* 🚀 Merged — Shape file merged into `data/shapes/` and available to the replay engine.
-
-### Naming Convention
-
-```
-<route_name>_overpass.geojson
-```
+- Use **lowercase** and **underscores** only.
+- `<route_name>` should match the eventual shape basename (without `shape_` prefix).
 
 Examples:
 
-```
-tokyo_monorail_overpass.geojson
-keisei_skyliner_overpass.geojson
-jr_haruka_overpass.geojson
-hokuriku_shinkansen_overpass.geojson
-```
+- `tokyo_monorail_overpass.geojson`
+- `keikyu_airport_overpass.geojson`
+- `jr_haruka_overpass.geojson`
+- `keisei_skyliner_overpass.geojson`
+- `narita_express_overpass.geojson`
 
-Use lowercase with underscores for consistency.
+Optional: include OSM relation id in the paired metadata file or **Notes** column, not in the filename.
+
+## Metadata template
+
+Copy `TEMPLATE.md` to `<route_name>_overpass.md` for each export. Pair one `.geojson` with one `.md` file.
+
+**Category** — one primary value per file: `airport_access`, `local_rail`, `shinkansen`, `bus`, or `other`.
+
+**Shape strategy** — `rail_shape` for trains, `bus_json` for bus lines, `fallback` when geometry needs manual handling.
+
+Current metadata files:
+
+- `narita_express_overpass.md`
+- `chuo_sobu_local_overpass.md`
+- `yurito_line_overpass.md`
+
+## Notes
+
+- Files here are **temporary source data**. Treat them as disposable once shapes are generated, validated, and merged.
+- Do not edit GeoJSON manually unless fixing a clear export issue.
+- **Production replay** should only use finalized files under `data/shapes/`, not this directory.
