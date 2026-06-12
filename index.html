@@ -16,6 +16,7 @@
   --peacock:#3F6B77;--peacock-hover:#355A64;--lime:#C7E93E;--soft-lime:#F4F7EA;
   --peacock-rgb:63,107,119;--lime-rgb:199,233,62;
   --color-charcoal:var(--primary);--color-lime:var(--lime);--color-muted-peacock:var(--peacock);
+  --color-surface:var(--white);--color-hairline:var(--warm-gray);
   --font-head:"DM Sans",sans-serif;--font-body:"Space Grotesk",sans-serif;
   --radius:8px;--ease:cubic-bezier(0.25,0.8,0.25,1);--dur:220ms;
   --safe-top:env(safe-area-inset-top,0px);
@@ -218,8 +219,21 @@ body.shared-view .edit-toggle-btn{display:none!important;}
 .edit-panel{left:auto;right:24px;bottom:24px;width:340px;border-radius:var(--radius);transform:translateY(20px);opacity:0;pointer-events:none;}
 .edit-panel.open{transform:translateY(0);opacity:1;pointer-events:auto;}
 }
-#map{flex:1;}
-.leaflet-container{background:var(--map-paper);}
+#map{flex:1;min-width:0;overflow:hidden;position:relative;}
+.leaflet-container{background:var(--map-paper);overflow:hidden;}
+.leaflet-div-icon.limey-map-marker,.leaflet-marker-icon.limey-map-marker{background:transparent!important;border:none!important;}
+.replay-marker-host{position:relative;width:40px;height:40px;overflow:hidden;contain:layout style paint;pointer-events:none;}
+.replay-marker-layer{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity var(--dur) var(--ease);pointer-events:none;}
+.replay-marker-layer.is-visible{opacity:1;}
+.replay-transport-disc{width:40px;height:40px;border-radius:50%;background:var(--color-surface);border:1px solid var(--color-hairline);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;}
+.limey-icon{display:flex;align-items:center;justify-content:center;line-height:0;flex-shrink:0;overflow:hidden;}
+.limey-icon svg{display:block;stroke:currentColor;}
+.stop-marker-host.is-done{opacity:.42;}
+.transit-icon-inline{display:inline-flex;width:14px;height:14px;vertical-align:-2px;color:var(--color-muted-peacock);overflow:hidden;line-height:0;}
+.transit-icon-inline .limey-icon,.transit-icon-inline svg{width:14px;height:14px;}
+.stop-row.is-done .stop-card,.stop-row.is-done .stop-time,.stop-row.is-done .stop-name,.stop-row.is-done .stop-desc{opacity:.55;}
+.btn-icon{display:inline-flex;align-items:center;justify-content:center;gap:5px;}
+.btn-icon svg{width:12px;height:12px;display:block;flex-shrink:0;}
 .leaflet-popup-content-wrapper{background:var(--white)!important;border:1px solid var(--warm-gray)!important;border-radius:var(--radius)!important;color:var(--primary)!important;box-shadow:none!important;padding:0!important;}
 .leaflet-popup-content{margin:11px 13px!important;font-family:var(--font-body)!important;}
 .leaflet-popup-tip{background:var(--white)!important;}
@@ -270,17 +284,10 @@ button,.btn,.share-btn,.day-tab,.trip-card,.stop-row,.draft-icon-btn,.back-btn,.
 .day-tab{min-width:72px;flex:0 0 auto;padding:12px 10px;}
 .timeline{-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y;}
 .timeline.day-swipe-lock{touch-action:none;}
-.controls .btn{min-height:44px;font-size:11px;}
-.btn-icon{display:inline-flex;align-items:center;justify-content:center;gap:6px;}
-.btn-icon svg{width:14px;height:14px;display:block;flex-shrink:0;}
-.replay-marker-host{position:relative;display:flex;align-items:center;justify-content:center;}
-.replay-marker-layer{position:absolute;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity var(--dur) var(--ease);pointer-events:none;}
-.replay-marker-layer.is-visible{opacity:1;}
-.replay-marker-layer svg{width:100%;height:100%;display:block;}
-.stop-marker-host.is-done{opacity:.42;}
-.transit-icon-inline{display:inline-flex;width:14px;height:14px;vertical-align:-2px;color:var(--color-muted-peacock);}
-.transit-icon-inline svg{width:100%;height:100%;display:block;}
-.stop-row.is-done .stop-card,.stop-row.is-done .stop-time,.stop-row.is-done .stop-name,.stop-row.is-done .stop-desc{opacity:.55;}
+.sidebar-footer{position:sticky;bottom:0;z-index:2;flex-shrink:0;}
+.controls{padding-bottom:max(12px,var(--safe-bottom));}
+.controls .btn{min-height:44px;font-size:11px;padding:11px 12px;}
+.controls .btn-icon svg{width:14px;height:14px;}
 .cost-bar{padding-left:max(16px,var(--safe-left));padding-right:max(16px,var(--safe-right));}
 .day-swipe-hint:not([hidden]){display:block;text-align:center;font-size:9px;color:var(--secondary);padding:0 16px 6px;letter-spacing:.04em;}
 #sharedErrorScreen{padding-top:var(--safe-top);padding-bottom:var(--safe-bottom);}
@@ -692,7 +699,7 @@ function renderTransitConnector(estimate, fromIdx) {
     var d = DAYS[currentDay];
     var nextStop = d && d.stops[fromIdx + 1];
     var iconName = transportModeToIconName(nextStop ? normalizeTransportMode(nextStop) : 'walk');
-    lead += '<span class="transit-icon-inline">' + iconMarkup(iconName, 'var(--color-muted-peacock)') + '</span> ';
+    lead += '<span class="transit-icon-inline">' + iconMarkup(iconName, 'var(--color-muted-peacock)', 14, 14) + '</span> ';
   } else {
     lead += estimate.emoji + ' ';
   }
@@ -752,10 +759,15 @@ function preloadLimeyIcons(done) {
   });
 }
 
-function iconMarkup(name, color) {
+function iconMarkup(name, color, w, h) {
   var svg = LIMEY_ICON_SVGS[name];
   if (!svg) return '';
-  return '<span style="color:' + color + ';display:flex;align-items:center;justify-content:center;width:100%;height:100%">' + svg + '</span>';
+  w = w || 20;
+  h = h || 20;
+  var sized = svg
+    .replace(/\s(width|height)="[^"]*"/gi, '')
+    .replace(/<svg\b/i, '<svg width="' + w + '" height="' + h + '"');
+  return '<span class="limey-icon" style="color:' + color + ';width:' + w + 'px;height:' + h + 'px">' + sized + '</span>';
 }
 
 function clearReplayTransitTimer() {
@@ -788,8 +800,9 @@ function scheduleInTransitPhase(stopIdx) {
 
 function initReplayControlIcons() {
   var resetBtn = document.getElementById('resetBtnIcon');
-  if (resetBtn && LIMEY_ICON_SVGS['control-reset']) {
-    resetBtn.innerHTML = iconMarkup('control-reset', 'currentColor') + '<span>Reset</span>';
+  if (resetBtn) {
+    var resetIcon = iconMarkup('control-reset', 'currentColor', 12, 12);
+    resetBtn.innerHTML = (resetIcon || '') + '<span>Reset</span>';
   }
   setPlayButtonState(playing);
 }
@@ -799,10 +812,9 @@ function setPlayButtonState(isPlaying) {
   if (!btn) return;
   var iconName = isPlaying ? 'control-pause' : 'control-play';
   var label = isPlaying ? 'Stop' : 'Play';
-  var iconHtml = iconMarkup(iconName, 'currentColor');
-  btn.innerHTML = iconHtml
-    ? '<span class="btn-icon">' + iconHtml + '<span>' + label + '</span></span>'
-    : (isPlaying ? '&#9632; Stop' : '&#9654; Play');
+  var iconSize = isMobileLayout() ? 14 : 12;
+  var iconHtml = iconMarkup(iconName, 'currentColor', iconSize, iconSize);
+  btn.innerHTML = '<span class="btn-icon">' + (iconHtml || '') + '<span>' + label + '</span></span>';
   btn.classList.toggle('playing', !!isPlaying);
 }
 
@@ -2024,35 +2036,38 @@ function renderDayTabs() {
 }
 
 function makeStopMarkerIcon(idx) {
+  var markerSize = 40;
   var isActive = idx === currentStop;
   var isDone = currentStop >= 0 && idx < currentStop;
+  var iconOpts = {
+    className: 'limey-map-marker',
+    iconSize: [markerSize, markerSize],
+    iconAnchor: [markerSize / 2, markerSize / 2],
+    popupAnchor: [0, -(markerSize / 2)]
+  };
   if (!isActive) {
-    return L.divIcon({
-      className: '',
-      html: '<div class="stop-marker-host' + (isDone ? ' is-done' : '') + '" style="width:22px;height:22px;background:#FDFBF8;border:2px solid ' + CHARCOAL + ';border-radius:50%;display:flex;align-items:center;justify-content:center"><div style="width:7px;height:7px;background:' + CHARCOAL + ';border-radius:50%"></div></div>',
+    return L.divIcon(Object.assign({}, iconOpts, {
       iconSize: [22, 22],
       iconAnchor: [11, 11],
-      popupAnchor: [0, -11]
-    });
+      popupAnchor: [0, -11],
+      html: '<div class="stop-marker-host' + (isDone ? ' is-done' : '') + '" style="width:22px;height:22px;background:var(--color-surface);border:2px solid var(--color-charcoal);border-radius:50%;display:flex;align-items:center;justify-content:center"><div style="width:7px;height:7px;background:var(--color-charcoal);border-radius:50%"></div></div>'
+    }));
   }
   var pinVisible = replayPhase !== 'in_transit';
   var transportName = transportModeToIconName(replayTransitMode);
-  var pinLayer = iconMarkup('marker-current-pin', 'var(--color-lime)');
-  var transportLayer = iconMarkup(transportName, 'var(--color-muted-peacock)');
+  var pinLayer = iconMarkup('marker-current-pin', 'var(--color-lime)', 32, 32);
+  var transportInner = iconMarkup(transportName, 'var(--color-muted-peacock)', 20, 20);
+  var transportLayer = '<div class="replay-transport-disc">' + transportInner + '</div>';
   if (!pinLayer) {
-    return L.divIcon({
-      className: '',
-      html: '<div style="width:34px;height:34px;background:' + LIME + ';border:2px solid ' + CHARCOAL + ';border-radius:50%"></div>',
-      iconSize: [34, 34],
-      iconAnchor: [17, 17],
-      popupAnchor: [0, -17]
-    });
+    return L.divIcon(Object.assign({}, iconOpts, {
+      html: '<div style="width:40px;height:40px;background:var(--color-lime);border:2px solid var(--color-charcoal);border-radius:50%"></div>'
+    }));
   }
-  var html = '<div class="replay-marker-host" style="width:36px;height:36px">' +
-    '<div class="replay-marker-layer pin' + (pinVisible ? ' is-visible' : '') + '" style="width:36px;height:36px">' + pinLayer + '</div>' +
-    '<div class="replay-marker-layer transport' + (!pinVisible ? ' is-visible' : '') + '" style="width:28px;height:28px">' + transportLayer + '</div>' +
+  var html = '<div class="replay-marker-host">' +
+    '<div class="replay-marker-layer pin' + (pinVisible ? ' is-visible' : '') + '">' + pinLayer + '</div>' +
+    '<div class="replay-marker-layer transport' + (!pinVisible ? ' is-visible' : '') + '">' + transportLayer + '</div>' +
     '</div>';
-  return L.divIcon({ className: '', html: html, iconSize: [36, 36], iconAnchor: [18, 18], popupAnchor: [0, -18] });
+  return L.divIcon(Object.assign({}, iconOpts, { html: html }));
 }
 
 function refreshMarkerIcons() {
