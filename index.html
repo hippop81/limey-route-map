@@ -718,7 +718,7 @@ var limeyIconsReady = false;
 var replayPhase = 'at_stop';
 var replayTransitMode = 'walk';
 var replayTransitTimer = null;
-var REPLAY_PIN_HOLD_MS = 500;
+var REPLAY_ARRIVAL_PIN_MS = 150;
 
 function transportModeToIconName(mode) {
   if (!mode) return 'transport-walk';
@@ -784,18 +784,35 @@ function setReplayPhase(phase, mode) {
   renderTimeline();
 }
 
-function scheduleInTransitPhase(stopIdx) {
+function movementModeFromStop(stopIdx) {
+  var d = DAYS[currentDay];
+  if (!d || stopIdx < 0 || stopIdx >= d.stops.length - 1) return 'walk';
+  return normalizeTransportMode(d.stops[stopIdx + 1]);
+}
+
+function markArrivedAtStop(stopIdx) {
+  replayPhase = 'at_stop';
+  replayTransitMode = movementModeFromStop(stopIdx);
+  refreshMarkerIcons();
+  renderTimeline();
+}
+
+function markMovingFromStop(stopIdx) {
+  if (!playing) return;
+  var d = DAYS[currentDay];
+  if (!d || stopIdx < 0 || stopIdx >= d.stops.length - 1) return;
+  setReplayPhase('in_transit', movementModeFromStop(stopIdx));
+}
+
+function scheduleMovementFromStop(stopIdx) {
   clearReplayTransitTimer();
   if (!playing) return;
   var d = DAYS[currentDay];
   if (!d || stopIdx < 0 || stopIdx >= d.stops.length - 1) return;
-  replayPhase = 'at_stop';
-  refreshMarkerIcons();
   replayTransitTimer = setTimeout(function() {
     if (!playing || currentStop !== stopIdx) return;
-    var nextStop = d.stops[stopIdx + 1];
-    setReplayPhase('in_transit', normalizeTransportMode(nextStop));
-  }, REPLAY_PIN_HOLD_MS);
+    markMovingFromStop(stopIdx);
+  }, REPLAY_ARRIVAL_PIN_MS);
 }
 
 function initReplayControlIcons() {
@@ -2156,13 +2173,10 @@ function jumpTo(i){
   currentStop=i;
   var d=DAYS[currentDay];
   if (!d || !d.stops[i] || !d.stops[i].lat) return;
-  replayPhase = 'at_stop';
-  replayTransitMode = i < d.stops.length - 1 ? normalizeTransportMode(d.stops[i + 1]) : 'walk';
-  refreshMarkerIcons();
+  markArrivedAtStop(i);
   map.flyTo([d.stops[i].lat,d.stops[i].lng],13,{duration:.7});
   mapMarkers[i].openPopup();
-  renderTimeline();
-  if (playing && i < d.stops.length - 1) scheduleInTransitPhase(i);
+  if (playing && i < d.stops.length - 1) scheduleMovementFromStop(i);
   var el=document.getElementById('sr'+i);
   if(el)el.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
@@ -2191,7 +2205,10 @@ function togglePlay(){
     setPlayButtonState(true);
     var max=DAYS[currentDay].stops.length;
     if(currentStop>=max-1)currentStop=-1;
-    if(currentStop>=0) scheduleInTransitPhase(currentStop);
+    if (currentStop >= 0) {
+      markArrivedAtStop(currentStop);
+      scheduleMovementFromStop(currentStop);
+    }
     playTimer=setInterval(function(){
       currentStop++;
       if(currentStop>=max){
