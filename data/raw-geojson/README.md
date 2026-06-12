@@ -98,13 +98,16 @@ Examples:
 - `jrc_tokaido_shinkansen_overpass.geojson`
 - `toei_oedo_line_overpass.geojson`
 
-Optional: include OSM relation id in a paired `*_overpass.md` metadata file or the **Notes** column.
+Naming Convention
 
-## Metadata template
+<operator>_<route_name>_overpass.geojson
 
-See `TEMPLATE.md`. Copy to `<route_name>_overpass.md` for each new export.
-
-## Notes
+Examples:
+- jre_narita_express_overpass.geojson
+- jre_chuo_sobu_local_overpass.geojson
+- keisei_skyliner_overpass.geojson
+- keikyu_airport_overpass.geojson
+- tokyo_monorail_overpass.geojson
 
 - Files here are **temporary source data**. Treat them as disposable once shapes are generated, validated, and merged.
 - Do not edit GeoJSON manually unless fixing a clear export issue.
