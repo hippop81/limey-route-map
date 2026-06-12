@@ -222,10 +222,8 @@ body.shared-view .edit-toggle-btn{display:none!important;}
 #map{flex:1;min-width:0;overflow:hidden;position:relative;}
 .leaflet-container{background:var(--map-paper);overflow:hidden;}
 .leaflet-div-icon.limey-map-marker,.leaflet-marker-icon.limey-map-marker{background:transparent!important;border:none!important;}
-.replay-marker-host{position:relative;width:40px;height:40px;overflow:hidden;contain:layout style paint;pointer-events:none;}
-.replay-marker-layer{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity var(--dur) var(--ease);pointer-events:none;}
-.replay-marker-layer.is-visible{opacity:1;}
-.replay-transport-disc{width:40px;height:40px;border-radius:50%;background:var(--color-surface);border:1px solid var(--color-hairline);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;}
+.limey-map-marker--transport svg,.limey-map-marker--pin svg{display:block;}
+.limey-map-marker--transport svg{width:24px;height:24px;}
 .limey-icon{display:flex;align-items:center;justify-content:center;line-height:0;flex-shrink:0;overflow:hidden;}
 .limey-icon svg{display:block;stroke:currentColor;}
 .stop-marker-host.is-done{opacity:.42;}
@@ -719,6 +717,9 @@ var replayPhase = 'at_stop';
 var replayTransitMode = 'walk';
 var replayTransitTimer = null;
 var REPLAY_ARRIVAL_PIN_MS = 150;
+var REPLAY_SEGMENT_MS = 4000;
+var REPLAY_TRANSPORT_ICON_PX = 24;
+var REPLAY_PIN_ICON_PX = 32;
 
 function transportModeToIconName(mode) {
   if (!mode) return 'transport-walk';
@@ -764,10 +765,17 @@ function iconMarkup(name, color, w, h) {
   if (!svg) return '';
   w = w || 20;
   h = h || 20;
-  var sized = svg
+  return '<span class="limey-icon" style="color:' + color + ';width:' + w + 'px;height:' + h + 'px">' + iconMarkupRaw(name, color, w, h) + '</span>';
+}
+
+function iconMarkupRaw(name, color, w, h) {
+  var svg = LIMEY_ICON_SVGS[name];
+  if (!svg) return '';
+  w = w || REPLAY_TRANSPORT_ICON_PX;
+  h = h || REPLAY_TRANSPORT_ICON_PX;
+  return svg
     .replace(/\s(width|height)="[^"]*"/gi, '')
-    .replace(/<svg\b/i, '<svg width="' + w + '" height="' + h + '"');
-  return '<span class="limey-icon" style="color:' + color + ';width:' + w + 'px;height:' + h + 'px">' + sized + '</span>';
+    .replace(/<svg\b/i, '<svg width="' + w + '" height="' + h + '" style="display:block;width:' + w + 'px;height:' + h + 'px;color:' + color + '"');
 }
 
 function clearReplayTransitTimer() {
@@ -2053,38 +2061,39 @@ function renderDayTabs() {
 }
 
 function makeStopMarkerIcon(idx) {
-  var markerSize = 40;
   var isActive = idx === currentStop;
   var isDone = currentStop >= 0 && idx < currentStop;
-  var iconOpts = {
-    className: 'limey-map-marker',
-    iconSize: [markerSize, markerSize],
-    iconAnchor: [markerSize / 2, markerSize / 2],
-    popupAnchor: [0, -(markerSize / 2)]
-  };
   if (!isActive) {
-    return L.divIcon(Object.assign({}, iconOpts, {
+    return L.divIcon({
+      className: 'limey-map-marker',
       iconSize: [22, 22],
       iconAnchor: [11, 11],
       popupAnchor: [0, -11],
       html: '<div class="stop-marker-host' + (isDone ? ' is-done' : '') + '" style="width:22px;height:22px;background:var(--color-surface);border:2px solid var(--color-charcoal);border-radius:50%;display:flex;align-items:center;justify-content:center"><div style="width:7px;height:7px;background:var(--color-charcoal);border-radius:50%"></div></div>'
-    }));
+    });
   }
-  var pinVisible = replayPhase !== 'in_transit';
   var transportName = transportModeToIconName(replayTransitMode);
-  var pinLayer = iconMarkup('marker-current-pin', 'var(--color-lime)', 32, 32);
-  var transportInner = iconMarkup(transportName, 'var(--color-muted-peacock)', 20, 20);
-  var transportLayer = '<div class="replay-transport-disc">' + transportInner + '</div>';
-  if (!pinLayer) {
-    return L.divIcon(Object.assign({}, iconOpts, {
-      html: '<div style="width:40px;height:40px;background:var(--color-lime);border:2px solid var(--color-charcoal);border-radius:50%"></div>'
-    }));
+  var t = REPLAY_TRANSPORT_ICON_PX;
+  var p = REPLAY_PIN_ICON_PX;
+  if (replayPhase === 'in_transit') {
+    var transportHtml = iconMarkupRaw(transportName, 'var(--color-muted-peacock)', t, t);
+    return L.divIcon({
+      className: 'limey-map-marker limey-map-marker--transport',
+      html: transportHtml || '',
+      iconSize: [t, t],
+      iconAnchor: [t / 2, t / 2],
+      popupAnchor: [0, -(t / 2)]
+    });
   }
-  var html = '<div class="replay-marker-host">' +
-    '<div class="replay-marker-layer pin' + (pinVisible ? ' is-visible' : '') + '">' + pinLayer + '</div>' +
-    '<div class="replay-marker-layer transport' + (!pinVisible ? ' is-visible' : '') + '">' + transportLayer + '</div>' +
-    '</div>';
-  return L.divIcon(Object.assign({}, iconOpts, { html: html }));
+  var pinHtml = iconMarkupRaw('marker-current-pin', 'var(--color-lime)', p, p);
+  var pinAnchorY = Math.round(p * 21 / 24);
+  return L.divIcon({
+    className: 'limey-map-marker limey-map-marker--pin',
+    html: pinHtml || '',
+    iconSize: [p, p],
+    iconAnchor: [p / 2, pinAnchorY],
+    popupAnchor: [0, -pinAnchorY]
+  });
 }
 
 function refreshMarkerIcons() {
@@ -2223,7 +2232,7 @@ function togglePlay(){
         return;
       }
       jumpTo(currentStop);
-    },2200);
+    }, REPLAY_SEGMENT_MS);
   }
 }
 
