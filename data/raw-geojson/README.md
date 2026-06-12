@@ -77,20 +77,16 @@ Optional: include OSM relation id in the paired metadata file or **Notes** colum
 
 ## Metadata template
 
-Copy `TEMPLATE.md` to `<route_name>_overpass.md` for each export. Pair one `.geojson` with one `.md` file.
+Naming Convention
 
-**Category** — one primary value per file: `airport_access`, `local_rail`, `shinkansen`, `bus`, or `other`.
+<operator>_<route_name>_overpass.geojson
 
-**Shape strategy** — `rail_shape` for trains, `bus_json` for bus lines, `fallback` when geometry needs manual handling.
-
-Current metadata files:
-
-- `narita_express_overpass.md`
-- `chuo_sobu_local_overpass.md`
-- `yurito_line_overpass.md`
-- `tokaido_shinkansen_overpass.md`
-
-## Notes
+Examples:
+- jre_narita_express_overpass.geojson
+- jre_chuo_sobu_local_overpass.geojson
+- keisei_skyliner_overpass.geojson
+- keikyu_airport_overpass.geojson
+- tokyo_monorail_overpass.geojson
 
 - Files here are **temporary source data**. Treat them as disposable once shapes are generated, validated, and merged.
 - Do not edit GeoJSON manually unless fixing a clear export issue.
