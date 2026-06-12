@@ -15,6 +15,7 @@
   --warm-gray:#E1DED9;--graticule:#E4E1DC;--light-gray:#E9E6E2;
   --peacock:#3F6B77;--peacock-hover:#355A64;--lime:#C7E93E;--soft-lime:#F4F7EA;
   --peacock-rgb:63,107,119;--lime-rgb:199,233,62;
+  --color-charcoal:var(--primary);--color-lime:var(--lime);--color-muted-peacock:var(--peacock);
   --font-head:"DM Sans",sans-serif;--font-body:"Space Grotesk",sans-serif;
   --radius:8px;--ease:cubic-bezier(0.25,0.8,0.25,1);--dur:220ms;
   --safe-top:env(safe-area-inset-top,0px);
@@ -270,6 +271,16 @@ button,.btn,.share-btn,.day-tab,.trip-card,.stop-row,.draft-icon-btn,.back-btn,.
 .timeline{-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y;}
 .timeline.day-swipe-lock{touch-action:none;}
 .controls .btn{min-height:44px;font-size:11px;}
+.btn-icon{display:inline-flex;align-items:center;justify-content:center;gap:6px;}
+.btn-icon svg{width:14px;height:14px;display:block;flex-shrink:0;}
+.replay-marker-host{position:relative;display:flex;align-items:center;justify-content:center;}
+.replay-marker-layer{position:absolute;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity var(--dur) var(--ease);pointer-events:none;}
+.replay-marker-layer.is-visible{opacity:1;}
+.replay-marker-layer svg{width:100%;height:100%;display:block;}
+.stop-marker-host.is-done{opacity:.42;}
+.transit-icon-inline{display:inline-flex;width:14px;height:14px;vertical-align:-2px;color:var(--color-muted-peacock);}
+.transit-icon-inline svg{width:100%;height:100%;display:block;}
+.stop-row.is-done .stop-card,.stop-row.is-done .stop-time,.stop-row.is-done .stop-name,.stop-row.is-done .stop-desc{opacity:.55;}
 .cost-bar{padding-left:max(16px,var(--safe-left));padding-right:max(16px,var(--safe-right));}
 .day-swipe-hint:not([hidden]){display:block;text-align:center;font-size:9px;color:var(--secondary);padding:0 16px 6px;letter-spacing:.04em;}
 #sharedErrorScreen{padding-top:var(--safe-top);padding-bottom:var(--safe-bottom);}
@@ -396,8 +407,8 @@ button,.btn,.share-btn,.day-tab,.trip-card,.stop-row,.draft-icon-btn,.back-btn,.
     <div class="sidebar-footer">
       <div class="cost-bar" id="costBar"></div>
       <div class="controls">
-        <button class="btn btn-play" id="playBtn" onclick="togglePlay()">&#9654; Play</button>
-        <button class="btn btn-reset" onclick="resetAnim()">&#8635; Reset</button>
+        <button class="btn btn-play" id="playBtn" type="button" onclick="togglePlay()"><span class="btn-icon" id="playBtnIcon">Play</span></button>
+        <button class="btn btn-reset" id="resetBtn" type="button" onclick="resetAnim()"><span class="btn-icon" id="resetBtnIcon">Reset</span></button>
       </div>
     </div>
   </div>
@@ -672,12 +683,127 @@ function getTransitEstimate(stopA, stopB) {
   };
 }
 
-function renderTransitConnector(estimate) {
+function renderTransitConnector(estimate, fromIdx) {
   if (!estimate || !estimate.visible) {
     return '<div class="transit-gap"><div class="stop-spine"><div class="stop-seg"></div></div><div class="transit-label"></div></div>';
   }
+  var lead = '&#8595; ';
+  if (playing && replayPhase === 'in_transit' && currentStop === fromIdx) {
+    var d = DAYS[currentDay];
+    var nextStop = d && d.stops[fromIdx + 1];
+    var iconName = transportModeToIconName(nextStop ? normalizeTransportMode(nextStop) : 'walk');
+    lead += '<span class="transit-icon-inline">' + iconMarkup(iconName, 'var(--color-muted-peacock)') + '</span> ';
+  } else {
+    lead += estimate.emoji + ' ';
+  }
   return '<div class="transit-gap"><div class="stop-spine"><div class="stop-seg"></div></div>' +
-    '<div class="transit-label">&#8595; ' + estimate.emoji + ' ' + escapeHtml(estimate.text) + '</div></div>';
+    '<div class="transit-label">' + lead + escapeHtml(estimate.text) + '</div></div>';
+}
+
+/* ── Limey transport icons (assets/icons/) ── */
+var LIMEY_ICON_SVGS = {};
+var LIMEY_ICON_NAMES = [
+  'transport-flight', 'transport-shinkansen', 'transport-train', 'transport-subway',
+  'transport-bus', 'transport-walk', 'transport-ferry', 'marker-current-pin',
+  'control-play', 'control-pause', 'control-reset'
+];
+var limeyIconsReady = false;
+var replayPhase = 'at_stop';
+var replayTransitMode = 'walk';
+var replayTransitTimer = null;
+var REPLAY_PIN_HOLD_MS = 500;
+
+function transportModeToIconName(mode) {
+  if (!mode) return 'transport-walk';
+  if (mode === 'plane' || mode === 'flight') return 'transport-flight';
+  if (mode === 'shinkansen') return 'transport-shinkansen';
+  if (mode === 'train' || mode === 'train_local' || mode === 'train_limited') return 'transport-train';
+  if (mode === 'subway') return 'transport-subway';
+  if (mode === 'bus' || mode === 'bus_local' || mode === 'bus_express' || mode === 'shuttle' || mode === 'tour') return 'transport-bus';
+  if (mode === 'ferry') return 'transport-ferry';
+  return 'transport-walk';
+}
+
+function preloadLimeyIcons(done) {
+  if (limeyIconsReady) {
+    if (done) done();
+    return;
+  }
+  var pending = LIMEY_ICON_NAMES.length;
+  if (!pending) {
+    limeyIconsReady = true;
+    if (done) done();
+    return;
+  }
+  LIMEY_ICON_NAMES.forEach(function(name) {
+    fetch('./assets/icons/' + name + '.svg')
+      .then(function(r) { return r.ok ? r.text() : ''; })
+      .then(function(txt) { LIMEY_ICON_SVGS[name] = String(txt || '').replace(/<\?xml[^>]*>/, '').trim(); })
+      .catch(function() { LIMEY_ICON_SVGS[name] = ''; })
+      .finally(function() {
+        pending--;
+        if (pending === 0) {
+          limeyIconsReady = true;
+          initReplayControlIcons();
+          if (mapReady && mapMarkers.length) refreshMarkerIcons();
+          if (done) done();
+        }
+      });
+  });
+}
+
+function iconMarkup(name, color) {
+  var svg = LIMEY_ICON_SVGS[name];
+  if (!svg) return '';
+  return '<span style="color:' + color + ';display:flex;align-items:center;justify-content:center;width:100%;height:100%">' + svg + '</span>';
+}
+
+function clearReplayTransitTimer() {
+  if (replayTransitTimer) {
+    clearTimeout(replayTransitTimer);
+    replayTransitTimer = null;
+  }
+}
+
+function setReplayPhase(phase, mode) {
+  replayPhase = phase === 'in_transit' ? 'in_transit' : 'at_stop';
+  if (mode) replayTransitMode = mode;
+  refreshMarkerIcons();
+  renderTimeline();
+}
+
+function scheduleInTransitPhase(stopIdx) {
+  clearReplayTransitTimer();
+  if (!playing) return;
+  var d = DAYS[currentDay];
+  if (!d || stopIdx < 0 || stopIdx >= d.stops.length - 1) return;
+  replayPhase = 'at_stop';
+  refreshMarkerIcons();
+  replayTransitTimer = setTimeout(function() {
+    if (!playing || currentStop !== stopIdx) return;
+    var nextStop = d.stops[stopIdx + 1];
+    setReplayPhase('in_transit', normalizeTransportMode(nextStop));
+  }, REPLAY_PIN_HOLD_MS);
+}
+
+function initReplayControlIcons() {
+  var resetBtn = document.getElementById('resetBtnIcon');
+  if (resetBtn && LIMEY_ICON_SVGS['control-reset']) {
+    resetBtn.innerHTML = iconMarkup('control-reset', 'currentColor') + '<span>Reset</span>';
+  }
+  setPlayButtonState(playing);
+}
+
+function setPlayButtonState(isPlaying) {
+  var btn = document.getElementById('playBtn');
+  if (!btn) return;
+  var iconName = isPlaying ? 'control-pause' : 'control-play';
+  var label = isPlaying ? 'Stop' : 'Play';
+  var iconHtml = iconMarkup(iconName, 'currentColor');
+  btn.innerHTML = iconHtml
+    ? '<span class="btn-icon">' + iconHtml + '<span>' + label + '</span></span>'
+    : (isPlaying ? '&#9632; Stop' : '&#9654; Play');
+  btn.classList.toggle('playing', !!isPlaying);
 }
 
 /* ── DraftStop Preview Editor (Phase 1.5A) ── */
@@ -1833,6 +1959,7 @@ async function switchTrip(tripId, routeData, tripTitle) {
 }
 
 function initApp() {
+  preloadLimeyIcons();
   var tripId = getSharedTripIdFromUrl();
   if (tripId) {
     enterSharedView(tripId);
@@ -1853,12 +1980,11 @@ function stopReplay() {
   clearInterval(playTimer);
   playTimer = null;
   playing = false;
+  clearReplayTransitTimer();
+  replayPhase = 'at_stop';
+  replayTransitMode = 'walk';
   currentStop = -1;
-  var btn = document.getElementById('playBtn');
-  if (btn) {
-    btn.innerHTML = '&#9654; Play';
-    btn.classList.remove('playing');
-  }
+  setPlayButtonState(false);
 }
 
 function clearRouteLayers() {
@@ -1897,9 +2023,44 @@ function renderDayTabs() {
   if (hint) hint.hidden = !(isMobileLayout() && DAYS.length > 1);
 }
 
-function makeIcon(s,active){
-  if(active){return L.divIcon({className:'',html:'<div style="width:34px;height:34px;background:'+LIME+';border:2px solid '+CHARCOAL+';border-radius:50%;display:flex;align-items:center;justify-content:center"><div style="width:10px;height:10px;background:'+CHARCOAL+';border-radius:50%"></div></div>',iconSize:[34,34],iconAnchor:[17,17],popupAnchor:[0,-17]});}
-  return L.divIcon({className:'',html:'<div style="width:22px;height:22px;background:#FDFBF8;border:2px solid '+CHARCOAL+';border-radius:50%;display:flex;align-items:center;justify-content:center"><div style="width:7px;height:7px;background:'+CHARCOAL+';border-radius:50%"></div></div>',iconSize:[22,22],iconAnchor:[11,11],popupAnchor:[0,-11]});
+function makeStopMarkerIcon(idx) {
+  var isActive = idx === currentStop;
+  var isDone = currentStop >= 0 && idx < currentStop;
+  if (!isActive) {
+    return L.divIcon({
+      className: '',
+      html: '<div class="stop-marker-host' + (isDone ? ' is-done' : '') + '" style="width:22px;height:22px;background:#FDFBF8;border:2px solid ' + CHARCOAL + ';border-radius:50%;display:flex;align-items:center;justify-content:center"><div style="width:7px;height:7px;background:' + CHARCOAL + ';border-radius:50%"></div></div>',
+      iconSize: [22, 22],
+      iconAnchor: [11, 11],
+      popupAnchor: [0, -11]
+    });
+  }
+  var pinVisible = replayPhase !== 'in_transit';
+  var transportName = transportModeToIconName(replayTransitMode);
+  var pinLayer = iconMarkup('marker-current-pin', 'var(--color-lime)');
+  var transportLayer = iconMarkup(transportName, 'var(--color-muted-peacock)');
+  if (!pinLayer) {
+    return L.divIcon({
+      className: '',
+      html: '<div style="width:34px;height:34px;background:' + LIME + ';border:2px solid ' + CHARCOAL + ';border-radius:50%"></div>',
+      iconSize: [34, 34],
+      iconAnchor: [17, 17],
+      popupAnchor: [0, -17]
+    });
+  }
+  var html = '<div class="replay-marker-host" style="width:36px;height:36px">' +
+    '<div class="replay-marker-layer pin' + (pinVisible ? ' is-visible' : '') + '" style="width:36px;height:36px">' + pinLayer + '</div>' +
+    '<div class="replay-marker-layer transport' + (!pinVisible ? ' is-visible' : '') + '" style="width:28px;height:28px">' + transportLayer + '</div>' +
+    '</div>';
+  return L.divIcon({ className: '', html: html, iconSize: [36, 36], iconAnchor: [18, 18], popupAnchor: [0, -18] });
+}
+
+function refreshMarkerIcons() {
+  var d = DAYS[currentDay];
+  if (!d || !mapMarkers.length) return;
+  for (var j = 0; j < mapMarkers.length; j++) {
+    mapMarkers[j].setIcon(makeStopMarkerIcon(j));
+  }
 }
 
 function renderAddRow(insertAfter){
@@ -1923,6 +2084,7 @@ function renderTimeline(){
   for(var i=0;i<d.stops.length;i++){
     var s=d.stops[i];
     var isActive=i===currentStop;
+    var isDone=currentStop>=0&&i<currentStop;
     var hasT=s.transport&&s.transport!=='到着';
     var tHtml='';
     if(hasT){tHtml='<div class="transport-row"><span class="badge b-'+s.type+'">'+escapeHtml(s.transport)+'</span>'+(s.price?'<span class="price-tag">'+escapeHtml(s.price)+'</span>':'')+'</div>';}
@@ -1935,13 +2097,13 @@ function renderTimeline(){
           '<button type="button" class="stop-action-btn" onclick="event.stopPropagation();handleDeleteStop('+i+')" title="削除">&#128465;</button>'+
         '</div>'
       : '';
-    html+='<div class="stop-row'+(isActive?' active':'')+'"'+clickAttr+dragAttr+' id="sr'+i+'">';
+    html+='<div class="stop-row'+(isActive?' active':'')+(isDone?' is-done':'')+'"'+clickAttr+dragAttr+' id="sr'+i+'">';
     html+='<div class="stop-spine"><div class="stop-dot"></div></div>';
     html+='<div style="flex:1"><div class="stop-card"><div class="stop-time">'+escapeHtml(s.time)+'</div><div class="stop-name">'+escapeHtml(s.name)+'</div><div class="stop-desc">'+escapeHtml(s.desc)+'</div>'+tHtml+'</div></div>';
     html+=editActions;
     html+='</div>';
     if (i < d.stops.length - 1) {
-      html += renderTransitConnector(getTransitEstimate(s, d.stops[i + 1]));
+      html += renderTransitConnector(getTransitEstimate(s, d.stops[i + 1]), i);
     }
     if (canEdit) html += renderAddRow(i);
   }
@@ -1962,7 +2124,7 @@ function renderMap(){
     (function(idx){
       var s=d.stops[idx];
       if(!s.lat)return;
-      var m=L.marker([s.lat,s.lng],{icon:makeIcon(s,idx===currentStop)});
+      var m=L.marker([s.lat,s.lng],{icon:makeStopMarkerIcon(idx)});
       var hasT=s.transport&&s.transport!=='到着';
       var tHtml=hasT?'<div style="margin-top:5px"><span style="font-size:9px;font-weight:600;padding:2px 7px;border-radius:20px;background:#E9E6E2;color:#6A6C67;border:1px solid #E1DED9">'+escapeHtml(s.transport)+'</span>'+(s.price?'<span style="font-size:10px;font-weight:700;color:'+CHARCOAL+';margin-left:4px">'+escapeHtml(s.price)+'</span>':'')+'</div>':'';
       m.bindPopup('<div style="font-family:Space Grotesk,sans-serif;min-width:155px"><div style="font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#A1A19B;margin-bottom:2px">'+escapeHtml(s.time)+'</div><div style="font-family:DM Sans,sans-serif;font-weight:700;font-size:13px;color:'+CHARCOAL+';margin-bottom:3px;line-height:1.3">'+escapeHtml(s.name)+'</div><div style="font-size:11px;color:#6A6C67;line-height:1.5">'+escapeHtml(s.desc)+'</div>'+tHtml+'</div>');
@@ -1975,13 +2137,17 @@ function renderMap(){
 }
 
 function jumpTo(i){
+  clearReplayTransitTimer();
   currentStop=i;
   var d=DAYS[currentDay];
   if (!d || !d.stops[i] || !d.stops[i].lat) return;
-  for(var j=0;j<mapMarkers.length;j++)mapMarkers[j].setIcon(makeIcon(d.stops[j],j===i));
+  replayPhase = 'at_stop';
+  replayTransitMode = i < d.stops.length - 1 ? normalizeTransportMode(d.stops[i + 1]) : 'walk';
+  refreshMarkerIcons();
   map.flyTo([d.stops[i].lat,d.stops[i].lng],13,{duration:.7});
   mapMarkers[i].openPopup();
   renderTimeline();
+  if (playing && i < d.stops.length - 1) scheduleInTransitPhase(i);
   var el=document.getElementById('sr'+i);
   if(el)el.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
@@ -1997,18 +2163,33 @@ function switchDay(i){
 
 function togglePlay(){
   if(playing){
-    clearInterval(playTimer);playing=false;
-    document.getElementById('playBtn').innerHTML='&#9654; Play';
-    document.getElementById('playBtn').classList.remove('playing');
+    clearInterval(playTimer);
+    playTimer=null;
+    playing=false;
+    clearReplayTransitTimer();
+    replayPhase='at_stop';
+    setPlayButtonState(false);
+    refreshMarkerIcons();
+    renderTimeline();
   } else {
     playing=true;
-    document.getElementById('playBtn').innerHTML='&#9632; Stop';
-    document.getElementById('playBtn').classList.add('playing');
+    setPlayButtonState(true);
     var max=DAYS[currentDay].stops.length;
     if(currentStop>=max-1)currentStop=-1;
+    if(currentStop>=0) scheduleInTransitPhase(currentStop);
     playTimer=setInterval(function(){
       currentStop++;
-      if(currentStop>=max){clearInterval(playTimer);playing=false;document.getElementById('playBtn').innerHTML='&#9654; Play';document.getElementById('playBtn').classList.remove('playing');return;}
+      if(currentStop>=max){
+        clearInterval(playTimer);
+        playTimer=null;
+        playing=false;
+        clearReplayTransitTimer();
+        replayPhase='at_stop';
+        setPlayButtonState(false);
+        refreshMarkerIcons();
+        renderTimeline();
+        return;
+      }
       jumpTo(currentStop);
     },2200);
   }
@@ -2016,6 +2197,7 @@ function togglePlay(){
 
 function resetAnim(){
   stopReplay();
+  replayPhase='at_stop';
   renderTimeline();
   renderMap();
 }
