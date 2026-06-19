@@ -90,8 +90,17 @@
 - **Warnings:** 0
 - **Output:** `data/shapes/airport-access/jr_haruka.txt`
 
+## jre_narita_express.txt
+- **Source:** `raw-geojson/jre_narita_express_overpass.geojson` (OSM relation `11688429`, 成田空港 → 大宮)
+- **Points:** 2128
+- **Median step:** 0.041 km (outlier threshold: 15.00 km)
+- **Max step:** 0.695 km
+- **Corrected:** 0
+- **Warnings:** 0
+- **Output:** `data/shapes/airport-access/jre_narita_express.txt`
+
 ## Summary
-- **Total points:** 3631
+- **Total points:** 5759
 - **Total corrected:** 1
 - **Total warnings:** 22
 
