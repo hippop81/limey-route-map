@@ -216,6 +216,22 @@ body.shared-view .edit-toggle-btn{display:none!important;}
 .edit-panel{left:auto;right:24px;bottom:24px;width:340px;border-radius:var(--radius);transform:translateY(20px);opacity:0;pointer-events:none;}
 .edit-panel.open{transform:translateY(0);opacity:1;pointer-events:auto;}
 }
+
+/* ── Edit tab bar (Stops / Days toggle) ── */
+.edit-tab-bar{display:none;border-bottom:2px solid var(--light-gray);padding:0 12px;background:var(--white);flex-shrink:0;}
+.edit-tab{padding:7px 14px;border:none;background:transparent;font-family:var(--font-body);font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--secondary);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s;}
+.edit-tab.active{color:var(--peacock);border-bottom-color:var(--peacock);}
+
+/* ── Day edit panel ── */
+.day-edit-panel{flex:1;overflow-y:auto;padding:12px 16px;display:none;}
+.de-day-card{background:var(--white);border:1.5px solid var(--light-gray);border-radius:var(--radius);padding:12px;margin-bottom:8px;transition:border-color .15s;}
+.de-day-card.de-day-active{border-color:var(--peacock);}
+.de-day-hd{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.de-day-num{font-family:var(--font-body);font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--peacock);flex:1;}
+.de-day-stat{font-family:var(--font-body);font-size:11px;font-weight:600;color:var(--secondary);}
+.de-day-switch{font-family:var(--font-body);font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--peacock);background:var(--soft-lime);border:none;border-radius:4px;padding:2px 7px;cursor:pointer;opacity:0;transition:opacity .15s;}
+.de-day-card:hover .de-day-switch{opacity:1;}
+.day-action-row{display:flex;gap:8px;margin-top:10px;}
 #map{flex:1;}
 .leaflet-container{background:#1a6a7a;}
 .leaflet-popup-content-wrapper{background:var(--white)!important;border-top:3px solid var(--peacock)!important;border-radius:var(--radius)!important;color:var(--primary)!important;box-shadow:0 4px 16px rgba(0,0,0,.18)!important;padding:0!important;}
@@ -265,6 +281,9 @@ button,.btn,.share-btn,.day-tab,.trip-card,.stop-row,.draft-icon-btn,.back-btn,.
 .sidebar-header-actions{width:100%;margin-top:6px;}
 .share-btn{flex:1;justify-content:center;margin-top:0;min-height:44px;font-size:11px;}
 .edit-toggle-btn{flex:1;justify-content:center;min-height:44px;font-size:11px;}
+.edit-tab{min-height:44px;}
+.day-edit-panel{padding-left:max(16px,var(--safe-left));padding-right:max(16px,var(--safe-right));-webkit-overflow-scrolling:touch;}
+.de-day-switch{opacity:1;}
 .sidebar-header{padding-left:max(16px,var(--safe-left));padding-right:max(16px,var(--safe-right));}
 .day-tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
 .day-tabs::-webkit-scrollbar{display:none;}
@@ -393,7 +412,12 @@ button,.btn,.share-btn,.day-tab,.trip-card,.stop-row,.draft-icon-btn,.back-btn,.
       <div class="map-save-status" id="mapSaveStatus" data-save-state="saved">Saved ✓</div>
     </div>
     <div class="day-tabs" id="dayTabs"></div>
+    <div class="edit-tab-bar" id="editTabBar">
+      <button class="edit-tab active" id="etabStops" type="button" onclick="switchEditTab('stops')">Stops</button>
+      <button class="edit-tab" id="etabDays" type="button" onclick="switchEditTab('days')">Days</button>
+    </div>
     <div class="day-swipe-hint" id="daySwipeHint" hidden>左右スワイプで日を切り替え</div>
+    <div class="day-edit-panel" id="dayEditPanel"></div>
     <div class="timeline" id="timeline"></div>
     <div class="cost-bar" id="costBar"></div>
     <div class="controls">
@@ -1384,7 +1408,12 @@ function toggleEditMode() {
     btn.innerHTML = editMode ? '&#10003; Done' : '&#9999; Edit Trip';
     btn.classList.toggle('on', editMode);
   }
-  if (!editMode) closeEP();
+  var tabBar = document.getElementById('editTabBar');
+  if (tabBar) tabBar.style.display = editMode ? 'flex' : 'none';
+  if (!editMode) {
+    closeEP();
+    switchEditTab('stops');
+  }
   renderTimeline();
 }
 
@@ -1495,6 +1524,124 @@ function onDragEnd() {
   for (var i = 0; i < rows.length; i++) rows[i].classList.remove('drag-over');
 }
 
+/* ── Day management (Edit mode → Days tab) ── */
+var _editTab = 'stops';
+
+function switchEditTab(tab) {
+  _editTab = tab;
+  var tl = document.getElementById('timeline');
+  var dep = document.getElementById('dayEditPanel');
+  var es = document.getElementById('etabStops');
+  var ed = document.getElementById('etabDays');
+  if (tab === 'days') {
+    if (tl) tl.style.display = 'none';
+    if (dep) { dep.style.display = ''; renderDayEditPanel(); }
+    if (es) es.classList.remove('active');
+    if (ed) ed.classList.add('active');
+  } else {
+    if (tl) tl.style.display = '';
+    if (dep) dep.style.display = 'none';
+    if (es) es.classList.add('active');
+    if (ed) ed.classList.remove('active');
+  }
+}
+
+function dayFareTotalStr(stops) {
+  var total = (stops || []).reduce(function(sum, s) {
+    if (!s.fare && !s.price) return sum;
+    var raw = s.fare || s.price || '';
+    var n = parseInt(String(raw).replace(/[¥,\s]/g, ''), 10);
+    return sum + (isNaN(n) ? 0 : n);
+  }, 0);
+  return total > 0 ? '¥' + total.toLocaleString('ja-JP') : '';
+}
+
+function renderDayEditPanel() {
+  var days = getRouteDaysArray();
+  var html = '';
+  for (var d = 0; d < days.length; d++) {
+    var day = days[d];
+    var stops = day.stops || [];
+    var isActive = d === currentDay;
+    var fareStr = dayFareTotalStr(stops);
+    html += '<div class="de-day-card' + (isActive ? ' de-day-active' : '') + '">' +
+      '<div class="de-day-hd">' +
+        '<span class="de-day-num">Day ' + (d + 1) + '</span>' +
+        '<span class="de-day-stat">' + stops.length + ' stops</span>' +
+        (fareStr ? '<span class="de-day-stat">' + fareStr + '</span>' : '') +
+        (!isActive ? '<button type="button" class="de-day-switch" onclick="switchDay(' + d + ');switchEditTab(\'stops\')">切替 &#8594;</button>' : '') +
+      '</div>' +
+      '<div class="draft-field">' +
+        '<label>ラベル</label>' +
+        '<input type="text" id="de-day-' + d + '-label" value="' + escapeHtml(day.label || '') + '" placeholder="Day ' + (d + 1) + '" oninput="saveDayEdit()">' +
+      '</div>' +
+      '<div class="draft-field" style="margin-top:6px">' +
+        '<label>メモ</label>' +
+        '<input type="text" id="de-day-' + d + '-cost" value="' + escapeHtml(day.cost || '') + '" placeholder="交通費・メモ" oninput="saveDayEdit()">' +
+      '</div>' +
+    '</div>';
+  }
+  html += '<div class="day-action-row">' +
+    '<button type="button" class="btn-add-stop" onclick="addNewDay()" style="flex:1;border-style:dashed">＋ Day を追加</button>' +
+    '<button type="button" class="btn-add-stop" onclick="deleteLastDay()" style="flex:1;border-color:rgba(192,68,68,.35);color:#c04444;border-style:dashed">− 最後のDay</button>' +
+  '</div>';
+  var panel = document.getElementById('dayEditPanel');
+  if (panel) panel.innerHTML = html;
+}
+
+function saveDayEdit() {
+  if (isSharedView || !currentRoute) return;
+  var days = getRouteDaysArray();
+  var changed = false;
+  for (var d = 0; d < days.length; d++) {
+    var lbl = document.getElementById('de-day-' + d + '-label');
+    var cst = document.getElementById('de-day-' + d + '-cost');
+    if (lbl && days[d].label !== lbl.value) { days[d].label = lbl.value; changed = true; }
+    if (cst && days[d].cost !== cst.value) { days[d].cost = cst.value; changed = true; }
+  }
+  if (changed) {
+    writeRouteDays(days);
+    syncDaysFromRoute();
+    renderDayTabs();
+    notifyRouteChanged();
+  }
+}
+
+function addNewDay() {
+  if (isSharedView) return;
+  mutateRoute(function() {
+    var days = getRouteDaysArray();
+    var last = days[days.length - 1];
+    var newDay = {
+      label: 'Day ' + (days.length + 1),
+      cost: '',
+      center: last ? [last.center[0], last.center[1]] : [26.3, 127.7],
+      zoom: last ? last.zoom : 11,
+      stops: []
+    };
+    days.push(newDay);
+    writeRouteDays(days);
+  }, { render: true });
+  renderDayEditPanel();
+}
+
+function deleteLastDay() {
+  if (isSharedView) return;
+  var days = getRouteDaysArray();
+  if (days.length <= 1) { alert('最低1日は必要です'); return; }
+  var lastIdx = days.length - 1;
+  if (!confirm('Day ' + (lastIdx + 1) + ' を削除しますか？\n（このDayのストップもすべて削除されます）')) return;
+  mutateRoute(function() {
+    var d = getRouteDaysArray();
+    d.splice(d.length - 1, 1);
+    writeRouteDays(d);
+  }, { render: false });
+  if (currentDay >= days.length - 1) currentDay = days.length - 2;
+  syncDaysFromRoute();
+  render();
+  renderDayEditPanel();
+}
+
 function routeDataToDays(routeData) {
   if (!routeData || !routeData.days) return JSON.parse(JSON.stringify(DEFAULT_DAYS));
   var raw = routeData.days;
@@ -1560,11 +1707,14 @@ function buildShareUrl(tripId) {
 function resetEditMode() {
   editMode = false;
   closeEP();
+  switchEditTab('stops');
   var btn = document.getElementById('editToggleBtn');
   if (btn) {
     btn.innerHTML = '&#9999; Edit Trip';
     btn.classList.remove('on');
   }
+  var tabBar = document.getElementById('editTabBar');
+  if (tabBar) tabBar.style.display = 'none';
 }
 
 function setSharedViewMode(on) {
@@ -2096,6 +2246,7 @@ function switchDay(i){
   document.querySelectorAll('.day-tab').forEach(function(t,j){t.classList.toggle('active',j===i);});
   renderTimeline();
   renderMap();
+  if (editMode && _editTab === 'days') renderDayEditPanel();
 }
 
 function togglePlay(){
